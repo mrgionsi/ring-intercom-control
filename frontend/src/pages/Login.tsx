@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from '../api';
+import { useTranslation } from 'react-i18next';
 
 export default function Login({
   onLogin
@@ -12,6 +13,7 @@ export default function Login({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -37,11 +39,11 @@ export default function Login({
   return (
     <div className="page">
       <div className="card narrow">
-        <h1>Sign In</h1>
-        <p>Use your username and password.</p>
+        <h1>{t('login.title')}</h1>
+        <p>{t('login.subtitle')}</p>
         <form onSubmit={handleSubmit} className="stack">
           <label className="field">
-            <span>Username</span>
+            <span>{t('login.username')}</span>
             <input
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -49,7 +51,7 @@ export default function Login({
             />
           </label>
           <label className="field">
-            <span>Password</span>
+            <span>{t('login.password')}</span>
             <input
               type="password"
               value={password}
@@ -59,7 +61,7 @@ export default function Login({
           </label>
           {error ? <div className="error">{error}</div> : null}
           <button className="btn" disabled={loading}>
-            {loading ? 'Signing in…' : 'Sign in'}
+            {loading ? t('login.signing_in') : t('login.sign_in')}
           </button>
         </form>
       </div>

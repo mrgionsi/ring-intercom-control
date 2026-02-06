@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '../api';
+import { useTranslation } from 'react-i18next';
 
 type RingSummary = {
   locationId: string;
@@ -29,6 +30,7 @@ type GuestLinkTemplate = {
 };
 
 export default function GuestLinks() {
+  const { t } = useTranslation();
   const [summary, setSummary] = useState<RingSummary[]>([]);
   const [links, setLinks] = useState<GuestLink[]>([]);
   const [templates, setTemplates] = useState<GuestLinkTemplate[]>([]);
@@ -101,10 +103,10 @@ export default function GuestLinks() {
         }
       );
       const url = `${window.location.origin}/guest/${result.link.token}`;
-      setMessage(`Guest link created: ${url}`);
+      setMessage(t('guest_links.created', { url }));
       await loadData();
     } catch (err: any) {
-      setError(err.message ?? 'Failed to create link');
+      setError(err.message ?? t('common.error'));
     }
   };
 
@@ -139,7 +141,7 @@ export default function GuestLinks() {
       setMessage('Template created.');
       await loadData();
     } catch (err: any) {
-      setError(err.message ?? 'Failed to create template');
+      setError(err.message ?? t('common.error'));
     }
   };
 
@@ -158,19 +160,19 @@ export default function GuestLinks() {
       {initializing ? (
         <div className="overlay">
           <div className="spinner" />
-          <div>Loading guest links…</div>
+          <div>{t('app.loading')}</div>
         </div>
       ) : null}
       <section className="card">
-        <h2>Create Guest Link</h2>
+        <h2>{t('guest_links.create_title')}</h2>
         <div className="grid two">
           <label className="field">
-            <span>Template (optional)</span>
+            <span>{t('guest_links.template_optional')}</span>
             <select
               value={templateId}
               onChange={(e) => handleSelectTemplate(e.target.value)}
             >
-              <option value="">No template</option>
+              <option value="">{t('profile.no_templates')}</option>
               {templates.map((tmpl) => (
                 <option key={tmpl.id} value={tmpl.id}>
                   {tmpl.name} · {tmpl.duration_hours}h
@@ -182,16 +184,16 @@ export default function GuestLinks() {
         </div>
         <div className="grid two">
           <label className="field">
-            <span>Label</span>
+            <span>{t('guest_links.label')}</span>
             <input value={label} onChange={(e) => setLabel(e.target.value)} />
           </label>
           <label className="field">
-            <span>Intercom</span>
+            <span>{t('guest_links.intercom')}</span>
             <select
               value={intercomId}
               onChange={(e) => setIntercomId(e.target.value)}
             >
-              <option value="">Select an intercom</option>
+              <option value="">{t('profile.select_intercom')}</option>
               {allIntercoms.map((intercom) => (
                 <option key={intercom.id} value={intercom.id}>
                   {intercom.name}
@@ -200,7 +202,7 @@ export default function GuestLinks() {
             </select>
           </label>
           <label className="field">
-            <span>Expires At</span>
+            <span>{t('guest_links.expires_at')}</span>
             <input
               type="datetime-local"
               value={expiresAt}
@@ -208,7 +210,7 @@ export default function GuestLinks() {
             />
           </label>
           <label className="field">
-            <span>Max Uses (optional)</span>
+            <span>{t('guest_links.max_uses')}</span>
             <input
               type="number"
               min="1"
@@ -218,24 +220,24 @@ export default function GuestLinks() {
           </label>
         </div>
         <button className="btn" onClick={handleCreate}>
-          Create Link
+          {t('guest_links.create')}
         </button>
         {message ? <div className="success">{message}</div> : null}
         {error ? <div className="error">{error}</div> : null}
       </section>
 
       <section className="card">
-        <h2>Templates</h2>
+        <h2>{t('guest_links.templates_title')}</h2>
         <div className="grid two">
           <label className="field">
-            <span>Name</span>
+            <span>{t('guest_links.template_name')}</span>
             <input
               value={templateName}
               onChange={(e) => setTemplateName(e.target.value)}
             />
           </label>
           <label className="field">
-            <span>Duration (hours)</span>
+            <span>{t('guest_links.template_duration')}</span>
             <input
               type="number"
               min="1"
@@ -244,7 +246,7 @@ export default function GuestLinks() {
             />
           </label>
           <label className="field">
-            <span>Max Uses (optional)</span>
+            <span>{t('guest_links.template_max_uses')}</span>
             <input
               type="number"
               min="1"
@@ -254,10 +256,10 @@ export default function GuestLinks() {
           </label>
         </div>
         <button className="btn" onClick={handleCreateTemplate}>
-          Create Template
+          {t('guest_links.template_create')}
         </button>
         {templates.length === 0 ? (
-          <p className="muted">No templates yet.</p>
+          <p className="muted">{t('guest_links.template_none')}</p>
         ) : (
           <div className="stack">
             {templates.map((tmpl) => (
@@ -265,17 +267,17 @@ export default function GuestLinks() {
                 <div>
                   <strong>{tmpl.name}</strong>
                   <div className="muted">
-                    Duration: {tmpl.duration_hours}h
+                    {t('guest_links.template_duration')}: {tmpl.duration_hours}h
                   </div>
                   <div className="muted">
-                    Max uses: {tmpl.max_uses ?? 'Unlimited'}
+                    {t('guest_links.template_max_uses')}: {tmpl.max_uses ?? t('guest_links.template_unlimited')}
                   </div>
                 </div>
                 <button
                   className="btn ghost"
                   onClick={() => handleDeleteTemplate(tmpl.id)}
                 >
-                  Delete
+                  {t('guest_links.disable')}
                 </button>
               </div>
             ))}
@@ -284,9 +286,9 @@ export default function GuestLinks() {
       </section>
 
       <section className="card">
-        <h2>Existing Links</h2>
+        <h2>{t('guest_links.existing')}</h2>
         {links.length === 0 ? (
-          <p className="muted">No guest links yet.</p>
+          <p className="muted">{t('guest_links.no_links')}</p>
         ) : (
           <div className="stack">
             {links.map((link) => (
@@ -309,13 +311,13 @@ export default function GuestLinks() {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    Open
+                    {t('guest_links.open')}
                   </a>
                   <button
                     className="btn"
                     onClick={() => handleDisable(link.id)}
                   >
-                    Disable
+                    {t('guest_links.disable')}
                   </button>
                 </div>
               </div>

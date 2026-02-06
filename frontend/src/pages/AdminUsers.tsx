@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from '../api';
+import { useTranslation } from 'react-i18next';
 
 type UserRow = {
   id: number;
@@ -54,6 +55,7 @@ type LoginAuditEvent = {
 };
 
 export default function AdminUsers() {
+  const { t } = useTranslation();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [devices, setDevices] = useState<UserDevices[]>([]);
   const [username, setUsername] = useState('');
@@ -170,7 +172,7 @@ export default function AdminUsers() {
           disabled: editDisabled ? 1 : 0
         })
       });
-      setMessage('User updated.');
+    setMessage(t('admin.save_changes'));
       setEditPassword('');
       await loadAll();
     } catch (err: any) {
@@ -182,20 +184,18 @@ export default function AdminUsers() {
 
   const handleDelete = async () => {
     if (!selectedUserId) return;
-    const confirmDelete = window.confirm(
-      'Disable this user account? (You can re-enable later)'
-    );
+    const confirmDelete = window.confirm(t('admin.disable_user'));
     if (!confirmDelete) return;
     setLoading(true);
     setError(null);
     setMessage(null);
     try {
       await apiFetch(`/api/admin/users/${selectedUserId}`, { method: 'DELETE' });
-      setMessage('User disabled.');
+      setMessage(t('common.disabled'));
       setSelectedUserId(null);
       await loadAll();
     } catch (err: any) {
-      setError(err.message ?? 'Failed to disable user');
+      setError(err.message ?? t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -211,10 +211,10 @@ export default function AdminUsers() {
         method: 'PUT',
         body: JSON.stringify({ disabled: nextDisabled })
       });
-      setMessage(nextDisabled ? 'User disabled.' : 'User enabled.');
+      setMessage(nextDisabled ? t('common.disabled') : t('common.active'));
       await loadAll();
     } catch (err: any) {
-      setError(err.message ?? 'Failed to update user');
+      setError(err.message ?? t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -232,9 +232,9 @@ export default function AdminUsers() {
           authPerMinute: Number(authLimit)
         })
       });
-      setMessage('Rate limits updated.');
+      setMessage(t('admin.save_limits'));
     } catch (err: any) {
-      setError(err.message ?? 'Failed to update limits');
+      setError(err.message ?? t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -242,9 +242,7 @@ export default function AdminUsers() {
 
   const handleResetPassword = async () => {
     if (!selectedUserId) return;
-    const confirmReset = window.confirm(
-      'Reset password and generate a temporary one for this user?'
-    );
+    const confirmReset = window.confirm(t('admin.reset_password'));
     if (!confirmReset) return;
     setLoading(true);
     setError(null);
@@ -255,9 +253,9 @@ export default function AdminUsers() {
         { method: 'POST' }
       );
       setTempPassword(result.tempPassword);
-      setMessage('Temporary password generated.');
+      setMessage(t('admin.temp_password'));
     } catch (err: any) {
-      setError(err.message ?? 'Failed to reset password');
+      setError(err.message ?? t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -298,9 +296,9 @@ export default function AdminUsers() {
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
-      setMessage('Audit CSV exported.');
+      setMessage(t('admin.export_csv'));
     } catch (err: any) {
-      setError(err.message ?? 'Failed to export audit log');
+      setError(err.message ?? t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -311,18 +309,18 @@ export default function AdminUsers() {
       {initializing ? (
         <div className="overlay">
           <div className="spinner" />
-          <div>Loading admin data…</div>
+          <div>{t('app.loading')}</div>
         </div>
       ) : null}
       <section className="card">
-        <h2>Create User</h2>
+        <h2>{t('admin.create_user')}</h2>
         <div className="grid two">
           <label className="field">
-            <span>Username</span>
+            <span>{t('login.username')}</span>
             <input value={username} onChange={(e) => setUsername(e.target.value)} />
           </label>
           <label className="field">
-            <span>Password</span>
+            <span>{t('login.password')}</span>
             <input
               type="password"
               value={password}
@@ -330,21 +328,21 @@ export default function AdminUsers() {
             />
           </label>
           <label className="field">
-            <span>First Name</span>
+            <span>{t('profile.first_name')}</span>
             <input
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
             />
           </label>
           <label className="field">
-            <span>Last Name</span>
+            <span>{t('profile.last_name')}</span>
             <input
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
             />
           </label>
           <label className="field">
-            <span>Structure</span>
+            <span>{t('profile.structure')}</span>
             <input
               value={structure}
               onChange={(e) => setStructure(e.target.value)}
@@ -356,17 +354,17 @@ export default function AdminUsers() {
           onClick={handleCreate}
           disabled={loading || !username || !password}
         >
-          {loading ? 'Creating...' : 'Create User'}
+          {loading ? t('app.loading') : t('admin.create_user')}
         </button>
         {message ? <div className="success">{message}</div> : null}
         {error ? <div className="error">{error}</div> : null}
       </section>
 
       <section className="card">
-        <h2>Rate Limits</h2>
+        <h2>{t('admin.rate_limits')}</h2>
         <div className="grid two">
           <label className="field">
-            <span>Guest Requests / Minute</span>
+            <span>{t('admin.guest_rpm')}</span>
             <input
               type="number"
               min="1"
@@ -375,7 +373,7 @@ export default function AdminUsers() {
             />
           </label>
           <label className="field">
-            <span>Authenticated Requests / Minute</span>
+            <span>{t('admin.auth_rpm')}</span>
             <input
               type="number"
               min="1"
@@ -385,14 +383,14 @@ export default function AdminUsers() {
           </label>
         </div>
         <button className="btn" onClick={handleSaveLimits} disabled={loading}>
-          {loading ? 'Saving...' : 'Save Limits'}
+          {loading ? t('app.loading') : t('admin.save_limits')}
         </button>
       </section>
 
       <section className="card">
-        <h2>Users</h2>
+        <h2>{t('admin.users')}</h2>
         {users.length === 0 ? (
-          <p className="muted">No users yet.</p>
+          <p className="muted">{t('admin.no_users')}</p>
         ) : (
           <div className="stack">
             {users.map((user) => (
@@ -415,24 +413,26 @@ export default function AdminUsers() {
                   <div className="muted">
                     {user.firstName || user.lastName
                       ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim()
-                      : 'No name'}
+                      : t('common.no_name')}
                   </div>
                   {user.structure ? (
-                    <div className="muted">Structure: {user.structure}</div>
+                    <div className="muted">
+                      {t('profile.structure')}: {user.structure}
+                    </div>
                   ) : null}
                   {user.lockoutUntil ? (
                     <div className="muted">
-                      Locked until: {new Date(user.lockoutUntil).toLocaleString()}
+                      {t('admin.locked_until')}: {new Date(user.lockoutUntil).toLocaleString()}
                     </div>
                   ) : null}
                   <div className="muted">
-                    Created: {new Date(user.createdAt).toLocaleString()}
+                    {t('common.created')}: {new Date(user.createdAt).toLocaleString()}
                   </div>
                 </div>
                 <div className="actions">
                   <span className="badge">{user.role}</span>
                   <span className={`badge ${user.disabled ? 'danger' : 'ok'}`}>
-                    {user.disabled ? 'disabled' : 'active'}
+                    {user.disabled ? t('common.disabled') : t('common.active')}
                   </span>
                   <button
                     className="btn ghost"
@@ -442,7 +442,7 @@ export default function AdminUsers() {
                     }}
                     disabled={loading}
                   >
-                    {user.disabled ? 'Enable' : 'Disable'}
+                    {user.disabled ? t('common.active') : t('common.disabled')}
                   </button>
                 </div>
               </div>
@@ -452,21 +452,21 @@ export default function AdminUsers() {
       </section>
 
       <section className="card">
-        <h2>User Details</h2>
+        <h2>{t('admin.details')}</h2>
         {!selectedUser ? (
-          <p className="muted">Select a user to view details.</p>
+          <p className="muted">{t('admin.select_user')}</p>
         ) : (
           <div className="stack">
             <div className="grid two">
               <label className="field">
-                <span>Username</span>
+                <span>{t('login.username')}</span>
                 <input
                   value={editUsername}
                   onChange={(e) => setEditUsername(e.target.value)}
                 />
               </label>
               <label className="field">
-                <span>New Password (optional)</span>
+                <span>{t('admin.reset_password')}</span>
                 <input
                   type="password"
                   value={editPassword}
@@ -474,54 +474,54 @@ export default function AdminUsers() {
                 />
               </label>
               <label className="field">
-                <span>First Name</span>
+                <span>{t('profile.first_name')}</span>
                 <input
                   value={editFirstName}
                   onChange={(e) => setEditFirstName(e.target.value)}
                 />
               </label>
               <label className="field">
-                <span>Last Name</span>
+                <span>{t('profile.last_name')}</span>
                 <input
                   value={editLastName}
                   onChange={(e) => setEditLastName(e.target.value)}
                 />
               </label>
               <label className="field">
-                <span>Structure</span>
+                <span>{t('profile.structure')}</span>
                 <input
                   value={editStructure}
                   onChange={(e) => setEditStructure(e.target.value)}
                 />
               </label>
               <label className="field">
-                <span>Account Status</span>
+                <span>{t('profile.account_status')}</span>
                 <select
                   value={editDisabled ? 'disabled' : 'active'}
                   onChange={(e) => setEditDisabled(e.target.value === 'disabled')}
                 >
-                  <option value="active">Active</option>
-                  <option value="disabled">Disabled</option>
+                  <option value="active">{t('common.active')}</option>
+                  <option value="disabled">{t('common.disabled')}</option>
                 </select>
               </label>
             </div>
             <div className="actions">
               <button className="btn" onClick={handleUpdate} disabled={loading}>
-                {loading ? 'Saving...' : 'Save Changes'}
+                {loading ? t('app.loading') : t('admin.save_changes')}
               </button>
               <button className="btn ghost" onClick={handleDelete} disabled={loading}>
-                Disable User
+                {t('admin.disable_user')}
               </button>
               <button className="btn ghost" onClick={handleResetPassword} disabled={loading}>
-                Reset Password
+                {t('admin.reset_password')}
               </button>
             </div>
             {tempPassword ? (
               <div className="tile">
                 <div>
-                  <strong>Temporary Password</strong>
+                  <strong>{t('admin.temp_password')}</strong>
                   <div className="muted">
-                    Share this with the user and ask them to change it after login.
+                    {t('admin.temp_password_desc')}
                   </div>
                 </div>
                 <code className="badge ok">{tempPassword}</code>
@@ -532,9 +532,9 @@ export default function AdminUsers() {
       </section>
 
       <section className="card">
-        <h2>Devices (Read Only)</h2>
+        <h2>{t('admin.devices_readonly')}</h2>
         {!selectedDevices ? (
-          <p className="muted">Select a user to view devices.</p>
+          <p className="muted">{t('admin.select_user')}</p>
         ) : selectedDevices.error ? (
           <p className="muted">{selectedDevices.error}</p>
         ) : selectedDevices.summary && selectedDevices.summary.length > 0 ? (
@@ -551,14 +551,14 @@ export default function AdminUsers() {
                         <div>
                           <strong>{intercom.name}</strong>
                           <div className="muted">
-                            Battery:{' '}
+                            {t('intercoms.battery')}:{' '}
                             {typeof intercom.batteryPercent === 'number'
                               ? `${intercom.batteryPercent}%`
                               : 'n/a'}
                           </div>
                           {intercom.connection ? (
                             <div className="muted">
-                              Status: {intercom.connection}
+                              {t('common.status')}: {intercom.connection}
                             </div>
                           ) : null}
                         </div>
@@ -576,15 +576,15 @@ export default function AdminUsers() {
 
       <section className="card">
         <div className="actions">
-          <h2>Unlock History</h2>
+          <h2>{t('admin.unlock_history')}</h2>
           <button className="btn ghost" onClick={handleExportAudit} disabled={loading}>
-            Export CSV
+            {t('admin.export_csv')}
           </button>
         </div>
         {!selectedUser ? (
-          <p className="muted">Select a user to view unlock history.</p>
+          <p className="muted">{t('admin.select_user')}</p>
         ) : auditEvents.length === 0 ? (
-          <p className="muted">No unlock activity yet.</p>
+          <p className="muted">{t('intercoms.health_none')}</p>
         ) : (
           <div className="stack">
             {auditEvents.slice(0, 10).map((event) => (
@@ -600,7 +600,7 @@ export default function AdminUsers() {
                   ) : null}
                 </div>
                 <span className={`badge ${event.success ? 'ok' : 'danger'}`}>
-                  {event.success ? 'success' : 'failed'}
+                  {event.success ? t('common.success') : t('common.failed')}
                 </span>
               </div>
             ))}
@@ -609,9 +609,9 @@ export default function AdminUsers() {
       </section>
 
       <section className="card">
-        <h2>Login Attempts</h2>
+        <h2>{t('admin.login_attempts')}</h2>
         {loginAudit.length === 0 ? (
-          <p className="muted">No login attempts yet.</p>
+          <p className="muted">{t('common.no_data')}</p>
         ) : (
           <div className="stack">
             {loginAudit.slice(0, 10).map((event) => (
@@ -624,7 +624,7 @@ export default function AdminUsers() {
                   {event.ip ? <div className="muted">IP: {event.ip}</div> : null}
                 </div>
                 <span className={`badge ${event.success ? 'ok' : 'danger'}`}>
-                  {event.success ? 'success' : 'failed'}
+                  {event.success ? t('common.success') : t('common.failed')}
                 </span>
               </div>
             ))}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { apiFetch } from '../api';
+import { useTranslation } from 'react-i18next';
 
 type GuestStatus = {
   token: string;
@@ -12,6 +13,7 @@ type GuestStatus = {
 };
 
 export default function Guest() {
+  const { t } = useTranslation();
   const { token } = useParams();
   const [status, setStatus] = useState<GuestStatus | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -32,9 +34,9 @@ export default function Guest() {
     setMessage(null);
     try {
       await apiFetch(`/api/guest/${token}/unlock`, { method: 'POST' });
-      setMessage('Door unlock requested.');
+      setMessage(t('guest.requested'));
     } catch (err: any) {
-      setError(err.message ?? 'Unlock failed');
+      setError(err.message ?? t('guest.error'));
     } finally {
       setLoading(false);
     }
@@ -43,23 +45,23 @@ export default function Guest() {
   return (
     <div className="page">
       <div className="card narrow">
-        <h1>Guest Access</h1>
+        <h1>{t('guest.title')}</h1>
         {status ? (
           <>
-            <p>{status.label || 'Welcome! Use the button below to unlock.'}</p>
+            <p>{status.label || t('guest.welcome')}</p>
             <p className="muted">
-              Expires: {new Date(status.expiresAt).toLocaleString()}
+              {t('guest.expires')}: {new Date(status.expiresAt).toLocaleString()}
             </p>
             <button
               className="btn"
               onClick={handleUnlock}
               disabled={!status.valid || loading}
             >
-              {loading ? 'Unlocking…' : 'Unlock Door'}
+              {loading ? t('guest.unlocking') : t('guest.unlock')}
             </button>
           </>
         ) : (
-          <p className="muted">Checking access…</p>
+          <p className="muted">{t('guest.checking')}</p>
         )}
         {message ? <div className="success">{message}</div> : null}
         {error ? <div className="error">{error}</div> : null}

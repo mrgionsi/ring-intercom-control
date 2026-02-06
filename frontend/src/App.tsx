@@ -6,12 +6,15 @@ import Admin from './pages/Admin';
 import GuestLinks from './pages/GuestLinks';
 import Guest from './pages/Guest';
 import AdminUsers from './pages/AdminUsers';
+import { useTranslation } from 'react-i18next';
+import { setLanguage } from './i18n';
 
 type User = { username: string; role: 'admin' | 'user' } | null;
 
 export default function App() {
   const [user, setUser] = useState<User>(null);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     initCsrf()
@@ -27,7 +30,7 @@ export default function App() {
     return (
       <div className="page">
         <div className="card">
-          <h1>Loading…</h1>
+          <h1>{t('app.loading')}</h1>
         </div>
       </div>
     );
@@ -87,32 +90,50 @@ function Shell({
   onLogout: () => void;
   children: React.ReactNode;
 }) {
+  const { t, i18n } = useTranslation();
   const handleLogout = async () => {
     await apiFetch('/api/auth/logout', { method: 'POST' });
     onLogout();
+  };
+
+  const setLang = (lang: string) => {
+    setLanguage(lang);
   };
 
   return (
     <div className="page">
       <header className="header">
         <div>
-          <h1>Ring Intercom Control</h1>
-          <p>Signed in as {user.username}</p>
+          <h1>{t('app.title')}</h1>
+          <p>{t('app.signed_in_as', { username: user.username })}</p>
         </div>
         <div className="actions">
           <Link to="/" className="btn ghost">
-            Dashboard
+            {t('app.dashboard')}
           </Link>
           <Link to="/links" className="btn ghost">
-            Guest Links
+            {t('app.guest_links')}
           </Link>
           {user.role === 'admin' ? (
             <Link to="/admin/users" className="btn ghost">
-              Users
+              {t('app.users')}
             </Link>
           ) : null}
+          <div className="lang-select">
+            <span className="lang-label">{t('app.language')}</span>
+            <select
+              className="btn ghost"
+              onChange={(e) => setLang(e.target.value)}
+              value={i18n.language}
+            >
+              <option value="en">EN</option>
+              <option value="it">IT</option>
+              <option value="es">ES</option>
+              <option value="de">DE</option>
+            </select>
+          </div>
           <button className="btn" onClick={handleLogout}>
-            Log out
+            {t('app.logout')}
           </button>
         </div>
       </header>

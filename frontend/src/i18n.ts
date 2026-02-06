@@ -1,0 +1,39 @@
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import en from './i18n/en.json';
+import it from './i18n/it.json';
+import es from './i18n/es.json';
+import de from './i18n/de.json';
+
+const STORAGE_KEY = 'ring_lang';
+
+function detectLanguage(): string {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored) return stored;
+  const lang = navigator.language.toLowerCase();
+  if (lang.startsWith('it')) return 'it';
+  if (lang.startsWith('es')) return 'es';
+  if (lang.startsWith('de')) return 'de';
+  return 'en';
+}
+
+i18n.use(initReactI18next).init({
+  resources: {
+    en: { translation: en },
+    it: { translation: it },
+    es: { translation: es },
+    de: { translation: de }
+  },
+  lng: detectLanguage(),
+  fallbackLng: 'en',
+  interpolation: {
+    escapeValue: false
+  }
+});
+
+export function setLanguage(lang: string) {
+  i18n.changeLanguage(lang);
+  localStorage.setItem(STORAGE_KEY, lang);
+}
+
+export default i18n;

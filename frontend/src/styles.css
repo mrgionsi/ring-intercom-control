@@ -211,6 +211,21 @@ textarea {
   flex-wrap: wrap;
 }
 
+.lang-select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #c3d7d7;
+  background: #f6fbfb;
+}
+
+.lang-label {
+  font-weight: 600;
+  color: var(--accent-dark);
+}
+
 .error {
   color: var(--danger);
   font-weight: 600;

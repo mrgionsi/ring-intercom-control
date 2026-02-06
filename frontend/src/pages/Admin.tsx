@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from '../api';
+import { useTranslation } from 'react-i18next';
 
 type RingSummary = {
   locationId: string;
@@ -45,6 +46,7 @@ type HealthSample = {
 };
 
 export default function Admin() {
+  const { t } = useTranslation();
   const [configured, setConfigured] = useState(false);
   const [refreshToken, setRefreshToken] = useState('');
   const [editingToken, setEditingToken] = useState(false);
@@ -100,13 +102,13 @@ export default function Admin() {
         method: 'POST',
         body: JSON.stringify({ refreshToken })
       });
-      setMessage('Refresh token saved.');
+    setMessage(t('messages.token_saved'));
       setConfigured(true);
       setEditingToken(false);
       setRefreshToken('');
       await loadSummary();
     } catch (err: any) {
-      setError(err.message ?? 'Failed to save token');
+      setError(err.message ?? t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -121,11 +123,11 @@ export default function Admin() {
         method: 'POST',
         body: JSON.stringify({ intercomId })
       });
-      setMessage('Unlock signal sent.');
-      setToast('Unlock request sent.');
+      setMessage(t('messages.unlock_sent'));
+      setToast(t('messages.unlock_sent'));
       setTimeout(() => setToast(null), 3000);
     } catch (err: any) {
-      setError(err.message ?? 'Unlock failed');
+      setError(err.message ?? t('guest.error'));
     } finally {
       setLoading(false);
     }
@@ -150,10 +152,10 @@ export default function Admin() {
     setError(null);
     try {
       await Promise.all([loadSummary(), loadAudit()]);
-      setToast('Devices refreshed.');
+      setToast(t('messages.devices_refreshed'));
       setTimeout(() => setToast(null), 3000);
     } catch (err: any) {
-      setError(err.message ?? 'Failed to refresh devices');
+      setError(err.message ?? t('common.error'));
     } finally {
       setRefreshing(false);
     }
@@ -164,23 +166,19 @@ export default function Admin() {
       {initializing ? (
         <div className="overlay">
           <div className="spinner" />
-          <div>Loading Ring configuration…</div>
+          <div>{t('app.loading')}</div>
         </div>
       ) : null}
       <section className="card">
-        <h2>Ring Connection</h2>
-        <p>
-          Store a Ring refresh token securely. You can generate one with the
-          Ring CLI from ring-client-api. Paste it below and save.
-        </p>
+        <h2>{t('ring.connection_title')}</h2>
+        <p>{t('ring.connection_desc')}</p>
         <div className="stack">
           {configured && !editingToken ? (
             <div className="token-status">
               <div>
-                <strong>Refresh token is already stored.</strong>
+                <strong>{t('ring.token_stored')}</strong>
                 <div className="muted">
-                  You do not need to paste it again unless you want to replace
-                  it.
+                  {t('ring.token_stored_desc')}
                 </div>
               </div>
               <button
@@ -188,18 +186,18 @@ export default function Admin() {
                 onClick={() => setEditingToken(true)}
                 disabled={loading || initializing}
               >
-                Edit token
+                {t('ring.edit_token')}
               </button>
             </div>
           ) : (
             <>
               <label className="field">
-                <span>Refresh Token</span>
+                <span>{t('ring.refresh_token')}</span>
                 <textarea
                   rows={4}
                   value={refreshToken}
                   onChange={(e) => setRefreshToken(e.target.value)}
-                  placeholder="Paste refresh token here"
+                  placeholder={t('ring.refresh_token')}
                 />
               </label>
               <div className="actions">
@@ -208,7 +206,7 @@ export default function Admin() {
                   onClick={handleSaveToken}
                   disabled={loading || !refreshToken.trim()}
                 >
-                  {loading ? 'Saving…' : 'Save Token'}
+                  {loading ? t('ring.saving') : t('ring.save_token')}
                 </button>
                 {configured ? (
                   <button
@@ -219,40 +217,40 @@ export default function Admin() {
                     }}
                     disabled={loading}
                   >
-                    Cancel
+                    {t('ring.cancel')}
                   </button>
                 ) : null}
               </div>
             </>
           )}
           {configured ? (
-            <p className="success">Ring is configured.</p>
+            <p className="success">{t('ring.configured')}</p>
           ) : (
-            <p className="muted">No token stored yet.</p>
+            <p className="muted">{t('ring.not_configured')}</p>
           )}
         </div>
       </section>
 
       <section className="card">
-        <h2>Intercoms</h2>
+        <h2>{t('intercoms.title')}</h2>
         <div className="actions">
-          <p>Unlock your intercoms directly from the dashboard.</p>
+          <p>{t('intercoms.desc')}</p>
           <button
             className="btn ghost"
             onClick={handleReload}
             disabled={refreshing || initializing}
           >
-            {refreshing ? 'Refreshing…' : 'Reload devices'}
+            {refreshing ? t('intercoms.reloading') : t('intercoms.reload')}
           </button>
         </div>
         {summary.length === 0 ? (
-          <p className="muted">No devices loaded yet.</p>
+          <p className="muted">{t('intercoms.none')}</p>
         ) : (
           summary.map((location) => (
             <div key={location.locationId} className="stack">
               <h3>{location.locationName}</h3>
               {location.intercoms.length === 0 ? (
-                <p className="muted">No intercoms detected.</p>
+                <p className="muted">{t('intercoms.no_intercoms')}</p>
               ) : (
                 <div className="grid">
                   {location.intercoms.map((intercom) => (
@@ -262,7 +260,7 @@ export default function Admin() {
                         <div className="muted">ID: {intercom.id}</div>
                         <div className="meta">
                           <span>
-                            Battery:{' '}
+                            {t('intercoms.battery')}:{' '}
                             {formatBattery(intercom.batteryPercent, intercom.data)}
                           </span>
                           {intercom.batteryCategory ? (
@@ -278,27 +276,27 @@ export default function Admin() {
                           {intercom.rssi !== null &&
                           intercom.rssi !== undefined ? (
                             <span className="badge">
-                              RSSI {intercom.rssi}
+                              {t('intercoms.rssi')} {intercom.rssi}
                             </span>
                           ) : null}
                         </div>
                         {intercom.firmware ? (
                           <div className="muted">
-                            Firmware: {intercom.firmware}
+                            {t('intercoms.firmware')}: {intercom.firmware}
                           </div>
                         ) : null}
                         {intercom.wifiName ? (
                           <div className="muted">
-                            Wi‑Fi: {intercom.wifiName}
+                            {t('intercoms.wifi')}: {intercom.wifiName}
                           </div>
                         ) : null}
                         {intercom.otaStatus ? (
                           <div className="muted">
-                            OTA: {intercom.otaStatus}
+                            {t('intercoms.ota')}: {intercom.otaStatus}
                           </div>
                         ) : null}
                         <details className="details">
-                          <summary>Raw Data</summary>
+                          <summary>{t('intercoms.raw_data')}</summary>
                           <pre>{JSON.stringify(intercom.data, null, 2)}</pre>
                         </details>
                         <details
@@ -310,9 +308,9 @@ export default function Admin() {
                             }
                           }}
                         >
-                          <summary>Health History</summary>
+                          <summary>{t('intercoms.health_history')}</summary>
                           {healthLoading[intercom.id] ? (
-                            <p className="muted">Loading history…</p>
+                            <p className="muted">{t('intercoms.health_loading')}</p>
                           ) : healthHistory[intercom.id]?.length ? (
                             <div className="stack">
                               {healthHistory[intercom.id].map((sample) => (
@@ -322,23 +320,23 @@ export default function Admin() {
                                       {new Date(sample.created_at).toLocaleString()}
                                     </strong>
                                     <div className="muted">
-                                      Battery:{' '}
+                                      {t('intercoms.battery')}:{' '}
                                       {typeof sample.battery_percent === 'number'
                                         ? `${sample.battery_percent}%`
                                         : 'n/a'}
                                     </div>
                                     <div className="muted">
-                                      RSSI: {sample.rssi ?? 'n/a'}
+                                      {t('intercoms.rssi')}: {sample.rssi ?? 'n/a'}
                                     </div>
                                     <div className="muted">
-                                      OTA: {sample.ota_status ?? 'n/a'}
+                                      {t('intercoms.ota')}: {sample.ota_status ?? 'n/a'}
                                     </div>
                                   </div>
                                 </div>
                               ))}
                             </div>
                           ) : (
-                            <p className="muted">No history yet.</p>
+                            <p className="muted">{t('intercoms.health_none')}</p>
                           )}
                         </details>
                       </div>
@@ -347,7 +345,7 @@ export default function Admin() {
                         onClick={() => handleUnlock(intercom.id)}
                         disabled={loading || initializing}
                       >
-                        Unlock
+                        {t('intercoms.unlock')}
                       </button>
                     </div>
                   ))}
@@ -359,15 +357,15 @@ export default function Admin() {
       </section>
 
       <section className="card">
-        <h2>Cameras & Devices</h2>
+        <h2>{t('devices.title')}</h2>
         {summary.length === 0 ? (
-          <p className="muted">No device data available.</p>
+          <p className="muted">{t('devices.none')}</p>
         ) : (
           summary.map((location) => (
             <div key={location.locationId} className="stack">
               <h3>{location.locationName}</h3>
               {location.cameras.length === 0 ? (
-                <p className="muted">No cameras detected.</p>
+                <p className="muted">{t('devices.no_cameras')}</p>
               ) : (
                 <div className="grid">
                   {location.cameras.map((camera) => (
@@ -377,7 +375,7 @@ export default function Admin() {
                         <div className="muted">ID: {camera.id}</div>
                       </div>
                       <details className="details">
-                        <summary>Raw Data</summary>
+                        <summary>{t('intercoms.raw_data')}</summary>
                         <pre>
                           {JSON.stringify(camera.data, null, 2)}
                         </pre>
@@ -392,9 +390,9 @@ export default function Admin() {
       </section>
 
       <section className="card">
-        <h2>Recent Unlocks</h2>
+        <h2>{t('admin.unlock_history')}</h2>
         {auditEvents.length === 0 ? (
-          <p className="muted">No unlock activity yet.</p>
+          <p className="muted">{t('common.no_data')}</p>
         ) : (
           <div className="stack">
             {auditEvents.slice(0, 10).map((event) => (
@@ -402,15 +400,20 @@ export default function Admin() {
                 <div>
                   <strong>Intercom {event.intercom_id}</strong>
                   <div className="muted">
-                    {event.source === 'guest' ? 'Guest link' : 'User'} ·{' '}
+                    {event.source === 'guest'
+                      ? t('profile.guest_link')
+                      : t('profile.user')}{' '}
+                    ·{' '}
                     {new Date(event.created_at).toLocaleString()}
                   </div>
                   {event.error_message ? (
-                    <div className="muted">Error: {event.error_message}</div>
+                    <div className="muted">
+                      {t('profile.error')}: {event.error_message}
+                    </div>
                   ) : null}
                 </div>
                 <span className={`badge ${event.success ? 'ok' : 'danger'}`}>
-                  {event.success ? 'success' : 'failed'}
+                  {event.success ? t('common.success') : t('common.failed')}
                 </span>
               </div>
             ))}

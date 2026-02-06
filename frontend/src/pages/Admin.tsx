@@ -57,6 +57,14 @@ export default function Admin() {
   const [refreshing, setRefreshing] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authCode, setAuthCode] = useState('');
+  const [authPrompt, setAuthPrompt] = useState<string | null>(null);
+  const [authSessionId, setAuthSessionId] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [authOpen, setAuthOpen] = useState(false);
   const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
   const [healthHistory, setHealthHistory] = useState<Record<string, HealthSample[]>>(
     {}
@@ -93,16 +101,16 @@ export default function Admin() {
     return () => clearInterval(timer);
   }, []);
 
-  const handleSaveToken = async () => {
+  const saveRefreshToken = async (token: string) => {
     setLoading(true);
     setError(null);
     setMessage(null);
     try {
       await apiFetch('/api/ring/refresh-token', {
         method: 'POST',
-        body: JSON.stringify({ refreshToken })
+        body: JSON.stringify({ refreshToken: token })
       });
-    setMessage(t('messages.token_saved'));
+      setMessage(t('messages.token_saved'));
       setConfigured(true);
       setEditingToken(false);
       setRefreshToken('');
@@ -111,6 +119,79 @@ export default function Admin() {
       setError(err.message ?? t('common.error'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveToken = async () => {
+    if (!refreshToken.trim()) return;
+    await saveRefreshToken(refreshToken);
+  };
+
+  const resetAuthFlow = () => {
+    setAuthEmail('');
+    setAuthPassword('');
+    setAuthCode('');
+    setAuthPrompt(null);
+    setAuthSessionId(null);
+    setAuthError(null);
+    setAuthOpen(false);
+  };
+
+  const handleAuthStart = async () => {
+    setAuthLoading(true);
+    setAuthError(null);
+    setMessage(null);
+    try {
+      const result = await apiFetch<{
+        refreshToken?: string;
+        requires2fa?: boolean;
+        authSessionId?: string;
+        prompt?: string;
+      }>('/api/ring/auth/start', {
+        method: 'POST',
+        body: JSON.stringify({ email: authEmail, password: authPassword })
+      });
+      if (result.requires2fa && result.authSessionId) {
+        setAuthSessionId(result.authSessionId);
+        setAuthPrompt(result.prompt ?? t('ring.2fa_prompt_default'));
+        setAuthCode('');
+        setAuthPassword('');
+      } else if (result.refreshToken) {
+        await saveRefreshToken(result.refreshToken);
+        resetAuthFlow();
+      } else {
+        setAuthError(t('common.error'));
+      }
+    } catch (err: any) {
+      setAuthError(err.message ?? t('common.error'));
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleAuthVerify = async () => {
+    if (!authSessionId || !authCode.trim()) return;
+    setAuthLoading(true);
+    setAuthError(null);
+    setMessage(null);
+    try {
+      const result = await apiFetch<{ refreshToken?: string }>(
+        '/api/ring/auth/verify',
+        {
+          method: 'POST',
+          body: JSON.stringify({ authSessionId, code: authCode })
+        }
+      );
+      if (result.refreshToken) {
+        await saveRefreshToken(result.refreshToken);
+        resetAuthFlow();
+      } else {
+        setAuthError(t('common.error'));
+      }
+    } catch (err: any) {
+      setAuthError(err.message ?? t('common.error'));
+    } finally {
+      setAuthLoading(false);
     }
   };
 
@@ -228,6 +309,101 @@ export default function Admin() {
           ) : (
             <p className="muted">{t('ring.not_configured')}</p>
           )}
+          <div className="divider" />
+          <div className="stack">
+            <div className="actions">
+              <div>
+                <strong>{t('ring.generate_title')}</strong>
+                <div className="muted">{t('ring.generate_desc')}</div>
+              </div>
+              <button
+                className="btn ghost"
+                onClick={() => setAuthOpen((prev) => !prev)}
+                disabled={authLoading || initializing}
+              >
+                {authOpen ? t('ring.generate_hide') : t('ring.generate_show')}
+              </button>
+            </div>
+            {authOpen ? (
+              <>
+                <p className="muted">{t('ring.generate_note')}</p>
+                <label className="field">
+                  <span>{t('ring.email')}</span>
+                  <input
+                    type="email"
+                    value={authEmail}
+                    onChange={(e) => setAuthEmail(e.target.value)}
+                    placeholder="name@example.com"
+                    autoComplete="username"
+                    disabled={authLoading}
+                  />
+                </label>
+                <label className="field">
+                  <span>{t('ring.password')}</span>
+                  <input
+                    type="password"
+                    value={authPassword}
+                    onChange={(e) => setAuthPassword(e.target.value)}
+                    autoComplete="current-password"
+                    disabled={authLoading || Boolean(authSessionId)}
+                  />
+                </label>
+                {authSessionId ? (
+                  <>
+                    <div className="info">
+                      {authPrompt ?? t('ring.2fa_prompt_default')}
+                    </div>
+                    <label className="field">
+                      <span>{t('ring.2fa_code')}</span>
+                      <input
+                        type="text"
+                        value={authCode}
+                        onChange={(e) => setAuthCode(e.target.value)}
+                        placeholder="123456"
+                        inputMode="numeric"
+                        disabled={authLoading}
+                      />
+                    </label>
+                  </>
+                ) : null}
+                {authError ? <p className="error">{authError}</p> : null}
+                <div className="actions">
+                  {authSessionId ? (
+                    <button
+                      className="btn"
+                      onClick={handleAuthVerify}
+                      disabled={authLoading || !authCode.trim()}
+                    >
+                      {authLoading
+                        ? t('ring.verifying')
+                        : t('ring.verify_code')}
+                    </button>
+                  ) : (
+                    <button
+                      className="btn"
+                      onClick={handleAuthStart}
+                      disabled={
+                        authLoading ||
+                        !authEmail.trim() ||
+                        !authPassword.trim()
+                      }
+                    >
+                      {authLoading
+                        ? t('ring.requesting_code')
+                        : t('ring.start_auth')}
+                    </button>
+                  )}
+                  <button
+                    className="btn ghost"
+                    onClick={resetAuthFlow}
+                    disabled={authLoading}
+                  >
+                    {t('ring.auth_cancel')}
+                  </button>
+                </div>
+              </>
+            ) : null}
+          </div>
         </div>
       </section>
 

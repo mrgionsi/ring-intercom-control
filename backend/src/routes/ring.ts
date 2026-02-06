@@ -6,6 +6,7 @@ import {
   setUserRefreshToken,
   unlockIntercomForUser
 } from '../ring.js';
+import { startRingAuth, verifyRingAuth } from '../ringAuth.js';
 import { recordUnlockEvent } from '../db.js';
 import { listDeviceHealthHistory } from '../db.js';
 
@@ -23,6 +24,66 @@ router.post('/refresh-token', requireAuth, async (req, res) => {
   }
   await setUserRefreshToken(req.session.auth!.id, refreshToken.trim());
   res.json({ ok: true });
+});
+
+router.post('/auth/start', requireAuth, async (req, res) => {
+  const { email, password } = req.body ?? {};
+  if (
+    typeof email !== 'string' ||
+    typeof password !== 'string' ||
+    !email.trim() ||
+    !password.trim()
+  ) {
+    return res.status(400).json({ error: 'email and password are required' });
+  }
+
+  try {
+    const result = await startRingAuth(
+      req.session.auth!.id,
+      email.trim(),
+      password
+    );
+    if ('refreshToken' in result) {
+      return res.json({ refreshToken: result.refreshToken });
+    }
+    return res.json({
+      requires2fa: true,
+      authSessionId: result.authSessionId,
+      prompt: result.prompt,
+      expiresAt: result.expiresAt
+    });
+  } catch (err: any) {
+    res
+      .status(err.status ?? 500)
+      .json({ error: err.message ?? 'Failed to start Ring auth' });
+  }
+});
+
+router.post('/auth/verify', requireAuth, async (req, res) => {
+  const { authSessionId, code } = req.body ?? {};
+  if (
+    typeof authSessionId !== 'string' ||
+    typeof code !== 'string' ||
+    !authSessionId.trim() ||
+    !code.trim()
+  ) {
+    return res
+      .status(400)
+      .json({ error: 'authSessionId and code are required' });
+  }
+
+  try {
+    const result = await verifyRingAuth(
+      req.session.auth!.id,
+      authSessionId.trim(),
+      code.trim()
+    );
+    return res.json({ refreshToken: result.refreshToken });
+  } catch (err: any) {
+    res
+      .status(err.status ?? 500)
+      .json({ error: err.message ?? 'Failed to verify 2fa code' });
+  }
 });
 
 router.get('/summary', requireAuth, async (req, res) => {

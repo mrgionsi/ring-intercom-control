@@ -73,3 +73,7 @@ Run audits for both backend and frontend:
 3. Start backend: `npm run start`
 
 Backend serves the built frontend automatically in production.
+
+## License
+
+MIT

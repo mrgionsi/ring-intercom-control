@@ -7,6 +7,7 @@ import {
   unlockIntercomForUser
 } from '../ring.js';
 import { startRingAuth, verifyRingAuth } from '../ringAuth.js';
+import { RingApi } from 'ring-client-api';
 import { recordUnlockEvent } from '../db.js';
 import { listDeviceHealthHistory } from '../db.js';
 
@@ -24,6 +25,22 @@ router.post('/refresh-token', requireAuth, async (req, res) => {
   }
   await setUserRefreshToken(req.session.auth!.id, refreshToken.trim());
   res.json({ ok: true });
+});
+
+router.post('/refresh-token/test', requireAuth, async (req, res) => {
+  const { refreshToken } = req.body ?? {};
+  if (!refreshToken || typeof refreshToken !== 'string') {
+    return res.status(400).json({ error: 'refreshToken is required' });
+  }
+  try {
+    const api = new RingApi({ refreshToken: refreshToken.trim() });
+    const locations = await api.getLocations();
+    res.json({ ok: true, locations: locations.length });
+  } catch (err: any) {
+    res
+      .status(400)
+      .json({ error: err.message ?? 'Refresh token is invalid' });
+  }
 });
 
 router.post('/auth/start', requireAuth, async (req, res) => {

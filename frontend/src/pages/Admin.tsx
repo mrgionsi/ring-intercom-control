@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from '../api';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 
 type RingSummary = {
   locationId: string;
@@ -47,9 +48,6 @@ type HealthSample = {
 
 export default function Admin() {
   const { t } = useTranslation();
-  const [configured, setConfigured] = useState(false);
-  const [refreshToken, setRefreshToken] = useState('');
-  const [editingToken, setEditingToken] = useState(false);
   const [summary, setSummary] = useState<RingSummary[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -57,24 +55,11 @@ export default function Admin() {
   const [refreshing, setRefreshing] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
-  const [authEmail, setAuthEmail] = useState('');
-  const [authPassword, setAuthPassword] = useState('');
-  const [authCode, setAuthCode] = useState('');
-  const [authPrompt, setAuthPrompt] = useState<string | null>(null);
-  const [authSessionId, setAuthSessionId] = useState<string | null>(null);
-  const [authLoading, setAuthLoading] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
-  const [authOpen, setAuthOpen] = useState(false);
   const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
   const [healthHistory, setHealthHistory] = useState<Record<string, HealthSample[]>>(
     {}
   );
   const [healthLoading, setHealthLoading] = useState<Record<string, boolean>>({});
-
-  const loadStatus = async () => {
-    const status = await apiFetch<{ configured: boolean }>('/api/ring/status');
-    setConfigured(status.configured);
-  };
 
   const loadSummary = async () => {
     const data = await apiFetch<{ summary: RingSummary[] }>('/api/ring/summary');
@@ -88,9 +73,7 @@ export default function Admin() {
 
   useEffect(() => {
     setInitializing(true);
-    loadStatus()
-      .then(() => Promise.all([loadSummary(), loadAudit()]).catch(() => null))
-      .catch(() => null)
+    Promise.all([loadSummary(), loadAudit()]).catch(() => null)
       .finally(() => setInitializing(false));
   }, []);
 
@@ -100,100 +83,6 @@ export default function Admin() {
     }, 60_000);
     return () => clearInterval(timer);
   }, []);
-
-  const saveRefreshToken = async (token: string) => {
-    setLoading(true);
-    setError(null);
-    setMessage(null);
-    try {
-      await apiFetch('/api/ring/refresh-token', {
-        method: 'POST',
-        body: JSON.stringify({ refreshToken: token })
-      });
-      setMessage(t('messages.token_saved'));
-      setConfigured(true);
-      setEditingToken(false);
-      setRefreshToken('');
-      await loadSummary();
-    } catch (err: any) {
-      setError(err.message ?? t('common.error'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSaveToken = async () => {
-    if (!refreshToken.trim()) return;
-    await saveRefreshToken(refreshToken);
-  };
-
-  const resetAuthFlow = () => {
-    setAuthEmail('');
-    setAuthPassword('');
-    setAuthCode('');
-    setAuthPrompt(null);
-    setAuthSessionId(null);
-    setAuthError(null);
-    setAuthOpen(false);
-  };
-
-  const handleAuthStart = async () => {
-    setAuthLoading(true);
-    setAuthError(null);
-    setMessage(null);
-    try {
-      const result = await apiFetch<{
-        refreshToken?: string;
-        requires2fa?: boolean;
-        authSessionId?: string;
-        prompt?: string;
-      }>('/api/ring/auth/start', {
-        method: 'POST',
-        body: JSON.stringify({ email: authEmail, password: authPassword })
-      });
-      if (result.requires2fa && result.authSessionId) {
-        setAuthSessionId(result.authSessionId);
-        setAuthPrompt(result.prompt ?? t('ring.2fa_prompt_default'));
-        setAuthCode('');
-        setAuthPassword('');
-      } else if (result.refreshToken) {
-        await saveRefreshToken(result.refreshToken);
-        resetAuthFlow();
-      } else {
-        setAuthError(t('common.error'));
-      }
-    } catch (err: any) {
-      setAuthError(err.message ?? t('common.error'));
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  const handleAuthVerify = async () => {
-    if (!authSessionId || !authCode.trim()) return;
-    setAuthLoading(true);
-    setAuthError(null);
-    setMessage(null);
-    try {
-      const result = await apiFetch<{ refreshToken?: string }>(
-        '/api/ring/auth/verify',
-        {
-          method: 'POST',
-          body: JSON.stringify({ authSessionId, code: authCode })
-        }
-      );
-      if (result.refreshToken) {
-        await saveRefreshToken(result.refreshToken);
-        resetAuthFlow();
-      } else {
-        setAuthError(t('common.error'));
-      }
-    } catch (err: any) {
-      setAuthError(err.message ?? t('common.error'));
-    } finally {
-      setAuthLoading(false);
-    }
-  };
 
   const handleUnlock = async (intercomId: string) => {
     setLoading(true);
@@ -250,161 +139,13 @@ export default function Admin() {
           <div>{t('app.loading')}</div>
         </div>
       ) : null}
+
       <section className="card">
-        <h2>{t('ring.connection_title')}</h2>
-        <p>{t('ring.connection_desc')}</p>
-        <div className="stack">
-          {configured && !editingToken ? (
-            <div className="token-status">
-              <div>
-                <strong>{t('ring.token_stored')}</strong>
-                <div className="muted">
-                  {t('ring.token_stored_desc')}
-                </div>
-              </div>
-              <button
-                className="btn ghost"
-                onClick={() => setEditingToken(true)}
-                disabled={loading || initializing}
-              >
-                {t('ring.edit_token')}
-              </button>
-            </div>
-          ) : (
-            <>
-              <label className="field">
-                <span>{t('ring.refresh_token')}</span>
-                <textarea
-                  rows={4}
-                  value={refreshToken}
-                  onChange={(e) => setRefreshToken(e.target.value)}
-                  placeholder={t('ring.refresh_token')}
-                />
-              </label>
-              <div className="actions">
-                <button
-                  className="btn"
-                  onClick={handleSaveToken}
-                  disabled={loading || !refreshToken.trim()}
-                >
-                  {loading ? t('ring.saving') : t('ring.save_token')}
-                </button>
-                {configured ? (
-                  <button
-                    className="btn ghost"
-                    onClick={() => {
-                      setEditingToken(false);
-                      setRefreshToken('');
-                    }}
-                    disabled={loading}
-                  >
-                    {t('ring.cancel')}
-                  </button>
-                ) : null}
-              </div>
-            </>
-          )}
-          {configured ? (
-            <p className="success">{t('ring.configured')}</p>
-          ) : (
-            <p className="muted">{t('ring.not_configured')}</p>
-          )}
-          <div className="divider" />
-          <div className="stack">
-            <div className="actions">
-              <div>
-                <strong>{t('ring.generate_title')}</strong>
-                <div className="muted">{t('ring.generate_desc')}</div>
-              </div>
-              <button
-                className="btn ghost"
-                onClick={() => setAuthOpen((prev) => !prev)}
-                disabled={authLoading || initializing}
-              >
-                {authOpen ? t('ring.generate_hide') : t('ring.generate_show')}
-              </button>
-            </div>
-            {authOpen ? (
-              <>
-                <p className="muted">{t('ring.generate_note')}</p>
-                <label className="field">
-                  <span>{t('ring.email')}</span>
-                  <input
-                    type="email"
-                    value={authEmail}
-                    onChange={(e) => setAuthEmail(e.target.value)}
-                    placeholder="name@example.com"
-                    autoComplete="username"
-                    disabled={authLoading}
-                  />
-                </label>
-                <label className="field">
-                  <span>{t('ring.password')}</span>
-                  <input
-                    type="password"
-                    value={authPassword}
-                    onChange={(e) => setAuthPassword(e.target.value)}
-                    autoComplete="current-password"
-                    disabled={authLoading || Boolean(authSessionId)}
-                  />
-                </label>
-                {authSessionId ? (
-                  <>
-                    <div className="info">
-                      {authPrompt ?? t('ring.2fa_prompt_default')}
-                    </div>
-                    <label className="field">
-                      <span>{t('ring.2fa_code')}</span>
-                      <input
-                        type="text"
-                        value={authCode}
-                        onChange={(e) => setAuthCode(e.target.value)}
-                        placeholder="123456"
-                        inputMode="numeric"
-                        disabled={authLoading}
-                      />
-                    </label>
-                  </>
-                ) : null}
-                {authError ? <p className="error">{authError}</p> : null}
-                <div className="actions">
-                  {authSessionId ? (
-                    <button
-                      className="btn"
-                      onClick={handleAuthVerify}
-                      disabled={authLoading || !authCode.trim()}
-                    >
-                      {authLoading
-                        ? t('ring.verifying')
-                        : t('ring.verify_code')}
-                    </button>
-                  ) : (
-                    <button
-                      className="btn"
-                      onClick={handleAuthStart}
-                      disabled={
-                        authLoading ||
-                        !authEmail.trim() ||
-                        !authPassword.trim()
-                      }
-                    >
-                      {authLoading
-                        ? t('ring.requesting_code')
-                        : t('ring.start_auth')}
-                    </button>
-                  )}
-                  <button
-                    className="btn ghost"
-                    onClick={resetAuthFlow}
-                    disabled={authLoading}
-                  >
-                    {t('ring.auth_cancel')}
-                  </button>
-                </div>
-              </>
-            ) : null}
-          </div>
-        </div>
+        <h2>{t('settings.title')}</h2>
+        <p>{t('settings.manage_desc')}</p>
+        <Link to="/settings" className="btn">
+          {t('settings.open')}
+        </Link>
       </section>
 
       <section className="card">
@@ -552,9 +293,7 @@ export default function Admin() {
                       </div>
                       <details className="details">
                         <summary>{t('intercoms.raw_data')}</summary>
-                        <pre>
-                          {JSON.stringify(camera.data, null, 2)}
-                        </pre>
+                        <pre>{JSON.stringify(camera.data, null, 2)}</pre>
                       </details>
                     </div>
                   ))}
@@ -579,8 +318,7 @@ export default function Admin() {
                     {event.source === 'guest'
                       ? t('profile.guest_link')
                       : t('profile.user')}{' '}
-                    ·{' '}
-                    {new Date(event.created_at).toLocaleString()}
+                    - {new Date(event.created_at).toLocaleString()}
                   </div>
                   {event.error_message ? (
                     <div className="muted">

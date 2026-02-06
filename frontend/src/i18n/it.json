@@ -4,6 +4,7 @@
     "signed_in_as": "Accesso come {{username}}",
     "dashboard": "Dashboard",
     "guest_links": "Link Ospiti",
+    "settings": "Impostazioni",
     "users": "Utenti",
     "language": "Lingua",
     "logout": "Esci",
@@ -34,7 +35,12 @@
     "2fa_code": "Codice 2FA",
     "verify_code": "Verifica codice",
     "verifying": "Verifica…",
+    "resend_code": "Reinvia codice",
     "auth_cancel": "Annulla",
+    "test_token": "Test token",
+    "testing": "Verifica…",
+    "test_success": "Token valido. Sedi: {{count}}.",
+    "test_failed": "Verifica token fallita.",
     "refresh_token": "Refresh Token",
     "save_token": "Salva Token",
     "saving": "Salvataggio…",
@@ -124,6 +130,12 @@
     "export_csv": "Esporta CSV",
     "login_attempts": "Tentativi di Accesso",
     "locked_until": "Bloccato fino a"
+  },
+  "settings": {
+    "title": "Impostazioni",
+    "desc": "Gestisci la connessione Ring e i refresh token.",
+    "manage_desc": "Gestisci il refresh token Ring e l'autenticazione.",
+    "open": "Apri impostazioni"
   },
   "common": {
     "success": "successo",

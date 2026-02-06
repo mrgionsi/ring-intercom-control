@@ -1,12 +1,17 @@
 import crypto from 'crypto';
-import { RingRestClient } from 'ring-client-api/lib/rest-client.js';
+import path from 'path';
+import { createRequire } from 'module';
+import { pathToFileURL } from 'url';
+
+const require = createRequire(import.meta.url);
+let cachedRingRestClient: any;
 
 const AUTH_TTL_MS = 5 * 60 * 1000;
 
 type PendingAuth = {
   id: string;
   userId: number;
-  restClient: RingRestClient;
+  restClient: any;
   expiresAt: number;
   timer: NodeJS.Timeout;
 };
@@ -21,7 +26,16 @@ function clearPendingAuth(id: string) {
   }
 }
 
-function createPendingAuth(userId: number, restClient: RingRestClient) {
+function clearPendingAuthForUser(userId: number) {
+  for (const [id, pending] of pendingAuthById.entries()) {
+    if (pending.userId === userId) {
+      clearPendingAuth(id);
+    }
+  }
+}
+
+function createPendingAuth(userId: number, restClient: any) {
+  clearPendingAuthForUser(userId);
   const id = crypto.randomUUID();
   const expiresAt = Date.now() + AUTH_TTL_MS;
   const timer = setTimeout(() => pendingAuthById.delete(id), AUTH_TTL_MS);
@@ -29,11 +43,26 @@ function createPendingAuth(userId: number, restClient: RingRestClient) {
   return { id, expiresAt };
 }
 
+async function getRingRestClientClass() {
+  if (cachedRingRestClient) return cachedRingRestClient;
+  const entryPath = require.resolve('ring-client-api');
+  const modulePath = pathToFileURL(
+    path.resolve(path.dirname(entryPath), 'rest-client.js')
+  ).href;
+  const mod: any = await import(modulePath);
+  cachedRingRestClient = mod.RingRestClient;
+  if (!cachedRingRestClient) {
+    throw new Error('RingRestClient not available');
+  }
+  return cachedRingRestClient;
+}
+
 export async function startRingAuth(
   userId: number,
   email: string,
   password: string
 ) {
+  const RingRestClient = await getRingRestClientClass();
   const restClient = new RingRestClient({ email, password });
   try {
     const auth = await restClient.getCurrentAuth();

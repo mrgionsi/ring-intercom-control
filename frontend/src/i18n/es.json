@@ -4,6 +4,7 @@
     "signed_in_as": "Sesión como {{username}}",
     "dashboard": "Panel",
     "guest_links": "Enlaces de Invitados",
+    "settings": "Configuración",
     "users": "Usuarios",
     "language": "Idioma",
     "logout": "Cerrar sesión",
@@ -34,7 +35,12 @@
     "2fa_code": "Código 2FA",
     "verify_code": "Verificar código",
     "verifying": "Verificando…",
+    "resend_code": "Reenviar código",
     "auth_cancel": "Cancelar",
+    "test_token": "Probar token",
+    "testing": "Probando…",
+    "test_success": "Token válido. Ubicaciones: {{count}}.",
+    "test_failed": "La validación falló.",
     "refresh_token": "Refresh Token",
     "save_token": "Guardar Token",
     "saving": "Guardando…",
@@ -124,6 +130,12 @@
     "export_csv": "Exportar CSV",
     "login_attempts": "Intentos de inicio de sesión",
     "locked_until": "Bloqueado hasta"
+  },
+  "settings": {
+    "title": "Configuración",
+    "desc": "Gestiona la conexión de Ring y los refresh tokens.",
+    "manage_desc": "Gestiona el refresh token de Ring y la autenticación.",
+    "open": "Abrir configuración"
   },
   "common": {
     "success": "éxito",

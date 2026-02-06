@@ -6,6 +6,7 @@ import Admin from './pages/Admin';
 import GuestLinks from './pages/GuestLinks';
 import Guest from './pages/Guest';
 import AdminUsers from './pages/AdminUsers';
+import Settings from './pages/Settings';
 import { useTranslation } from 'react-i18next';
 import { setLanguage } from './i18n';
 
@@ -76,6 +77,18 @@ export default function App() {
           )
         }
       />
+      <Route
+        path="/settings"
+        element={
+          user ? (
+            <Shell user={user} onLogout={() => setUser(null)}>
+              <Settings />
+            </Shell>
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
@@ -113,6 +126,9 @@ function Shell({
           </Link>
           <Link to="/links" className="btn ghost">
             {t('app.guest_links')}
+          </Link>
+          <Link to="/settings" className="btn ghost">
+            {t('app.settings')}
           </Link>
           {user.role === 'admin' ? (
             <Link to="/admin/users" className="btn ghost">

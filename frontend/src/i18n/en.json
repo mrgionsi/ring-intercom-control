@@ -4,6 +4,7 @@
     "signed_in_as": "Signed in as {{username}}",
     "dashboard": "Dashboard",
     "guest_links": "Guest Links",
+    "settings": "Settings",
     "users": "Users",
     "language": "Language",
     "logout": "Log out",
@@ -34,7 +35,12 @@
     "2fa_code": "2FA Code",
     "verify_code": "Verify code",
     "verifying": "Verifying…",
+    "resend_code": "Resend code",
     "auth_cancel": "Cancel",
+    "test_token": "Test token",
+    "testing": "Testing…",
+    "test_success": "Token valid. Locations: {{count}}.",
+    "test_failed": "Token validation failed.",
     "refresh_token": "Refresh Token",
     "save_token": "Save Token",
     "saving": "Saving…",
@@ -124,6 +130,12 @@
     "export_csv": "Export CSV",
     "login_attempts": "Login Attempts",
     "locked_until": "Locked until"
+  },
+  "settings": {
+    "title": "Settings",
+    "desc": "Manage your Ring connection and refresh tokens.",
+    "manage_desc": "Manage your Ring refresh token and authentication flow.",
+    "open": "Open settings"
   },
   "common": {
     "success": "success",

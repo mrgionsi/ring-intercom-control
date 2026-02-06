@@ -4,6 +4,7 @@
     "signed_in_as": "Angemeldet als {{username}}",
     "dashboard": "Dashboard",
     "guest_links": "Gäste-Links",
+    "settings": "Einstellungen",
     "users": "Benutzer",
     "language": "Sprache",
     "logout": "Abmelden",
@@ -34,7 +35,12 @@
     "2fa_code": "2FA-Code",
     "verify_code": "Code prüfen",
     "verifying": "Prüfe…",
+    "resend_code": "Code erneut senden",
     "auth_cancel": "Abbrechen",
+    "test_token": "Token testen",
+    "testing": "Teste…",
+    "test_success": "Token gültig. Standorte: {{count}}.",
+    "test_failed": "Tokenprüfung fehlgeschlagen.",
     "refresh_token": "Refresh Token",
     "save_token": "Token speichern",
     "saving": "Speichern…",
@@ -124,6 +130,12 @@
     "export_csv": "CSV exportieren",
     "login_attempts": "Anmeldeversuche",
     "locked_until": "Gesperrt bis"
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "desc": "Verwalte die Ring-Verbindung und Refresh-Tokens.",
+    "manage_desc": "Verwalte den Ring-Refresh-Token und die Authentifizierung.",
+    "open": "Einstellungen öffnen"
   },
   "common": {
     "success": "erfolgreich",

@@ -59,6 +59,17 @@ This app stores a Ring refresh token (not your raw password). Generate one with:
 - Account lockout after 5 failed logins (15 min)
 - Rate limits (configurable in Admin UI)
 
+### Known Dependency Advisories
+
+Current `npm audit` reports high severity vulnerabilities in transitive dependencies:
+
+- `ip` via `ring-client-api` (requires a breaking downgrade to 9.x)
+- `tar` via `sqlite3` / `node-gyp` (requires a breaking downgrade)
+
+We are deferring these until the planned Supabase migration and/or upstream fixes. Track in:
+
+- `scripts/security-check.ps1` / `scripts/security-check.sh`
+
 ## Audit Scripts
 
 Run audits for both backend and frontend:

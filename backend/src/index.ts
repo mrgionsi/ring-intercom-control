@@ -3,11 +3,11 @@ import session from 'express-session';
 import SQLiteStoreFactory from 'connect-sqlite3';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import csrf from 'csurf';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import crypto from 'crypto';
 
 import { config } from './config.js';
 import { initDb } from './db.js';
@@ -67,23 +67,35 @@ app.use(
   })
 );
 
-const csrfProtection = csrf({
-  cookie: {
+app.get('/api/auth/csrf', (req, res) => {
+  const token = generateCsrfToken();
+  res.cookie('csrf_token', token, {
     httpOnly: true,
     sameSite: 'lax',
     secure: config.NODE_ENV === 'production'
-  }
-});
-
-app.get('/api/auth/csrf', csrfProtection, (req, res) => {
-  res.json({ csrfToken: req.csrfToken() });
+  });
+  res.json({ csrfToken: token });
 });
 
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/guest/')) {
     return next();
   }
-  return csrfProtection(req, res, next);
+  if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') {
+    return next();
+  }
+
+  const token = req.headers['x-csrf-token'];
+  const cookieToken = req.cookies?.csrf_token;
+  if (
+    typeof token !== 'string' ||
+    typeof cookieToken !== 'string' ||
+    token !== cookieToken ||
+    !verifyCsrfToken(token)
+  ) {
+    return res.status(403).json({ error: 'Invalid CSRF token' });
+  }
+  return next();
 });
 
 app.use(
@@ -93,12 +105,35 @@ app.use(
     res: express.Response,
     next: express.NextFunction
   ) => {
-    if (err.code === 'EBADCSRFTOKEN') {
-      return res.status(403).json({ error: 'Invalid CSRF token' });
-    }
     return next(err);
   }
 );
+
+function generateCsrfToken(): string {
+  const nonce = crypto.randomBytes(16).toString('hex');
+  const sig = crypto
+    .createHmac('sha256', config.SESSION_SECRET)
+    .update(nonce)
+    .digest('hex');
+  return `${nonce}.${sig}`;
+}
+
+function verifyCsrfToken(token: string): boolean {
+  const [nonce, sig] = token.split('.');
+  if (!nonce || !sig) return false;
+  const expected = crypto
+    .createHmac('sha256', config.SESSION_SECRET)
+    .update(nonce)
+    .digest('hex');
+  return timingSafeEqual(sig, expected);
+}
+
+function timingSafeEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
 
 const guestLimiter = rateLimit({
   windowMs: 60_000,

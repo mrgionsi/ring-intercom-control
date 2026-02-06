@@ -1,0 +1,197 @@
+import { Router } from 'express';
+import bcrypt from 'bcryptjs';
+import {
+  createUser,
+  deleteUser,
+  getUserById,
+  listUsers,
+  listUsersWithTokens,
+  listLoginAttempts,
+  listLoginAudit,
+  listUnlockEventsAll,
+  listUnlockEventsForUser,
+  updateUser
+} from '../db.js';
+import { getRingSummaryForUser } from '../ring.js';
+import { requireAdmin } from '../middleware/auth.js';
+import crypto from 'crypto';
+import { getRateLimits, updateRateLimits } from '../rateLimits.js';
+
+const router = Router();
+
+router.get('/users', requireAdmin, async (_req, res) => {
+  const users = await listUsers();
+  const attempts = await listLoginAttempts();
+  const attemptMap = new Map(attempts.map((a) => [a.username, a]));
+  res.json({
+    users: users.map((u) => ({
+      id: u.id,
+      username: u.username,
+      createdAt: u.created_at,
+      role: u.role,
+      firstName: u.first_name ?? null,
+      lastName: u.last_name ?? null,
+      structure: u.structure ?? null,
+      disabled: u.disabled ?? 0,
+      lockoutUntil: attemptMap.get(u.username)?.locked_until ?? null
+    }))
+  });
+});
+
+router.post('/users', requireAdmin, async (req, res) => {
+  const { username, password, firstName, lastName, structure } = req.body ?? {};
+  if (!username || !password) {
+    return res.status(400).json({ error: 'username and password are required' });
+  }
+  const hash = await bcrypt.hash(password, 12);
+  try {
+    const user = await createUser({
+      username,
+      passwordHash: hash,
+      firstName,
+      lastName,
+      structure
+    });
+    res.json({
+      ok: true,
+      user: {
+        id: user.id,
+        username: user.username,
+        firstName: user.first_name ?? null,
+        lastName: user.last_name ?? null,
+        structure: user.structure ?? null
+      }
+    });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message ?? 'Failed to create user' });
+  }
+});
+
+router.put('/users/:id', requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!id) {
+    return res.status(400).json({ error: 'Invalid id' });
+  }
+  const { username, password, firstName, lastName, structure, disabled } = req.body ?? {};
+  if (disabled && req.session.auth?.id === id) {
+    return res.status(400).json({ error: 'Cannot disable your own admin account' });
+  }
+  const passwordHash = password ? await bcrypt.hash(password, 12) : undefined;
+  await updateUser(id, {
+    username,
+    passwordHash,
+    firstName,
+    lastName,
+    structure,
+    disabled: typeof disabled === 'number' ? disabled : undefined
+  });
+  res.json({ ok: true });
+});
+
+router.delete('/users/:id', requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!id) {
+    return res.status(400).json({ error: 'Invalid id' });
+  }
+  await deleteUser(id);
+  res.json({ ok: true });
+});
+
+router.post('/users/:id/reset-password', requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!id) {
+    return res.status(400).json({ error: 'Invalid id' });
+  }
+  const user = await getUserById(id);
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+  if (user.role === 'admin') {
+    return res.status(400).json({ error: 'Cannot reset admin password here' });
+  }
+  const tempPassword = crypto.randomBytes(8).toString('base64url');
+  const passwordHash = await bcrypt.hash(tempPassword, 12);
+  await updateUser(id, { passwordHash });
+  res.json({ ok: true, tempPassword });
+});
+
+router.get('/devices', requireAdmin, async (_req, res) => {
+  const users = await listUsersWithTokens();
+  const results: Array<{
+    userId: number;
+    username: string;
+    firstName: string | null;
+    lastName: string | null;
+    structure: string | null;
+    summary: any[] | null;
+    error?: string;
+  }> = [];
+
+  for (const user of users) {
+    if (!user.refresh_token) {
+      results.push({
+        userId: user.id,
+        username: user.username,
+        firstName: user.first_name ?? null,
+        lastName: user.last_name ?? null,
+        structure: user.structure ?? null,
+        summary: null,
+        error: 'No refresh token'
+      });
+      continue;
+    }
+    try {
+      const summary = await getRingSummaryForUser(user.id);
+      results.push({
+        userId: user.id,
+        username: user.username,
+        firstName: user.first_name ?? null,
+        lastName: user.last_name ?? null,
+        structure: user.structure ?? null,
+        summary
+      });
+    } catch (err: any) {
+      results.push({
+        userId: user.id,
+        username: user.username,
+        firstName: user.first_name ?? null,
+        lastName: user.last_name ?? null,
+        structure: user.structure ?? null,
+        summary: null,
+        error: err.message ?? 'Failed to load devices'
+      });
+    }
+  }
+
+  res.json({ users: results });
+});
+
+router.get('/audit', requireAdmin, async (req, res) => {
+  const userId = req.query.userId ? Number(req.query.userId) : null;
+  if (userId) {
+    const events = await listUnlockEventsForUser(userId, 100);
+    return res.json({ events });
+  }
+  const events = await listUnlockEventsAll(200);
+  return res.json({ events });
+});
+
+router.get('/login-audit', requireAdmin, async (_req, res) => {
+  const events = await listLoginAudit(200);
+  res.json({ events });
+});
+
+router.get('/limits', requireAdmin, async (_req, res) => {
+  res.json(getRateLimits());
+});
+
+router.post('/limits', requireAdmin, async (req, res) => {
+  const { guestPerMinute, authPerMinute } = req.body ?? {};
+  const updated = await updateRateLimits({
+    guestPerMinute: typeof guestPerMinute === 'number' ? guestPerMinute : undefined,
+    authPerMinute: typeof authPerMinute === 'number' ? authPerMinute : undefined
+  });
+  res.json(updated);
+});
+
+export default router;

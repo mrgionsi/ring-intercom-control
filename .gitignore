@@ -1,0 +1,9 @@
+node_modules
+dist
+.env
+.env.local
+.DS_Store
+backend/data.db
+backend/session.db
+*.db
+security-audit-report-*.txt

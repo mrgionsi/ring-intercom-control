@@ -104,20 +104,38 @@ cp .env.example .env
 
 Required env vars:
 
-- `SESSION_SECRET`: random string for session signing
-- `MASTER_KEY`: base64 32-byte key used for token encryption
+- `SESSION_SECRET`: secret used to sign and verify session cookies.
+  - Minimum recommendation: 32+ random bytes.
+  - Use a high-entropy value; do not reuse across environments.
+  - Rotating it will invalidate active sessions (users must log in again).
+- `MASTER_KEY`: base64-encoded 32-byte key for AES-256-GCM encryption of stored Ring refresh tokens.
+  - Must decode to exactly 32 bytes.
+  - If invalid length, backend startup fails by design.
+  - Rotating it without data migration makes previously stored encrypted tokens undecryptable.
+  - Keep it stable per environment unless you implement re-encryption migration.
 - `ADMIN_USERNAME`: bootstrap admin username
 - `ADMIN_PASSWORD_HASH`: bcrypt hash for admin password
 
 Generate values:
 
 ```bash
-# from repo root
+# Generate MASTER_KEY (base64, exactly 32 bytes)
 node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+
+# Generate SESSION_SECRET (hex string from 64 random bytes)
+node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 
 cd backend
 npm run hash-password -- yourStrongPassword
 ```
+
+Quick validation for `MASTER_KEY` length:
+
+```bash
+node -e "const k=process.env.MASTER_KEY||''; console.log(Buffer.from(k,'base64').length)"
+```
+
+Expected output: `32`
 
 ### 3) Run App in Dev Mode
 

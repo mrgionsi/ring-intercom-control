@@ -28,8 +28,10 @@ i18n.use(initReactI18next).init({
 });
 
 export function setLanguage(lang: string) {
-  i18n.changeLanguage(lang);
-  localStorage.setItem(STORAGE_KEY, lang);
+  const supported = ['en', 'it', 'es', 'de'];
+  const safeLang = supported.includes(lang) ? lang : 'en';
+  i18n.changeLanguage(safeLang);
+  localStorage.setItem(STORAGE_KEY, safeLang);
 }
 
 export default i18n;

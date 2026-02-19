@@ -14,6 +14,10 @@ describe('detectLanguage', () => {
     expect(detectLanguage(null, 'de-DE')).toBe('de');
   });
 
+  it('ignores unsupported stored language and falls back to browser', () => {
+    expect(detectLanguage('fr', 'it-IT')).toBe('it');
+  });
+
   it('falls back to english', () => {
     expect(detectLanguage(null, 'pt-BR')).toBe('en');
   });

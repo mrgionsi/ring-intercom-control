@@ -2,7 +2,10 @@ export function detectLanguage(
   storedLanguage: string | null,
   browserLanguage: string | null
 ): string {
-  if (storedLanguage) return storedLanguage;
+  const supported = new Set(['en', 'it', 'es', 'de']);
+  if (storedLanguage && supported.has(storedLanguage)) {
+    return storedLanguage;
+  }
 
   const lang = (browserLanguage ?? '').toLowerCase();
   if (lang.startsWith('it')) return 'it';

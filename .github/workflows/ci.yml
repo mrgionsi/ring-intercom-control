@@ -54,8 +54,16 @@ jobs:
         run: npm run build
         working-directory: backend
 
+      - name: Test backend
+        run: npm run test --if-present
+        working-directory: backend
+
       - name: Build frontend
         run: npm run build
+        working-directory: frontend
+
+      - name: Test frontend
+        run: npm run test --if-present
         working-directory: frontend
 
       - name: Start backend

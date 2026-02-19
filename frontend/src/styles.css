@@ -286,19 +286,39 @@ textarea {
   flex-wrap: wrap;
 }
 
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
 .lang-select {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 10px;
+  padding: 6px 8px;
   border-radius: 999px;
   border: 1px solid #c3d7d7;
   background: #f6fbfb;
+  flex-wrap: wrap;
 }
 
 .lang-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-weight: 600;
   color: var(--accent-dark);
+}
+
+.lang-native-select {
+  min-width: 110px;
 }
 
 .error {

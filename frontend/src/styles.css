@@ -302,10 +302,11 @@ textarea {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 10px;
+  padding: 6px 8px;
   border-radius: 999px;
   border: 1px solid #c3d7d7;
   background: #f6fbfb;
+  flex-wrap: wrap;
 }
 
 .lang-label {
@@ -314,6 +315,31 @@ textarea {
   gap: 6px;
   font-weight: 600;
   color: var(--accent-dark);
+}
+
+.lang-pills {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.lang-pill {
+  border: 1px solid #c3d7d7;
+  background: #ffffff;
+  color: var(--accent-dark);
+  border-radius: 999px;
+  padding: 4px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lang-pill.active {
+  background: var(--accent);
+  color: #ffffff;
+  border-color: var(--accent);
 }
 
 .error {

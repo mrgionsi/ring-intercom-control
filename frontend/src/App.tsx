@@ -104,6 +104,9 @@ function Shell({
   children: React.ReactNode;
 }) {
   const { t, i18n } = useTranslation();
+  const currentLanguage = (i18n.resolvedLanguage ?? i18n.language ?? 'en')
+    .toLowerCase()
+    .split('-')[0];
   const handleLogout = async () => {
     await apiFetch('/api/auth/logout', { method: 'POST' });
     onLogout();
@@ -151,16 +154,25 @@ function Shell({
               <NavIcon name="language" />
               {t('app.language')}
             </span>
-            <select
-              className="btn ghost"
-              onChange={(e) => setLang(e.target.value)}
-              value={i18n.language}
-            >
-              <option value="en">🇬🇧 EN</option>
-              <option value="it">🇮🇹 IT</option>
-              <option value="es">🇪🇸 ES</option>
-              <option value="de">🇩🇪 DE</option>
-            </select>
+            <div className="lang-pills">
+              {[
+                ['en', '🇬🇧', 'EN'],
+                ['it', '🇮🇹', 'IT'],
+                ['es', '🇪🇸', 'ES'],
+                ['de', '🇩🇪', 'DE']
+              ].map(([lang, flag, label]) => (
+                <button
+                  key={lang}
+                  type="button"
+                  className={`lang-pill ${currentLanguage === lang ? 'active' : ''}`}
+                  onClick={() => setLang(lang)}
+                  aria-pressed={currentLanguage === lang}
+                >
+                  <span>{flag}</span>
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
           </div>
           <button className="btn nav-link" onClick={handleLogout}>
             <NavIcon name="logout" />

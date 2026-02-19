@@ -7,6 +7,8 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "hash-password": "node -e \"const bcrypt=require('bcryptjs'); const pw=process.argv[1]; if(!pw){console.error('Usage: npm run hash-password -- yourPassword'); process.exit(1);} console.log(bcrypt.hashSync(pw, 12));\"",
     "security:check": "npm audit --production"
   },
@@ -32,6 +34,7 @@
     "@types/express-session": "^1.18.0",
     "@types/node": "^20.12.7",
     "tsx": "^4.10.5",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.9"
   }
 }

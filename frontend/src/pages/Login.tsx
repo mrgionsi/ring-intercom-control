@@ -39,6 +39,13 @@ export default function Login({
   return (
     <div className="page">
       <div className="card narrow">
+        <div className="login-brand">
+          <img
+            src="/ring_intercom_logo.png"
+            alt="Ring Intercom Control logo"
+            className="login-logo"
+          />
+        </div>
         <h1>{t('login.title')}</h1>
         <p>{t('login.subtitle')}</p>
         <form onSubmit={handleSubmit} className="stack">

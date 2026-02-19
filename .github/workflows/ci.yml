@@ -2,10 +2,18 @@ name: CI
 
 on:
   pull_request:
+    branches:
+      - main
+      - dev
   push:
     branches:
       - main
       - dev
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   verify:
@@ -14,10 +22,12 @@ jobs:
       SESSION_SECRET: ci-session-secret
       MASTER_KEY: 7sQb2MQ4mL/QBjxJgRLZ2TLGnciP9f4pBf3MQXybP5Q=
       ADMIN_USERNAME: admin
-      ADMIN_PASSWORD_HASH: $2a$12$M1dUTf0hO/WS9Vyuk3F7XefYq6vTjRt2Op6fA6x4gNwGsBjnodviO
+      ADMIN_PASSWORD_HASH: $2a$12$tGQSEUZiEq0SSh0Rt9rSlucHJqSrXVh5mbLK4AqYWiIISapwRZCUy
       CLIENT_ORIGIN: http://localhost:5173
       PORT: 3001
       DB_PATH: ./data.db
+      SMOKE_USERNAME: admin
+      SMOKE_PASSWORD: ci-admin-password
 
     steps:
       - name: Checkout
@@ -44,8 +54,16 @@ jobs:
         run: npm run build
         working-directory: backend
 
+      - name: Test backend
+        run: npm run test --if-present
+        working-directory: backend
+
       - name: Build frontend
         run: npm run build
+        working-directory: frontend
+
+      - name: Test frontend
+        run: npm run test --if-present
         working-directory: frontend
 
       - name: Start backend
@@ -62,5 +80,12 @@ jobs:
           exit 1
 
       - name: Run smoke test
-        run: node scripts/smoke-test.mjs --base-url http://localhost:3001
+        run: node scripts/smoke-test.mjs --base-url http://localhost:3001 --username "$SMOKE_USERNAME" --password "$SMOKE_PASSWORD"
 
+      - name: Upload backend log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-log
+          path: backend.log
+          if-no-files-found: ignore

@@ -4,18 +4,9 @@ import en from './i18n/en.json';
 import it from './i18n/it.json';
 import es from './i18n/es.json';
 import de from './i18n/de.json';
+import { detectLanguage } from './i18n/utils';
 
 const STORAGE_KEY = 'ring_lang';
-
-function detectLanguage(): string {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored) return stored;
-  const lang = navigator.language.toLowerCase();
-  if (lang.startsWith('it')) return 'it';
-  if (lang.startsWith('es')) return 'es';
-  if (lang.startsWith('de')) return 'de';
-  return 'en';
-}
 
 i18n.use(initReactI18next).init({
   resources: {
@@ -24,7 +15,12 @@ i18n.use(initReactI18next).init({
     es: { translation: es },
     de: { translation: de }
   },
-  lng: detectLanguage(),
+  lng: detectLanguage(
+    typeof localStorage === 'undefined'
+      ? null
+      : localStorage.getItem(STORAGE_KEY),
+    typeof navigator === 'undefined' ? null : navigator.language
+  ),
   fallbackLng: 'en',
   interpolation: {
     escapeValue: false

@@ -2,6 +2,10 @@
 
 Web application to manage Ring Intercom access: store Ring refresh tokens securely, unlock doors, and generate expiring guest links for B&B guests.
 
+<p align="left">
+  <img src="frontend/public/ring_intercom_logo.png" alt="Ring Intercom Control logo" width="180" />
+</p>
+
 ## Highlights
 
 - Secure storage of Ring refresh tokens (AES-256-GCM)

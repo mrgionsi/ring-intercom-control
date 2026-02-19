@@ -44,6 +44,18 @@ body {
   margin-bottom: 24px;
 }
 
+.brand-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-logo {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
 h1,
 h2,
 h3 {

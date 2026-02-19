@@ -117,7 +117,14 @@ function Shell({
     <div className="page">
       <header className="header">
         <div>
-          <h1>{t('app.title')}</h1>
+          <div className="brand-title">
+            <img
+              src="/ring_intercom_logo.png"
+              alt="Ring Intercom Control logo"
+              className="brand-logo"
+            />
+            <h1>{t('app.title')}</h1>
+          </div>
           <p>{t('app.signed_in_as', { username: user.username })}</p>
         </div>
         <div className="actions">

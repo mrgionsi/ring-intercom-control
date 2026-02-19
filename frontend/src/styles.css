@@ -56,16 +56,52 @@ body {
   object-fit: contain;
 }
 
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 48px;
+}
+
+.login-shell {
+  width: min(460px, 100%);
+}
+
+.login-topline {
+  height: 4px;
+  width: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #0f6f6f, #49a6a3);
+  margin-bottom: 14px;
+}
+
+.login-card {
+  padding: 28px;
+}
+
 .login-brand {
   display: flex;
   justify-content: center;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .login-logo {
-  width: 72px;
-  height: 72px;
+  width: 88px;
+  height: 88px;
   object-fit: contain;
+}
+
+.login-subtitle {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.login-card h1 {
+  text-align: center;
+}
+
+.login-button {
+  width: 100%;
 }
 
 h1,

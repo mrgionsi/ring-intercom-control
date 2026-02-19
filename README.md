@@ -15,7 +15,7 @@ Web application to manage Ring Intercom access: store Ring refresh tokens secure
 
 ## Tech Stack
 
-- Backend: Node.js + TypeScript + Express + SQLite
+- Backend: Node.js + TypeScript + Express + SQLite (`sqlite` wrapper + `sqlite3` driver)
 - Ring API: `ring-client-api`
 - Frontend: React + Vite
 
@@ -89,6 +89,19 @@ Run audits for both backend and frontend:
 
 - PowerShell: `scripts/security-check.ps1`
 - Bash: `scripts/security-check.sh`
+
+## Smoke Tests
+
+Run quick API smoke tests (health, auth guards, CSRF, optional login):
+
+- PowerShell: `scripts/smoke-test.ps1`
+- Bash: `scripts/smoke-test.sh`
+
+Optional login verification:
+
+- `SMOKE_USERNAME=<username>`
+- `SMOKE_PASSWORD=<password>`
+- `SMOKE_BASE_URL=http://localhost:3001` (optional)
 
 ## Production Build
 

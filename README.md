@@ -71,7 +71,11 @@ It supports secure Ring token management, one-click unlock from web, expiring gu
 - GitHub Actions workflow: `.github/workflows/ci.yml`
 - Runs backend build, frontend build, and smoke tests on PR/push (`main`, `dev`)
 
-## Project Structure
+<p align="left">
+  <img src="frontend/public/ring_intercom_logo.png" alt="Ring Intercom Control logo" width="180" />
+</p>
+
+## Highlights
 
 - `backend/` API server and data layer
 - `frontend/` React web application

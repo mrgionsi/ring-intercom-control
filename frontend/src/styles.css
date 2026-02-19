@@ -318,12 +318,6 @@ textarea {
 }
 
 .lang-native-select {
-  font-family:
-    'Space Grotesk',
-    'Segoe UI Emoji',
-    'Apple Color Emoji',
-    'Noto Color Emoji',
-    sans-serif;
   min-width: 110px;
 }
 

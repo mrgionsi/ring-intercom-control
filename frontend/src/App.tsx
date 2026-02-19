@@ -159,10 +159,10 @@ function Shell({
               onChange={(e) => setLang(e.target.value)}
               value={currentLanguage}
             >
-              <option value="en">{'\uD83C\uDDEC\uD83C\uDDE7'} EN</option>
-              <option value="it">{'\uD83C\uDDEE\uD83C\uDDF9'} IT</option>
-              <option value="es">{'\uD83C\uDDEA\uD83C\uDDF8'} ES</option>
-              <option value="de">{'\uD83C\uDDE9\uD83C\uDDEA'} DE</option>
+              <option value="en">EN</option>
+              <option value="it">IT</option>
+              <option value="es">ES</option>
+              <option value="de">DE</option>
             </select>
           </div>
           <button className="btn nav-link" onClick={handleLogout}>

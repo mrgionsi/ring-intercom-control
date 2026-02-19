@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - dev
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      SESSION_SECRET: ci-session-secret
+      MASTER_KEY: 7sQb2MQ4mL/QBjxJgRLZ2TLGnciP9f4pBf3MQXybP5Q=
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD_HASH: $2a$12$M1dUTf0hO/WS9Vyuk3F7XefYq6vTjRt2Op6fA6x4gNwGsBjnodviO
+      CLIENT_ORIGIN: http://localhost:5173
+      PORT: 3001
+      DB_PATH: ./data.db
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Install backend deps
+        run: npm ci
+        working-directory: backend
+
+      - name: Install frontend deps
+        run: npm ci
+        working-directory: frontend
+
+      - name: Build backend
+        run: npm run build
+        working-directory: backend
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: frontend
+
+      - name: Start backend
+        run: |
+          nohup node backend/dist/index.js > backend.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://localhost:3001/api/health > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Backend did not start in time"
+          cat backend.log
+          exit 1
+
+      - name: Run smoke test
+        run: node scripts/smoke-test.mjs --base-url http://localhost:3001
+

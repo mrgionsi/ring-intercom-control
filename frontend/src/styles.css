@@ -56,6 +56,18 @@ body {
   object-fit: contain;
 }
 
+.login-brand {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.login-logo {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
+
 h1,
 h2,
 h3 {

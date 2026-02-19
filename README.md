@@ -5,6 +5,7 @@ Web application to manage Ring Intercom access: store Ring refresh tokens secure
 ## Highlights
 
 - Secure storage of Ring refresh tokens (AES-256-GCM)
+- Refresh token setup via GUI (email/password + 2FA)
 - Admin + user roles
 - Guest links with expiration and max uses
 - Guest link templates (one-click presets)
@@ -14,7 +15,7 @@ Web application to manage Ring Intercom access: store Ring refresh tokens secure
 
 ## Tech Stack
 
-- Backend: Node.js + TypeScript + Express + SQLite
+- Backend: Node.js + TypeScript + Express + SQLite (`sqlite` wrapper + `sqlite3` driver)
 - Ring API: `ring-client-api`
 - Frontend: React + Vite
 
@@ -46,11 +47,23 @@ Frontend expects the backend at `http://localhost:3001` (Vite proxy is configure
 
 ## Ring Refresh Token
 
-This app stores a Ring refresh token (not your raw password). Generate one with:
+This app stores a Ring refresh token (not your raw password).
+
+### Option A: Generate in the GUI (recommended)
+
+Go to **Settings → Ring Connection**:
+
+1. Enter email + password
+2. Enter 2FA code (SMS or authenticator)
+3. Save the refresh token automatically
+
+You can also **test a token** before saving it and **resend the 2FA code**.
+
+### Option B: Generate with CLI
 
 1. `cd backend`
 2. `npx -p ring-client-api ring-auth-cli`
-3. Paste the refresh token into the app (Dashboard → Ring Connection).
+3. Paste the refresh token into the app (Settings → Ring Connection).
 
 ## Security
 
@@ -76,6 +89,19 @@ Run audits for both backend and frontend:
 
 - PowerShell: `scripts/security-check.ps1`
 - Bash: `scripts/security-check.sh`
+
+## Smoke Tests
+
+Run quick API smoke tests (health, auth guards, CSRF, optional login):
+
+- PowerShell: `scripts/smoke-test.ps1`
+- Bash: `scripts/smoke-test.sh`
+
+Optional login verification:
+
+- `SMOKE_USERNAME=<username>`
+- `SMOKE_PASSWORD=<password>`
+- `SMOKE_BASE_URL=http://localhost:3001` (optional)
 
 ## Production Build
 

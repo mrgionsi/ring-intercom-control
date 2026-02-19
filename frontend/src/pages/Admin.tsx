@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from '../api';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 
 type RingSummary = {
   locationId: string;
@@ -47,9 +48,6 @@ type HealthSample = {
 
 export default function Admin() {
   const { t } = useTranslation();
-  const [configured, setConfigured] = useState(false);
-  const [refreshToken, setRefreshToken] = useState('');
-  const [editingToken, setEditingToken] = useState(false);
   const [summary, setSummary] = useState<RingSummary[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -63,11 +61,6 @@ export default function Admin() {
   );
   const [healthLoading, setHealthLoading] = useState<Record<string, boolean>>({});
 
-  const loadStatus = async () => {
-    const status = await apiFetch<{ configured: boolean }>('/api/ring/status');
-    setConfigured(status.configured);
-  };
-
   const loadSummary = async () => {
     const data = await apiFetch<{ summary: RingSummary[] }>('/api/ring/summary');
     setSummary(data.summary);
@@ -80,9 +73,7 @@ export default function Admin() {
 
   useEffect(() => {
     setInitializing(true);
-    loadStatus()
-      .then(() => Promise.all([loadSummary(), loadAudit()]).catch(() => null))
-      .catch(() => null)
+    Promise.all([loadSummary(), loadAudit()]).catch(() => null)
       .finally(() => setInitializing(false));
   }, []);
 
@@ -92,27 +83,6 @@ export default function Admin() {
     }, 60_000);
     return () => clearInterval(timer);
   }, []);
-
-  const handleSaveToken = async () => {
-    setLoading(true);
-    setError(null);
-    setMessage(null);
-    try {
-      await apiFetch('/api/ring/refresh-token', {
-        method: 'POST',
-        body: JSON.stringify({ refreshToken })
-      });
-    setMessage(t('messages.token_saved'));
-      setConfigured(true);
-      setEditingToken(false);
-      setRefreshToken('');
-      await loadSummary();
-    } catch (err: any) {
-      setError(err.message ?? t('common.error'));
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleUnlock = async (intercomId: string) => {
     setLoading(true);
@@ -169,66 +139,13 @@ export default function Admin() {
           <div>{t('app.loading')}</div>
         </div>
       ) : null}
+
       <section className="card">
-        <h2>{t('ring.connection_title')}</h2>
-        <p>{t('ring.connection_desc')}</p>
-        <div className="stack">
-          {configured && !editingToken ? (
-            <div className="token-status">
-              <div>
-                <strong>{t('ring.token_stored')}</strong>
-                <div className="muted">
-                  {t('ring.token_stored_desc')}
-                </div>
-              </div>
-              <button
-                className="btn ghost"
-                onClick={() => setEditingToken(true)}
-                disabled={loading || initializing}
-              >
-                {t('ring.edit_token')}
-              </button>
-            </div>
-          ) : (
-            <>
-              <label className="field">
-                <span>{t('ring.refresh_token')}</span>
-                <textarea
-                  rows={4}
-                  value={refreshToken}
-                  onChange={(e) => setRefreshToken(e.target.value)}
-                  placeholder={t('ring.refresh_token')}
-                />
-              </label>
-              <div className="actions">
-                <button
-                  className="btn"
-                  onClick={handleSaveToken}
-                  disabled={loading || !refreshToken.trim()}
-                >
-                  {loading ? t('ring.saving') : t('ring.save_token')}
-                </button>
-                {configured ? (
-                  <button
-                    className="btn ghost"
-                    onClick={() => {
-                      setEditingToken(false);
-                      setRefreshToken('');
-                    }}
-                    disabled={loading}
-                  >
-                    {t('ring.cancel')}
-                  </button>
-                ) : null}
-              </div>
-            </>
-          )}
-          {configured ? (
-            <p className="success">{t('ring.configured')}</p>
-          ) : (
-            <p className="muted">{t('ring.not_configured')}</p>
-          )}
-        </div>
+        <h2>{t('settings.title')}</h2>
+        <p>{t('settings.manage_desc')}</p>
+        <Link to="/settings" className="btn">
+          {t('settings.open')}
+        </Link>
       </section>
 
       <section className="card">
@@ -376,9 +293,7 @@ export default function Admin() {
                       </div>
                       <details className="details">
                         <summary>{t('intercoms.raw_data')}</summary>
-                        <pre>
-                          {JSON.stringify(camera.data, null, 2)}
-                        </pre>
+                        <pre>{JSON.stringify(camera.data, null, 2)}</pre>
                       </details>
                     </div>
                   ))}
@@ -403,8 +318,7 @@ export default function Admin() {
                     {event.source === 'guest'
                       ? t('profile.guest_link')
                       : t('profile.user')}{' '}
-                    ·{' '}
-                    {new Date(event.created_at).toLocaleString()}
+                    - {new Date(event.created_at).toLocaleString()}
                   </div>
                   {event.error_message ? (
                     <div className="muted">

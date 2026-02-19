@@ -154,6 +154,21 @@ p {
   background: #f7fbfb;
 }
 
+.divider {
+  height: 1px;
+  background: #e3eeee;
+  border-radius: 999px;
+}
+
+.info {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #eef6f6;
+  border: 1px solid #d2e6e6;
+  color: var(--ink);
+  font-weight: 600;
+}
+
 .field {
   display: flex;
   flex-direction: column;

@@ -740,7 +740,7 @@ function mapGuestLink(row: GuestLink): GuestLink {
 }
 
 async function ensureGuestLinksUserIdColumn(): Promise<void> {
-  const columns = await getDb().all<{ name: string }>(
+  const columns = await getDb().all<Array<{ name: string }>>(
     'PRAGMA table_info(guest_links)'
   );
   const hasUserId = columns.some((col) => col.name === 'user_id');
@@ -750,7 +750,7 @@ async function ensureGuestLinksUserIdColumn(): Promise<void> {
 }
 
 async function ensureUsersProfileColumns(): Promise<void> {
-  const columns = await getDb().all<{ name: string }>(
+  const columns = await getDb().all<Array<{ name: string }>>(
     'PRAGMA table_info(users)'
   );
   const existing = new Set(columns.map((c) => c.name));
@@ -766,7 +766,7 @@ async function ensureUsersProfileColumns(): Promise<void> {
 }
 
 async function ensureUsersDisabledColumn(): Promise<void> {
-  const columns = await getDb().all<{ name: string }>(
+  const columns = await getDb().all<Array<{ name: string }>>(
     'PRAGMA table_info(users)'
   );
   const existing = new Set(columns.map((c) => c.name));
@@ -776,7 +776,7 @@ async function ensureUsersDisabledColumn(): Promise<void> {
 }
 
 async function ensureUnlockEventsTable(): Promise<void> {
-  const tables = await getDb().all<{ name: string }>(
+  const tables = await getDb().all<Array<{ name: string }>>(
     "SELECT name FROM sqlite_master WHERE type='table' AND name='unlock_events'"
   );
   if (tables.length === 0) {
@@ -798,7 +798,7 @@ async function ensureUnlockEventsTable(): Promise<void> {
 }
 
 async function ensureLoginAttemptsTable(): Promise<void> {
-  const tables = await getDb().all<{ name: string }>(
+  const tables = await getDb().all<Array<{ name: string }>>(
     "SELECT name FROM sqlite_master WHERE type='table' AND name='login_attempts'"
   );
   if (tables.length === 0) {
@@ -814,7 +814,7 @@ async function ensureLoginAttemptsTable(): Promise<void> {
 }
 
 async function ensureLoginAuditTable(): Promise<void> {
-  const tables = await getDb().all<{ name: string }>(
+  const tables = await getDb().all<Array<{ name: string }>>(
     "SELECT name FROM sqlite_master WHERE type='table' AND name='login_audit'"
   );
   if (tables.length === 0) {
@@ -832,7 +832,7 @@ async function ensureLoginAuditTable(): Promise<void> {
 }
 
 async function ensureGuestLinkTemplatesTable(): Promise<void> {
-  const tables = await getDb().all<{ name: string }>(
+  const tables = await getDb().all<Array<{ name: string }>>(
     "SELECT name FROM sqlite_master WHERE type='table' AND name='guest_link_templates'"
   );
   if (tables.length === 0) {
@@ -851,7 +851,7 @@ async function ensureGuestLinkTemplatesTable(): Promise<void> {
 }
 
 async function ensureDeviceHealthHistoryTable(): Promise<void> {
-  const tables = await getDb().all<{ name: string }>(
+  const tables = await getDb().all<Array<{ name: string }>>(
     "SELECT name FROM sqlite_master WHERE type='table' AND name='device_health_history'"
   );
   if (tables.length === 0) {

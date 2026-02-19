@@ -317,29 +317,14 @@ textarea {
   color: var(--accent-dark);
 }
 
-.lang-pills {
-  display: inline-flex;
-  gap: 6px;
-  align-items: center;
-}
-
-.lang-pill {
-  border: 1px solid #c3d7d7;
-  background: #ffffff;
-  color: var(--accent-dark);
-  border-radius: 999px;
-  padding: 4px 8px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.lang-pill.active {
-  background: var(--accent);
-  color: #ffffff;
-  border-color: var(--accent);
+.lang-native-select {
+  font-family:
+    'Space Grotesk',
+    'Segoe UI Emoji',
+    'Apple Color Emoji',
+    'Noto Color Emoji',
+    sans-serif;
+  min-width: 110px;
 }
 
 .error {

@@ -154,25 +154,16 @@ function Shell({
               <NavIcon name="language" />
               {t('app.language')}
             </span>
-            <div className="lang-pills">
-              {[
-                ['en', '🇬🇧', 'EN'],
-                ['it', '🇮🇹', 'IT'],
-                ['es', '🇪🇸', 'ES'],
-                ['de', '🇩🇪', 'DE']
-              ].map(([lang, flag, label]) => (
-                <button
-                  key={lang}
-                  type="button"
-                  className={`lang-pill ${currentLanguage === lang ? 'active' : ''}`}
-                  onClick={() => setLang(lang)}
-                  aria-pressed={currentLanguage === lang}
-                >
-                  <span>{flag}</span>
-                  <span>{label}</span>
-                </button>
-              ))}
-            </div>
+            <select
+              className="btn ghost lang-native-select"
+              onChange={(e) => setLang(e.target.value)}
+              value={currentLanguage}
+            >
+              <option value="en">{'\uD83C\uDDEC\uD83C\uDDE7'} EN</option>
+              <option value="it">{'\uD83C\uDDEE\uD83C\uDDF9'} IT</option>
+              <option value="es">{'\uD83C\uDDEA\uD83C\uDDF8'} ES</option>
+              <option value="de">{'\uD83C\uDDE9\uD83C\uDDEA'} DE</option>
+            </select>
           </div>
           <button className="btn nav-link" onClick={handleLogout}>
             <NavIcon name="logout" />

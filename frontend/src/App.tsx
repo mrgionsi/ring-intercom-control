@@ -147,16 +147,19 @@ function Shell({
             </Link>
           ) : null}
           <div className="lang-select">
-            <span className="lang-label">{t('app.language')}</span>
+            <span className="lang-label">
+              <NavIcon name="language" />
+              {t('app.language')}
+            </span>
             <select
               className="btn ghost"
               onChange={(e) => setLang(e.target.value)}
               value={i18n.language}
             >
-              <option value="en">EN</option>
-              <option value="it">IT</option>
-              <option value="es">ES</option>
-              <option value="de">DE</option>
+              <option value="en">🇬🇧 EN</option>
+              <option value="it">🇮🇹 IT</option>
+              <option value="es">🇪🇸 ES</option>
+              <option value="de">🇩🇪 DE</option>
             </select>
           </div>
           <button className="btn nav-link" onClick={handleLogout}>
@@ -173,7 +176,7 @@ function Shell({
 function NavIcon({
   name
 }: {
-  name: 'dashboard' | 'links' | 'settings' | 'users' | 'logout';
+  name: 'dashboard' | 'links' | 'settings' | 'users' | 'logout' | 'language';
 }) {
   const common = {
     className: 'nav-icon',
@@ -222,6 +225,17 @@ function NavIcon({
         <circle cx="8.5" cy="7" r="4" />
         <path d="M20 8v6" />
         <path d="M23 11h-6" />
+      </svg>
+    );
+  }
+
+  if (name === 'language') {
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="12" r="10" />
+        <path d="M2 12h20" />
+        <path d="M12 2a15 15 0 0 1 0 20" />
+        <path d="M12 2a15 15 0 0 0 0 20" />
       </svg>
     );
   }

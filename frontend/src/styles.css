@@ -309,6 +309,9 @@ textarea {
 }
 
 .lang-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-weight: 600;
   color: var(--accent-dark);
 }

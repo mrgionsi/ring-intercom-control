@@ -140,7 +140,10 @@ export default function Admin() {
       ) : null}
 
       <section className="card">
-        <h2>{t('intercoms.title')}</h2>
+        <h2 className="section-title">
+          <UiIcon name="intercom" />
+          {t('intercoms.title')}
+        </h2>
         <div className="actions">
           <p>{t('intercoms.desc')}</p>
           <button
@@ -162,47 +165,48 @@ export default function Admin() {
               ) : (
                 <div className="grid">
                   {location.intercoms.map((intercom) => (
-                    <div key={intercom.id} className="tile">
-                      <div>
-                        <strong>{intercom.name}</strong>
-                        <div className="muted">ID: {intercom.id}</div>
-                        <div className="meta">
-                          <span>
-                            {t('intercoms.battery')}:{' '}
-                            {formatBattery(intercom.batteryPercent, intercom.data)}
+                    <div key={intercom.id} className="tile intercom-card">
+                      <div className="intercom-main">
+                        <div className="intercom-head">
+                          <strong className="intercom-name">{intercom.name}</strong>
+                          <span className="intercom-id">ID: {intercom.id}</span>
+                        </div>
+                        <div className="intercom-stats">
+                          <span className="stat-pill">
+                            <UiIcon name="battery" />
+                            {t('intercoms.battery')}: {formatBattery(intercom.batteryPercent, intercom.data)}
                           </span>
-                          {intercom.batteryCategory ? (
-                            <span className="badge">
-                              {intercom.batteryCategory}
+                          {intercom.rssi !== null &&
+                          intercom.rssi !== undefined ? (
+                            <span className="stat-pill">
+                              <UiIcon name="signal" />
+                              {t('intercoms.rssi')}: {intercom.rssi}
                             </span>
                           ) : null}
                           {intercom.connection ? (
-                            <span className="badge">
+                            <span className="stat-pill">
+                              <UiIcon name="status" />
                               {intercom.connection}
                             </span>
                           ) : null}
-                          {intercom.rssi !== null &&
-                          intercom.rssi !== undefined ? (
-                            <span className="badge">
-                              {t('intercoms.rssi')} {intercom.rssi}
-                            </span>
+                        </div>
+                        <div className="intercom-secondary">
+                          {intercom.firmware ? (
+                            <div className="muted">
+                              <UiIcon name="firmware" /> {t('intercoms.firmware')}: {intercom.firmware}
+                            </div>
+                          ) : null}
+                          {intercom.wifiName ? (
+                            <div className="muted">
+                              <UiIcon name="wifi" /> {t('intercoms.wifi')}: {intercom.wifiName}
+                            </div>
+                          ) : null}
+                          {intercom.otaStatus ? (
+                            <div className="muted">
+                              <UiIcon name="ota" /> {t('intercoms.ota')}: {intercom.otaStatus}
+                            </div>
                           ) : null}
                         </div>
-                        {intercom.firmware ? (
-                          <div className="muted">
-                            {t('intercoms.firmware')}: {intercom.firmware}
-                          </div>
-                        ) : null}
-                        {intercom.wifiName ? (
-                          <div className="muted">
-                            {t('intercoms.wifi')}: {intercom.wifiName}
-                          </div>
-                        ) : null}
-                        {intercom.otaStatus ? (
-                          <div className="muted">
-                            {t('intercoms.ota')}: {intercom.otaStatus}
-                          </div>
-                        ) : null}
                         <details className="details">
                           <summary>{t('intercoms.raw_data')}</summary>
                           <pre>{JSON.stringify(intercom.data, null, 2)}</pre>
@@ -249,10 +253,11 @@ export default function Admin() {
                         </details>
                       </div>
                       <button
-                        className="btn"
+                        className="btn nav-link"
                         onClick={() => handleUnlock(intercom.id)}
                         disabled={loading || initializing}
                       >
+                        <UiIcon name="unlock" />
                         {t('intercoms.unlock')}
                       </button>
                     </div>
@@ -299,6 +304,106 @@ export default function Admin() {
       {error ? <div className="error">{error}</div> : null}
       {toast ? <div className="toast">{toast}</div> : null}
     </div>
+  );
+}
+
+function UiIcon({
+  name
+}: {
+  name:
+    | 'intercom'
+    | 'unlock'
+    | 'battery'
+    | 'signal'
+    | 'status'
+    | 'firmware'
+    | 'wifi'
+    | 'ota';
+}) {
+  const common = {
+    className: 'nav-icon',
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: '2',
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    'aria-hidden': true
+  };
+
+  if (name === 'intercom') {
+    return (
+      <svg {...common}>
+        <rect x="4" y="3" width="16" height="18" rx="2" />
+        <line x1="9" y1="8" x2="15" y2="8" />
+        <circle cx="12" cy="14" r="1.5" />
+      </svg>
+    );
+  }
+  if (name === 'unlock') {
+    return (
+      <svg {...common}>
+        <rect x="4" y="11" width="16" height="10" rx="2" />
+        <path d="M8 11V8a4 4 0 0 1 8 0" />
+      </svg>
+    );
+  }
+  if (name === 'battery') {
+    return (
+      <svg {...common}>
+        <rect x="3" y="7" width="16" height="10" rx="2" />
+        <line x1="21" y1="10" x2="21" y2="14" />
+      </svg>
+    );
+  }
+  if (name === 'signal') {
+    return (
+      <svg {...common}>
+        <line x1="4" y1="20" x2="4" y2="16" />
+        <line x1="9" y1="20" x2="9" y2="12" />
+        <line x1="14" y1="20" x2="14" y2="8" />
+        <line x1="19" y1="20" x2="19" y2="4" />
+      </svg>
+    );
+  }
+  if (name === 'status') {
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="12" r="9" />
+        <circle cx="12" cy="12" r="2" />
+      </svg>
+    );
+  }
+  if (name === 'firmware') {
+    return (
+      <svg {...common}>
+        <path d="M12 3v8" />
+        <path d="M8 9l4 4 4-4" />
+        <rect x="4" y="15" width="16" height="6" rx="2" />
+      </svg>
+    );
+  }
+  if (name === 'wifi') {
+    return (
+      <svg {...common}>
+        <path d="M5 9a10 10 0 0 1 14 0" />
+        <path d="M8 12a6 6 0 0 1 8 0" />
+        <path d="M11 15a2 2 0 0 1 2 0" />
+        <circle cx="12" cy="19" r="1" />
+      </svg>
+    );
+  }
+  return (
+    <svg {...common}>
+      <path d="M12 2v6" />
+      <path d="M12 22v-6" />
+      <path d="M4.93 4.93l4.24 4.24" />
+      <path d="M14.83 14.83l4.24 4.24" />
+      <path d="M2 12h6" />
+      <path d="M22 12h-6" />
+      <path d="M4.93 19.07l4.24-4.24" />
+      <path d="M14.83 9.17l4.24-4.24" />
+    </svg>
   );
 }
 

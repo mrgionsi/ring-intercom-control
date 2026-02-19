@@ -286,6 +286,12 @@ textarea {
   flex-wrap: wrap;
 }
 
+.section-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .nav-link {
   display: inline-flex;
   align-items: center;
@@ -354,6 +360,57 @@ textarea {
   gap: 8px;
   margin-top: 6px;
   align-items: center;
+}
+
+.intercom-card {
+  align-items: flex-start;
+}
+
+.intercom-main {
+  width: 100%;
+}
+
+.intercom-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.intercom-name {
+  font-size: 17px;
+  letter-spacing: 0.2px;
+}
+
+.intercom-id {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.intercom-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #eef5f5;
+  color: #234447;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.intercom-secondary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 6px;
 }
 
 .badge {

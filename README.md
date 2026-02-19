@@ -1,227 +1,115 @@
 # ring-intercom-control
 
-`ring-intercom-control` is a self-hosted web application to manage Ring Intercom access for short-term rentals and small hospitality operations.
+Web application to manage Ring Intercom access: store Ring refresh tokens securely, unlock doors, and generate expiring guest links for B&B guests.
 
-It supports secure Ring token management, one-click unlock from web, expiring guest links, and admin user/device oversight.
+## Highlights
 
-## Features
+- Secure storage of Ring refresh tokens (AES-256-GCM)
+- Refresh token setup via GUI (email/password + 2FA)
+- Admin + user roles
+- Guest links with expiration and max uses
+- Guest link templates (one-click presets)
+- Device overview + health history (battery/RSSI/OTA)
+- Audit logs (unlock history + login attempts)
+- Rate limits configurable from admin UI
 
-### Access Control
-- Ring refresh token storage encrypted with AES-256-GCM
-- Ring token onboarding from GUI (email/password + 2FA)
-- Refresh token validation before save
-- Ring token update/edit flow per user
-- Manual unlock from dashboard
-- Guest unlock links with expiration date
-- Optional maximum uses per guest link
+## Tech Stack
 
-### User and Admin Management
-- Role model: `admin` and `user`
-- Admin can create, edit, disable, and reset users
-- Admin overview of users and devices (read-only for other users' devices)
-- Users can manage only their own Ring integration and guest links
-
-### Device Visibility
-- Ring locations, intercom list, and camera/device list
-- Battery, RSSI, OTA state, firmware, and Wi-Fi info when available
-- Device health history snapshots per intercom
-- Raw payload inspection for troubleshooting
-
-### Security and Auditing
-- Session-based auth with rotation at login
-- CSRF protection for authenticated write routes
-- Login lockout after 5 failed attempts (15 minutes)
-- Request rate limits configurable in admin UI
-- Unlock audit trail (user and guest sources)
-- Login attempt audit trail
-
-### UX and Internationalization
-- Languages: English, Italian, Spanish, German
-- Browser language auto-detection
-- Live language switch without page reload
-
-## Application Screenshot
-
-![Application dashboard](docs/screenshots/app-overview.svg)
-
-> Replace `docs/screenshots/app-overview.svg` with real UI screenshots anytime without changing README structure.
-
-## Stack Details
-
-### Backend
-- Node.js 24+
-- TypeScript
-- Express
-- Session auth (`express-session` + `connect-sqlite3`)
-- Database access via `sqlite` wrapper with `sqlite3` driver
-- Ring integration via `ring-client-api`
-
-### Frontend
-- React 18
-- TypeScript
-- Vite
-- React Router
-- i18next + react-i18next
-
-### Data Storage
-- SQLite file database (`backend/data.db`)
-- SQLite session store (`backend/session.db`)
-
-### CI/CD
-- GitHub Actions workflow: `.github/workflows/ci.yml`
-- Runs backend build, frontend build, and smoke tests on PR/push (`main`, `dev`)
+- Backend: Node.js + TypeScript + Express + SQLite (`sqlite` wrapper + `sqlite3` driver)
+- Ring API: `ring-client-api`
+- Frontend: React + Vite
 
 ## Project Structure
 
-- `backend/` API server and data layer
-- `frontend/` React web application
-- `scripts/` security and smoke test utilities
-- `.github/workflows/` CI pipelines
-- `docs/screenshots/` README image assets
+- `backend/` API server
+- `frontend/` Web UI
+- `scripts/` Audit scripts
 
-## Local Development
+## Quick Start (Local Dev)
 
-### Prerequisites
-- Node.js 24+
-- npm 10+
-- Ring account with 2FA enabled
+1. Install dependencies
+   - `cd backend`
+   - `npm install`
+   - `cd ../frontend`
+   - `npm install`
+2. Configure environment
+   - Copy `backend/.env.example` to `backend/.env`
+   - Generate a `MASTER_KEY` (base64):
+     - `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`
+   - Generate admin password hash:
+     - `cd backend`
+     - `npm run hash-password -- yourPassword`
+3. Run dev servers
+   - Backend: `cd backend` then `npm run dev`
+   - Frontend: `cd frontend` then `npm run dev`
 
-### 1) Install Dependencies
+Frontend expects the backend at `http://localhost:3001` (Vite proxy is configured).
 
-```bash
-cd backend
-npm install
-cd ../frontend
-npm install
-```
+## Ring Refresh Token
 
-### 2) Configure Backend Environment
+This app stores a Ring refresh token (not your raw password).
 
-```bash
-cd backend
-cp .env.example .env
-```
+### Option A: Generate in the GUI (recommended)
 
-Required env vars:
+Go to **Settings → Ring Connection**:
 
-- `SESSION_SECRET`: random string for session signing
-- `MASTER_KEY`: base64 32-byte key used for token encryption
-- `ADMIN_USERNAME`: bootstrap admin username
-- `ADMIN_PASSWORD_HASH`: bcrypt hash for admin password
+1. Enter email + password
+2. Enter 2FA code (SMS or authenticator)
+3. Save the refresh token automatically
 
-Generate values:
+You can also **test a token** before saving it and **resend the 2FA code**.
 
-```bash
-# from repo root
-node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+### Option B: Generate with CLI
 
-cd backend
-npm run hash-password -- yourStrongPassword
-```
+1. `cd backend`
+2. `npx -p ring-client-api ring-auth-cli`
+3. Paste the refresh token into the app (Settings → Ring Connection).
 
-### 3) Run App in Dev Mode
+## Security
 
-Terminal 1:
+- CSRF protection for authenticated routes
+- Session rotation on login
+- Account lockout after 5 failed logins (15 min)
+- Rate limits (configurable in Admin UI)
 
-```bash
-cd backend
-npm run dev
-```
-
-Terminal 2:
-
-```bash
-cd frontend
-npm run dev
-```
-
-Default URLs:
-
-- Frontend: `http://localhost:5173`
-- Backend: `http://localhost:3001`
-
-### 4) Configure Ring Integration
-
-Preferred:
-
-1. Open `Settings -> Ring Connection`
-2. Enter Ring email/password
-3. Enter 2FA code (SMS or authenticator)
-4. Save refresh token
-
-Alternative CLI:
-
-```bash
-cd backend
-npx -p ring-client-api ring-auth-cli
-```
-
-Paste generated refresh token in `Settings -> Ring Connection`.
-
-## Validation and QA
-
-### Build Checks
-
-```bash
-cd backend && npm run build
-cd ../frontend && npm run build
-```
-
-### Smoke Tests
-
-PowerShell:
-
-```powershell
-scripts/smoke-test.ps1
-```
-
-Bash:
-
-```bash
-scripts/smoke-test.sh
-```
-
-Optional authenticated smoke checks:
-
-- `SMOKE_USERNAME=<username>`
-- `SMOKE_PASSWORD=<password>`
-- `SMOKE_BASE_URL=http://localhost:3001`
-
-### Security Audit
-
-PowerShell:
-
-```powershell
-scripts/security-check.ps1
-```
-
-Bash:
-
-```bash
-scripts/security-check.sh
-```
-
-## Known Dependency Advisories
+### Known Dependency Advisories
 
 Current `npm audit` reports high severity vulnerabilities in transitive dependencies:
 
-- `ip` via `ring-client-api` (fix path requires breaking downgrade)
-- `tar` via `sqlite3` / `node-gyp` (fix path requires breaking downgrade)
+- `ip` via `ring-client-api` (requires a breaking downgrade to 9.x)
+- `tar` via `sqlite3` / `node-gyp` (requires a breaking downgrade)
 
-These are currently tracked and deferred until upstream fix availability and the planned DB migration.
+We are deferring these until the planned Supabase migration and/or upstream fixes. Track in:
 
-## Branching Model
+- `scripts/security-check.ps1` / `scripts/security-check.sh`
 
-- `main`: stable, production-ready branch
-- `dev`: integration and pre-release branch
-- `feature/*`: short-lived implementation branches
-- `hotfix/*`: emergency fixes from `main`
+## Audit Scripts
 
-## Roadmap
+Run audits for both backend and frontend:
 
-- Dockerized deployment (`backend` and `frontend` images)
-- Optional managed DB migration path (Supabase/Postgres)
-- Extended automated test coverage (API + UI)
+- PowerShell: `scripts/security-check.ps1`
+- Bash: `scripts/security-check.sh`
+
+## Smoke Tests
+
+Run quick API smoke tests (health, auth guards, CSRF, optional login):
+
+- PowerShell: `scripts/smoke-test.ps1`
+- Bash: `scripts/smoke-test.sh`
+
+Optional login verification:
+
+- `SMOKE_USERNAME=<username>`
+- `SMOKE_PASSWORD=<password>`
+- `SMOKE_BASE_URL=http://localhost:3001` (optional)
+
+## Production Build
+
+1. `cd frontend` then `npm run build`
+2. `cd ../backend` then `npm run build`
+3. Start backend: `npm run start`
+
+Backend serves the built frontend automatically in production.
 
 ## License
 

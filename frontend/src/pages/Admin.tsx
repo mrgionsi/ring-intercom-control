@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from '../api';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
 
 type RingSummary = {
   locationId: string;
@@ -141,14 +140,6 @@ export default function Admin() {
       ) : null}
 
       <section className="card">
-        <h2>{t('settings.title')}</h2>
-        <p>{t('settings.manage_desc')}</p>
-        <Link to="/settings" className="btn">
-          {t('settings.open')}
-        </Link>
-      </section>
-
-      <section className="card">
         <h2>{t('intercoms.title')}</h2>
         <div className="actions">
           <p>{t('intercoms.desc')}</p>
@@ -264,37 +255,6 @@ export default function Admin() {
                       >
                         {t('intercoms.unlock')}
                       </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))
-        )}
-      </section>
-
-      <section className="card">
-        <h2>{t('devices.title')}</h2>
-        {summary.length === 0 ? (
-          <p className="muted">{t('devices.none')}</p>
-        ) : (
-          summary.map((location) => (
-            <div key={location.locationId} className="stack">
-              <h3>{location.locationName}</h3>
-              {location.cameras.length === 0 ? (
-                <p className="muted">{t('devices.no_cameras')}</p>
-              ) : (
-                <div className="grid">
-                  {location.cameras.map((camera) => (
-                    <div key={camera.id} className="tile">
-                      <div>
-                        <strong>{camera.name}</strong>
-                        <div className="muted">ID: {camera.id}</div>
-                      </div>
-                      <details className="details">
-                        <summary>{t('intercoms.raw_data')}</summary>
-                        <pre>{JSON.stringify(camera.data, null, 2)}</pre>
-                      </details>
                     </div>
                   ))}
                 </div>

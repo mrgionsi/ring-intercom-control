@@ -7,14 +7,16 @@ import de from './i18n/de.json';
 import { detectLanguage } from './i18n/utils';
 
 const STORAGE_KEY = 'ring_lang';
+const resources = {
+  en: { translation: en },
+  it: { translation: it },
+  es: { translation: es },
+  de: { translation: de }
+} as const;
+const SUPPORTED_LANGUAGES = Object.keys(resources) as Array<keyof typeof resources>;
 
 i18n.use(initReactI18next).init({
-  resources: {
-    en: { translation: en },
-    it: { translation: it },
-    es: { translation: es },
-    de: { translation: de }
-  },
+  resources,
   lng: detectLanguage(
     typeof localStorage === 'undefined'
       ? null
@@ -28,8 +30,9 @@ i18n.use(initReactI18next).init({
 });
 
 export function setLanguage(lang: string) {
-  const supported = ['en', 'it', 'es', 'de'];
-  const safeLang = supported.includes(lang) ? lang : 'en';
+  const safeLang = SUPPORTED_LANGUAGES.includes(lang as keyof typeof resources)
+    ? lang
+    : 'en';
   i18n.changeLanguage(safeLang);
   localStorage.setItem(STORAGE_KEY, safeLang);
 }

@@ -27,12 +27,15 @@ export function validateGuestLinkExpiresAtUpdate(
   }
 
   if (typeof input.expiresAt !== 'string' || !input.expiresAt.trim()) {
-    return { ok: false, status: 400, error: 'id and expiresAt are required' };
+    return { ok: false, status: 400, error: 'expiresAt is required' };
   }
 
   const nextTs = Date.parse(input.expiresAt);
   if (!Number.isFinite(nextTs)) {
     return { ok: false, status: 400, error: 'Invalid date format' };
+  }
+  if (nextTs <= Date.now()) {
+    return { ok: false, status: 400, error: 'expiresAt must be in the future' };
   }
 
   const startTs = Date.parse(input.startsAtIso);

@@ -23,8 +23,8 @@ export function validateGuestLinkCreateInput(
   input: GuestLinkCreateInput
 ): GuestLinkValidationResult {
   const intercomId = typeof input.intercomId === 'string' ? input.intercomId.trim() : '';
-  const startsAt = typeof input.startsAt === 'string' ? input.startsAt : '';
-  const expiresAt = typeof input.expiresAt === 'string' ? input.expiresAt : '';
+  const startsAt = typeof input.startsAt === 'string' ? input.startsAt.trim() : '';
+  const expiresAt = typeof input.expiresAt === 'string' ? input.expiresAt.trim() : '';
 
   if (!intercomId || !startsAt || !expiresAt) {
     return {

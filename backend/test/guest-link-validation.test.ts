@@ -14,7 +14,9 @@ describe('validateGuestLinkCreateInput', () => {
     if (result.ok) {
       expect(result.intercomId).toBe('705848315');
       expect(result.maxUses).toBe(3);
-      expect(result.expiresAtIso > result.startsAtIso).toBe(true);
+      expect(Date.parse(result.expiresAtIso)).toBeGreaterThan(
+        Date.parse(result.startsAtIso)
+      );
     }
   });
 

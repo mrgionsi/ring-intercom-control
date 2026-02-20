@@ -36,11 +36,10 @@ router.post('/guest-links', requireAuth, async (req, res) => {
   const normalizedLabel =
     typeof label === 'string' ? label.trim() : '';
   if (normalizedLabel) {
-    const nowIso = new Date().toISOString();
     const duplicateActive = await hasActiveGuestLinkWithLabel(
       req.session.auth!.id,
       normalizedLabel,
-      nowIso
+      new Date().toISOString()
     );
     if (duplicateActive) {
       return res.status(409).json({
@@ -112,7 +111,7 @@ const updateExpiresAtHandler = async (
   const id = Number(req.params.id);
   const { expiresAt } = req.body ?? {};
   if (!id) {
-    return res.status(400).json({ error: 'id and expiresAt are required' });
+    return res.status(400).json({ error: 'id is required' });
   }
 
   const link = await getGuestLinkByIdForUser(id, req.session.auth!.id);
@@ -129,18 +128,20 @@ const updateExpiresAtHandler = async (
     return res.status(validation.status).json({ error: validation.error });
   }
 
-  await updateGuestLinkExpiresAt(
+  const updated = await updateGuestLinkExpiresAt(
     id,
     req.session.auth!.id,
     validation.expiresAtIso
   );
-  res.json({ ok: true });
+  if (!updated) {
+    return res.status(404).json({ error: 'Link not found' });
+  }
+  res.json({ ok: true, expiresAt: updated.expiresAt });
 };
 
 // Keep compatibility across clients/proxies that may not forward PATCH consistently
 router.patch('/guest-links/:id/expires-at', requireAuth, updateExpiresAtHandler);
 router.put('/guest-links/:id/expires-at', requireAuth, updateExpiresAtHandler);
-router.post('/guest-links/:id/expires-at', requireAuth, updateExpiresAtHandler);
 
 router.get('/guest/:token', async (req, res) => {
   const link = await getGuestLinkByToken(req.params.token);

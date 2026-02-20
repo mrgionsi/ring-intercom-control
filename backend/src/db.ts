@@ -244,7 +244,22 @@ export async function createGuestLink(input: {
   );
 
   const row = await getDb().get<GuestLink>(
-    'SELECT * FROM guest_links WHERE token = ?',
+    `
+      SELECT
+        id,
+        token,
+        label,
+        intercom_id AS intercomId,
+        user_id AS userId,
+        starts_at AS startsAt,
+        expires_at AS expiresAt,
+        max_uses AS maxUses,
+        uses,
+        disabled,
+        created_at AS createdAt
+      FROM guest_links
+      WHERE token = ?
+    `,
     input.token
   );
   return mapGuestLink(row!);
@@ -252,7 +267,22 @@ export async function createGuestLink(input: {
 
 export async function listGuestLinks(): Promise<GuestLink[]> {
   const rows = await getDb().all<GuestLink[]>(
-    'SELECT * FROM guest_links ORDER BY created_at DESC'
+    `
+      SELECT
+        id,
+        token,
+        label,
+        intercom_id AS intercomId,
+        user_id AS userId,
+        starts_at AS startsAt,
+        expires_at AS expiresAt,
+        max_uses AS maxUses,
+        uses,
+        disabled,
+        created_at AS createdAt
+      FROM guest_links
+      ORDER BY created_at DESC
+    `
   );
   return rows.map(mapGuestLink);
 }
@@ -261,7 +291,23 @@ export async function listGuestLinksForUser(
   userId: number
 ): Promise<GuestLink[]> {
   const rows = await getDb().all<GuestLink[]>(
-    'SELECT * FROM guest_links WHERE user_id = ? ORDER BY created_at DESC',
+    `
+      SELECT
+        id,
+        token,
+        label,
+        intercom_id AS intercomId,
+        user_id AS userId,
+        starts_at AS startsAt,
+        expires_at AS expiresAt,
+        max_uses AS maxUses,
+        uses,
+        disabled,
+        created_at AS createdAt
+      FROM guest_links
+      WHERE user_id = ?
+      ORDER BY created_at DESC
+    `,
     userId
   );
   return rows.map(mapGuestLink);
@@ -271,7 +317,22 @@ export async function getGuestLinkByToken(
   token: string
 ): Promise<GuestLink | null> {
   const row = await getDb().get<GuestLink>(
-    'SELECT * FROM guest_links WHERE token = ?',
+    `
+      SELECT
+        id,
+        token,
+        label,
+        intercom_id AS intercomId,
+        user_id AS userId,
+        starts_at AS startsAt,
+        expires_at AS expiresAt,
+        max_uses AS maxUses,
+        uses,
+        disabled,
+        created_at AS createdAt
+      FROM guest_links
+      WHERE token = ?
+    `,
     token
   );
   return row ? mapGuestLink(row) : null;
@@ -300,7 +361,22 @@ export async function getGuestLinkByIdForUser(
   userId: number
 ): Promise<GuestLink | null> {
   const row = await getDb().get<GuestLink>(
-    'SELECT * FROM guest_links WHERE id = ? AND user_id = ?',
+    `
+      SELECT
+        id,
+        token,
+        label,
+        intercom_id AS intercomId,
+        user_id AS userId,
+        starts_at AS startsAt,
+        expires_at AS expiresAt,
+        max_uses AS maxUses,
+        uses,
+        disabled,
+        created_at AS createdAt
+      FROM guest_links
+      WHERE id = ? AND user_id = ?
+    `,
     id,
     userId
   );
@@ -311,13 +387,34 @@ export async function updateGuestLinkExpiresAt(
   id: number,
   userId: number,
   expiresAtIso: string
-): Promise<void> {
+): Promise<GuestLink | null> {
   await getDb().run(
     'UPDATE guest_links SET expires_at = ? WHERE id = ? AND user_id = ?',
     expiresAtIso,
     id,
     userId
   );
+  const updated = await getDb().get<GuestLink>(
+    `
+      SELECT
+        id,
+        token,
+        label,
+        intercom_id AS intercomId,
+        user_id AS userId,
+        starts_at AS startsAt,
+        expires_at AS expiresAt,
+        max_uses AS maxUses,
+        uses,
+        disabled,
+        created_at AS createdAt
+      FROM guest_links
+      WHERE id = ? AND user_id = ?
+    `,
+    id,
+    userId
+  );
+  return updated ? mapGuestLink(updated) : null;
 }
 
 export async function hasActiveGuestLinkWithLabel(
@@ -332,13 +429,11 @@ export async function hasActiveGuestLinkWithLabel(
       WHERE user_id = ?
         AND disabled = 0
         AND label = ?
-        AND starts_at <= ?
         AND expires_at > ?
         AND (max_uses IS NULL OR uses < max_uses)
     `,
     userId,
     label,
-    nowIso,
     nowIso
   );
   return (row?.count ?? 0) > 0;
@@ -783,19 +878,7 @@ export async function listDeviceHealthHistory(
 }
 
 function mapGuestLink(row: GuestLink): GuestLink {
-  return {
-    ...row,
-    userId: row.userId ?? (row as any).user_id,
-    intercomId: row.intercomId ?? (row as any).intercom_id,
-    startsAt:
-      row.startsAt ??
-      (row as any).starts_at ??
-      (row as any).created_at ??
-      new Date(0).toISOString(),
-    expiresAt: row.expiresAt ?? (row as any).expires_at,
-    maxUses: row.maxUses ?? (row as any).max_uses,
-    createdAt: row.createdAt ?? (row as any).created_at
-  };
+  return row;
 }
 
 async function ensureGuestLinksUserIdColumn(): Promise<void> {

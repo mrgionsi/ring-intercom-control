@@ -68,7 +68,9 @@
     "health_history": "Statusverlauf",
     "health_loading": "Verlauf wird geladen…",
     "health_none": "Kein Verlauf.",
-    "account": "Konto"
+    "account": "Konto",
+    "location_count": "Standorte",
+    "intercom_count": "Intercoms"
   },
   "messages": {
     "token_saved": "Refresh-Token gespeichert.",
@@ -185,7 +187,7 @@
   },
   "settings": {
     "title": "Einstellungen",
-    "desc": "Verwalte die Ring-Verbindung und Refresh-Tokens.",
+    "desc": "Verwalte verbundene Ring-Konten und deren Intercom-Ger?te.",
     "manage_desc": "Verwalte den Ring-Refresh-Token und die Authentifizierung.",
     "open": "Einstellungen öffnen",
     "account_required": "Bitte zuerst ein Ring-Konto erstellen oder ausw?hlen.",
@@ -195,7 +197,25 @@
     "account_configured": "konfiguriert",
     "account_not_configured": "nicht konfiguriert",
     "new_account_placeholder": "Neues Ring-Konto-Label",
-    "add_account": "Konto hinzuf?gen"
+    "add_account": "Konto hinzuf?gen",
+    "accounts_overview": "Verbundene Konten und Ger?te",
+    "accounts_overview_desc": "{{accounts}} Konten verbunden, {{intercoms}} Intercoms verf?gbar.",
+    "manage_account": "Konto verwalten",
+    "token_state": "Token",
+    "credentials_state": "Anmeldedaten werden nach der Token-Erstellung nicht gespeichert",
+    "connected_intercoms": "Verbundene Intercoms",
+    "last_updated": "Zuletzt aktualisiert",
+    "add_integration": "Intercom-Integration hinzuf?gen",
+    "no_accounts": "Noch keine Ring-Konten verbunden.",
+    "renew_credentials": "Anmeldedaten erneuern",
+    "delete_account": "Konto l?schen",
+    "delete_account_confirm": "Konto \"{{label}}\" dauerhaft l?schen? Zugeh?rige Gast-Links werden entfernt.",
+    "account_deleted": "Konto gel?scht.",
+    "new_modal_title": "Intercom-Integration hinzuf?gen",
+    "renew_modal_title": "Anmeldedaten f?r {{label}} erneuern",
+    "modal_desc": "Verbinde ein neues Konto oder erneuere Anmeldedaten mit Login + 2FA, oder f?ge ein Refresh-Token ein.",
+    "mode_auth": "Login + 2FA",
+    "mode_token": "Refresh-Token"
   },
   "common": {
     "success": "erfolgreich",

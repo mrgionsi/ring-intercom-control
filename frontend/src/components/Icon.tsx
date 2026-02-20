@@ -3,9 +3,12 @@ type IconName =
   | 'links'
   | 'settings'
   | 'users'
+  | 'account'
   | 'logout'
   | 'language'
   | 'intercom'
+  | 'phone'
+  | 'trash'
   | 'unlock'
   | 'battery'
   | 'signal'
@@ -87,6 +90,32 @@ export function Icon({ name }: { name: IconName }) {
         <rect x="4" y="3" width="16" height="18" rx="2" />
         <line x1="9" y1="8" x2="15" y2="8" />
         <circle cx="12" cy="14" r="1.5" />
+      </svg>
+    );
+  }
+  if (name === 'account') {
+    return (
+      <svg {...iconProps}>
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4 20a8 8 0 0 1 16 0" />
+      </svg>
+    );
+  }
+  if (name === 'phone') {
+    return (
+      <svg {...iconProps}>
+        <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.2 19.2 0 0 1-5.9-5.9A19.8 19.8 0 0 1 2.2 4.3 2 2 0 0 1 4.2 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .8 2.9a2 2 0 0 1-.5 2.1L8.2 10a16 16 0 0 0 5.8 5.8l1.3-1.3a2 2 0 0 1 2.1-.5c.9.4 1.9.7 2.9.8a2 2 0 0 1 1.7 2.1z" />
+      </svg>
+    );
+  }
+  if (name === 'trash') {
+    return (
+      <svg {...iconProps}>
+        <path d="M3 6h18" />
+        <path d="M8 6V4h8v2" />
+        <path d="M6 6l1 14h10l1-14" />
+        <path d="M10 11v6" />
+        <path d="M14 11v6" />
       </svg>
     );
   }

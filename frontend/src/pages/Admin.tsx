@@ -51,6 +51,11 @@ type HealthSample = {
   created_at: string;
 };
 
+type IntercomEntry = RingSummary['intercoms'][number] & {
+  locationId: string;
+  locationName: string;
+};
+
 export default function Admin() {
   const { t } = useTranslation();
   const [summary, setSummary] = useState<RingSummary[]>([]);
@@ -65,6 +70,28 @@ export default function Admin() {
     {}
   );
   const [healthLoading, setHealthLoading] = useState<Record<string, boolean>>({});
+  const intercomEntries: IntercomEntry[] = summary
+    .flatMap((location) =>
+      location.intercoms.map((intercom) => ({
+        ...intercom,
+        locationId: location.locationId,
+        locationName: location.locationName
+      }))
+    )
+    .sort(
+      (a, b) =>
+        a.ringAccountLabel.localeCompare(b.ringAccountLabel) ||
+        a.locationName.localeCompare(b.locationName) ||
+        a.name.localeCompare(b.name)
+    );
+  const accountCount = new Set(summary.map((item) => item.ringAccountId)).size;
+  const locationCount = summary.length;
+  const intercomNameById = new Map<string, string>();
+  for (const intercom of intercomEntries) {
+    if (!intercomNameById.has(intercom.id)) {
+      intercomNameById.set(intercom.id, intercom.name);
+    }
+  }
 
   const loadSummary = async () => {
     const data = await apiFetch<{ summary: RingSummary[] }>('/api/ring/summary');
@@ -108,17 +135,17 @@ export default function Admin() {
     }
   };
 
-  const loadHealthHistory = async (intercomId: string) => {
-    setHealthLoading((prev) => ({ ...prev, [intercomId]: true }));
+  const loadHealthHistory = async (intercomId: string, cacheKey: string) => {
+    setHealthLoading((prev) => ({ ...prev, [cacheKey]: true }));
     try {
       const data = await apiFetch<{ history: HealthSample[] }>(
         `/api/ring/health/history?intercomId=${encodeURIComponent(intercomId)}`
       );
-      setHealthHistory((prev) => ({ ...prev, [intercomId]: data.history }));
+      setHealthHistory((prev) => ({ ...prev, [cacheKey]: data.history }));
     } catch {
-      setHealthHistory((prev) => ({ ...prev, [intercomId]: [] }));
+      setHealthHistory((prev) => ({ ...prev, [cacheKey]: [] }));
     } finally {
-      setHealthLoading((prev) => ({ ...prev, [intercomId]: false }));
+      setHealthLoading((prev) => ({ ...prev, [cacheKey]: false }));
     }
   };
 
@@ -160,25 +187,33 @@ export default function Admin() {
             {refreshing ? t('intercoms.reloading') : t('intercoms.reload')}
           </button>
         </div>
+        <div className="meta">
+          <span className="badge">{t('settings.ring_account')}: {accountCount}</span>
+          <span className="badge">{t('intercoms.location_count')}: {locationCount}</span>
+          <span className="badge ok">{t('intercoms.intercom_count')}: {intercomEntries.length}</span>
+        </div>
         {summary.length === 0 ? (
           <p className="muted">{t('intercoms.none')}</p>
         ) : (
-          summary.map((location) => (
-            <div key={location.locationId} className="stack">
-              <h3>{location.locationName}</h3>
-              <div className="muted">
-                {t('intercoms.account')}: {location.ringAccountLabel}
-              </div>
-              {location.intercoms.length === 0 ? (
-                <p className="muted">{t('intercoms.no_intercoms')}</p>
-              ) : (
-                <div className="grid">
-                  {location.intercoms.map((intercom) => (
-                    <div key={intercom.id} className="tile intercom-card">
+          <div className="grid">
+            {intercomEntries.length === 0 ? (
+              <p className="muted">{t('intercoms.no_intercoms')}</p>
+            ) : (
+              intercomEntries.map((intercom) => {
+                const intercomKey = `${intercom.ringAccountId}:${intercom.locationId}:${intercom.id}`;
+                return (
+                  <div key={intercomKey} className="tile intercom-card">
                       <div className="intercom-main">
                         <div className="intercom-head">
-                          <strong className="intercom-name">{intercom.name}</strong>
+                          <strong className="intercom-name intercom-name-line">
+                            <Icon name="phone" />
+                            {intercom.name}
+                          </strong>
                           <span className="intercom-id">ID: {intercom.id}</span>
+                          <div className="meta">
+                            <span className="badge">{t('intercoms.account')}: {intercom.ringAccountLabel}</span>
+                            <span className="badge">{intercom.locationName}</span>
+                          </div>
                         </div>
                         <div className="intercom-stats">
                             <span className="stat-pill">
@@ -224,17 +259,17 @@ export default function Admin() {
                           className="details"
                           onToggle={(e) => {
                             const open = (e.currentTarget as HTMLDetailsElement).open;
-                            if (open && !healthHistory[intercom.id]) {
-                              loadHealthHistory(intercom.id);
+                            if (open && !healthHistory[intercomKey]) {
+                              loadHealthHistory(intercom.id, intercomKey);
                             }
                           }}
                         >
                           <summary>{t('intercoms.health_history')}</summary>
-                          {healthLoading[intercom.id] ? (
+                          {healthLoading[intercomKey] ? (
                             <p className="muted">{t('intercoms.health_loading')}</p>
-                          ) : healthHistory[intercom.id]?.length ? (
+                          ) : healthHistory[intercomKey]?.length ? (
                             <div className="stack">
-                              {healthHistory[intercom.id].map((sample) => (
+                              {healthHistory[intercomKey].map((sample) => (
                                 <div key={sample.id} className="tile">
                                   <div>
                                     <strong>
@@ -270,11 +305,10 @@ export default function Admin() {
                         {t('intercoms.unlock')}
                       </button>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))
+                  );
+                })
+            )}
+          </div>
         )}
       </section>
 
@@ -287,8 +321,12 @@ export default function Admin() {
             {auditEvents.slice(0, 10).map((event) => (
               <div key={event.id} className="tile">
                 <div>
-                  <strong>Intercom {event.intercom_id}</strong>
+                  <strong>
+                    {intercomNameById.get(event.intercom_id) ??
+                      `${t('intercoms.title')} ${event.intercom_id}`}
+                  </strong>
                   <div className="muted">
+                    ID: {event.intercom_id} -{' '}
                     {event.source === 'guest'
                       ? t('profile.guest_link')
                       : t('profile.user')}{' '}

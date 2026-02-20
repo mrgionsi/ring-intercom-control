@@ -68,7 +68,9 @@
     "health_history": "Storico stato",
     "health_loading": "Caricamento storico…",
     "health_none": "Nessuno storico.",
-    "account": "Account"
+    "account": "Account",
+    "location_count": "Posizioni",
+    "intercom_count": "Citofoni"
   },
   "messages": {
     "token_saved": "Refresh token salvato.",
@@ -185,7 +187,7 @@
   },
   "settings": {
     "title": "Impostazioni",
-    "desc": "Gestisci la connessione Ring e i refresh token.",
+    "desc": "Gestisci gli account Ring collegati e i relativi citofoni.",
     "manage_desc": "Gestisci il refresh token Ring e l'autenticazione.",
     "open": "Apri impostazioni",
     "account_required": "Crea o seleziona prima un account Ring.",
@@ -195,7 +197,25 @@
     "account_configured": "configurato",
     "account_not_configured": "non configurato",
     "new_account_placeholder": "Nuova etichetta account Ring",
-    "add_account": "Aggiungi account"
+    "add_account": "Aggiungi account",
+    "accounts_overview": "Account e Dispositivi Collegati",
+    "accounts_overview_desc": "{{accounts}} account collegati, {{intercoms}} citofoni disponibili.",
+    "manage_account": "Gestisci account",
+    "token_state": "Token",
+    "credentials_state": "Le credenziali non vengono mai salvate dopo la generazione del token",
+    "connected_intercoms": "Citofoni collegati",
+    "last_updated": "Ultimo aggiornamento",
+    "add_integration": "Aggiungi integrazione citofono",
+    "no_accounts": "Nessun account Ring collegato.",
+    "renew_credentials": "Rinnova credenziali",
+    "delete_account": "Elimina account",
+    "delete_account_confirm": "Eliminare definitivamente l'account \"{{label}}\"? I guest link collegati verranno rimossi.",
+    "account_deleted": "Account eliminato.",
+    "new_modal_title": "Aggiungi integrazione citofono",
+    "renew_modal_title": "Rinnova credenziali per {{label}}",
+    "modal_desc": "Collega un nuovo account o rinnova le credenziali con login + 2FA, oppure inserisci un refresh token.",
+    "mode_auth": "Login + 2FA",
+    "mode_token": "Refresh token"
   },
   "common": {
     "success": "successo",

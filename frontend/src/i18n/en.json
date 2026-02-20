@@ -68,7 +68,9 @@
     "health_history": "Health History",
     "health_loading": "Loading history…",
     "health_none": "No history yet.",
-    "account": "Account"
+    "account": "Account",
+    "location_count": "Locations",
+    "intercom_count": "Intercoms"
   },
   "messages": {
     "token_saved": "Refresh token saved.",
@@ -185,7 +187,7 @@
   },
   "settings": {
     "title": "Settings",
-    "desc": "Manage your Ring connection and refresh tokens.",
+    "desc": "Manage connected Ring accounts and their intercom devices.",
     "manage_desc": "Manage your Ring refresh token and authentication flow.",
     "open": "Open settings",
     "account_required": "Please create or select a Ring account first.",
@@ -195,7 +197,25 @@
     "account_configured": "configured",
     "account_not_configured": "not configured",
     "new_account_placeholder": "New Ring account label",
-    "add_account": "Add account"
+    "add_account": "Add account",
+    "accounts_overview": "Connected Accounts & Devices",
+    "accounts_overview_desc": "{{accounts}} accounts connected, {{intercoms}} intercoms available.",
+    "manage_account": "Manage account",
+    "token_state": "Token",
+    "credentials_state": "Credentials are never stored after token generation",
+    "connected_intercoms": "Connected intercoms",
+    "last_updated": "Last updated",
+    "add_integration": "Add Intercom Integration",
+    "no_accounts": "No Ring accounts connected yet.",
+    "renew_credentials": "Renew credentials",
+    "delete_account": "Delete account",
+    "delete_account_confirm": "Delete account \"{{label}}\" permanently? This will remove related guest links.",
+    "account_deleted": "Account deleted.",
+    "new_modal_title": "Add Intercom Integration",
+    "renew_modal_title": "Renew credentials for {{label}}",
+    "modal_desc": "Connect a new account or renew credentials using login + 2FA, or provide a refresh token.",
+    "mode_auth": "Login + 2FA",
+    "mode_token": "Refresh token"
   },
   "common": {
     "success": "success",

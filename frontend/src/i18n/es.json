@@ -68,7 +68,9 @@
     "health_history": "Historial de estado",
     "health_loading": "Cargando historial…",
     "health_none": "Sin historial.",
-    "account": "Cuenta"
+    "account": "Cuenta",
+    "location_count": "Ubicaciones",
+    "intercom_count": "Intercomunicadores"
   },
   "messages": {
     "token_saved": "Refresh token guardado.",
@@ -185,7 +187,7 @@
   },
   "settings": {
     "title": "Configuración",
-    "desc": "Gestiona la conexión de Ring y los refresh tokens.",
+    "desc": "Administra las cuentas Ring conectadas y sus intercomunicadores.",
     "manage_desc": "Gestiona el refresh token de Ring y la autenticación.",
     "open": "Abrir configuración",
     "account_required": "Crea o selecciona primero una cuenta Ring.",
@@ -195,7 +197,25 @@
     "account_configured": "configurada",
     "account_not_configured": "no configurada",
     "new_account_placeholder": "Nueva etiqueta de cuenta Ring",
-    "add_account": "Agregar cuenta"
+    "add_account": "Agregar cuenta",
+    "accounts_overview": "Cuentas y Dispositivos Conectados",
+    "accounts_overview_desc": "{{accounts}} cuentas conectadas, {{intercoms}} intercomunicadores disponibles.",
+    "manage_account": "Administrar cuenta",
+    "token_state": "Token",
+    "credentials_state": "Las credenciales nunca se guardan despu?s de generar el token",
+    "connected_intercoms": "Intercomunicadores conectados",
+    "last_updated": "?ltima actualizaci?n",
+    "add_integration": "Agregar integraci?n de intercomunicador",
+    "no_accounts": "A?n no hay cuentas Ring conectadas.",
+    "renew_credentials": "Renovar credenciales",
+    "delete_account": "Eliminar cuenta",
+    "delete_account_confirm": "?Eliminar permanentemente la cuenta \"{{label}}\"? Se eliminar?n los enlaces de invitados relacionados.",
+    "account_deleted": "Cuenta eliminada.",
+    "new_modal_title": "Agregar integraci?n de intercomunicador",
+    "renew_modal_title": "Renovar credenciales para {{label}}",
+    "modal_desc": "Conecta una cuenta nueva o renueva credenciales con inicio de sesi?n + 2FA, o ingresa un refresh token.",
+    "mode_auth": "Inicio + 2FA",
+    "mode_token": "Refresh token"
   },
   "common": {
     "success": "éxito",

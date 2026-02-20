@@ -621,6 +621,9 @@ export async function createRingAccount(
   userId: number,
   label: string
 ): Promise<RingAccount> {
+  if (!Number.isFinite(userId) || userId <= 0) {
+    throw new Error('Invalid userId for ring account');
+  }
   const now = new Date().toISOString();
   const existingCount = await getDb().get<{ count: number }>(
     'SELECT COUNT(1) as count FROM ring_accounts WHERE user_id = ? AND disabled = 0',
@@ -723,6 +726,33 @@ export async function disableRingAccount(
     userId
   );
   if ((hasDefault?.count ?? 0) === 0) {
+    const next = await getDefaultRingAccountForUser(userId);
+    if (next) {
+      await setRingAccountDefault(userId, next.id);
+    }
+  }
+}
+
+export async function deleteRingAccountPermanently(
+  userId: number,
+  ringAccountId: number
+): Promise<void> {
+  const existing = await getDb().get<{ is_default: number }>(
+    'SELECT is_default FROM ring_accounts WHERE id = ? AND user_id = ? AND disabled = 0',
+    ringAccountId,
+    userId
+  );
+  if (!existing) {
+    return;
+  }
+
+  await getDb().run(
+    'DELETE FROM ring_accounts WHERE id = ? AND user_id = ?',
+    ringAccountId,
+    userId
+  );
+
+  if (existing.is_default) {
     const next = await getDefaultRingAccountForUser(userId);
     if (next) {
       await setRingAccountDefault(userId, next.id);
@@ -1147,6 +1177,9 @@ async function migrateUserTokensToRingAccounts(): Promise<void> {
     Array<{ user_id: number; refresh_token: string; updated_at: string }>
   >('SELECT user_id, refresh_token, updated_at FROM user_tokens');
   for (const row of rows) {
+    if (!Number.isFinite(row.user_id) || row.user_id <= 0) {
+      continue;
+    }
     const existing = await getDb().get<{ id: number }>(
       'SELECT id FROM ring_accounts WHERE user_id = ? AND disabled = 0 ORDER BY is_default DESC, id ASC LIMIT 1',
       row.user_id
@@ -1199,6 +1232,9 @@ async function ensureGuestLinksRingAccountIdColumn(): Promise<void> {
   );
   for (const row of rows) {
     if (row.ring_account_id && row.ring_account_id > 0) {
+      continue;
+    }
+    if (!Number.isFinite(row.user_id) || row.user_id <= 0) {
       continue;
     }
     const fallback = await getDefaultRingAccountForUser(row.user_id);

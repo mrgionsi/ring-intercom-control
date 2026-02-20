@@ -38,6 +38,15 @@ function accountCacheKey(userId: number, ringAccountId: number): string {
   return `${userId}:${ringAccountId}`;
 }
 
+export function clearRingAccountCache(
+  userId: number,
+  ringAccountId: number
+): void {
+  const key = accountCacheKey(userId, ringAccountId);
+  ringApiByUser.delete(key);
+  ringInitByUser.delete(key);
+}
+
 export async function setRingAccountRefreshToken(
   userId: number,
   ringAccountId: number,
@@ -45,9 +54,7 @@ export async function setRingAccountRefreshToken(
 ): Promise<void> {
   const encrypted = encrypt(refreshToken);
   await setRingAccountToken(userId, ringAccountId, encrypted);
-  const key = accountCacheKey(userId, ringAccountId);
-  ringApiByUser.delete(key);
-  ringInitByUser.delete(key);
+  clearRingAccountCache(userId, ringAccountId);
 }
 
 async function getRingAccountRefreshToken(

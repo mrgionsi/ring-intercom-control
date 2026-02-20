@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import {
+  clearRingAccountCache,
   getRingSummaryForUser,
   setRingAccountRefreshToken,
   unlockIntercomForUser
@@ -9,7 +10,7 @@ import { startRingAuth, verifyRingAuth } from '../ringAuth.js';
 import { RingApi } from 'ring-client-api';
 import {
   createRingAccount,
-  disableRingAccount,
+  deleteRingAccountPermanently,
   getDefaultRingAccountForUser,
   getRingAccountByIdForUser,
   getUserTokenStatus,
@@ -188,7 +189,8 @@ router.delete('/accounts/:id', requireAuth, async (req, res) => {
   if (!id) {
     return res.status(400).json({ error: 'Invalid account id' });
   }
-  await disableRingAccount(req.session.auth!.id, id);
+  clearRingAccountCache(req.session.auth!.id, id);
+  await deleteRingAccountPermanently(req.session.auth!.id, id);
   res.json({ ok: true });
 });
 

@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { apiFetch } from '../api';
 import { useTranslation } from 'react-i18next';
 import { formatDateTime } from '../utils/dateTime';
+import type { GuestLinkStatus } from './guestLinkStatus';
 
 type GuestStatus = {
   token: string;
@@ -12,7 +13,7 @@ type GuestStatus = {
   maxUses: number | null;
   uses: number;
   valid: boolean;
-  state?: 'scheduled' | 'expired' | 'used_up' | 'valid';
+  state: GuestLinkStatus;
 };
 
 export default function Guest() {
@@ -22,6 +23,15 @@ export default function Guest() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const getStateMessage = (state: GuestLinkStatus): string | null => {
+    if (state === 'scheduled') return t('guest.not_active_yet');
+    if (state === 'expired') return t('guest.expired');
+    if (state === 'used_up') return t('guest.used_up');
+    if (state === 'disabled') return t('guest.disabled');
+    if (state === 'invalid_date') return t('guest.invalid_date');
+    return null;
+  };
 
   useEffect(() => {
     if (!token) return;
@@ -58,13 +68,12 @@ export default function Guest() {
             <p className="muted">
               {t('guest.expires')}: {formatDateTime(status.expiresAt)}
             </p>
-            <button
-              className="btn"
-              onClick={handleUnlock}
-              disabled={!status.valid || loading}
-            >
+            <button className="btn" onClick={handleUnlock} disabled={status.state !== 'valid' || loading}>
               {loading ? t('guest.unlocking') : t('guest.unlock')}
             </button>
+            {getStateMessage(status.state) ? (
+              <p className="muted">{getStateMessage(status.state)}</p>
+            ) : null}
           </>
         ) : (
           <p className="muted">{t('guest.checking')}</p>

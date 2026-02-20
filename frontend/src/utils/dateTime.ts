@@ -14,7 +14,12 @@ export function formatDateTime(value: string | number | Date | null | undefined)
   return `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
 }
 
-export function toDateTimeLocalValue(value: string | number | Date): string {
+export function toDateTimeLocalValue(
+  value: string | number | Date | null | undefined
+): string {
+  if (value === null || value === undefined) {
+    return '';
+  }
   const date = value instanceof Date ? value : new Date(value);
   if (!Number.isFinite(date.getTime())) {
     return '';

@@ -73,4 +73,15 @@ describe('guest link status combinations', () => {
     expect(getLinkStatus(link)).toBe('disabled');
     expect(statusClassFor('disabled')).toBe('disabled');
   });
+
+  it('returns invalid_date when date values cannot be parsed', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(baseNow);
+    const link = makeLink({
+      startsAt: 'invalid',
+      expiresAt: 'invalid'
+    });
+    expect(getLinkStatus(link)).toBe('invalid_date');
+    expect(statusClassFor('invalid_date')).toBe('danger');
+  });
 });

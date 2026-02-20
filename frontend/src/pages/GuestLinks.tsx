@@ -1,14 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { apiFetch } from '../api';
 import { useTranslation } from 'react-i18next';
 import { formatDateTime, toDateTimeLocalValue } from '../utils/dateTime';
 import {
   getLinkStatus,
-  isLinkValidForNow,
   statusClassFor,
   type GuestLinkStatus
 } from './guestLinkStatus';
 import { filterGuestLinks, paginateGuestLinks } from './guestLinksTable';
+const PAGE_SIZE = 20;
 
 type RingSummary = {
   locationId: string;
@@ -39,15 +39,16 @@ type GuestLinkTemplate = {
 };
 
 export default function GuestLinks() {
-  const PAGE_SIZE = 20;
   const { t } = useTranslation();
   const [summary, setSummary] = useState<RingSummary[]>([]);
   const [links, setLinks] = useState<GuestLink[]>([]);
   const [templates, setTemplates] = useState<GuestLinkTemplate[]>([]);
   const [label, setLabel] = useState('');
   const [intercomId, setIntercomId] = useState('');
-  const [startsAt, setStartsAt] = useState('');
-  const [expiresAt, setExpiresAt] = useState('');
+  const [startsAt, setStartsAt] = useState(() => toDateTimeLocalValue(new Date()));
+  const [expiresAt, setExpiresAt] = useState(() =>
+    toDateTimeLocalValue(new Date(Date.now() + 24 * 60 * 60 * 1000))
+  );
   const [maxUses, setMaxUses] = useState('');
   const [templateId, setTemplateId] = useState('');
   const [templateName, setTemplateName] = useState('');
@@ -63,13 +64,19 @@ export default function GuestLinks() {
     scheduled: true,
     expired: true,
     used_up: true,
-    disabled: true
+    disabled: true,
+    invalid_date: true
   });
   const [toast, setToast] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [linksError, setLinksError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [initializing, setInitializing] = useState(true);
+  const templateTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const templateFirstFieldRef = useRef<HTMLInputElement | null>(null);
+  const modalCardRef = useRef<HTMLElement | null>(null);
+  const templateModalTitleId = 'template-modal-title';
   const isCreateReady = Boolean(
     intercomId &&
       startsAt &&
@@ -96,27 +103,27 @@ export default function GuestLinks() {
   const pagedLinks = paginateGuestLinks(filteredLinks, currentPage, PAGE_SIZE);
 
   const loadData = async () => {
+    setLoadError(null);
     setInitializing(true);
     try {
-      const ring = await apiFetch<{ summary: RingSummary[] }>(
-        '/api/ring/summary'
-      );
-      const guest = await apiFetch<{ links: GuestLink[] }>(
-        '/api/guest-links'
-      );
-      const templatesRes = await apiFetch<{ templates: GuestLinkTemplate[] }>(
-        '/api/guest-link-templates'
-      );
+      const [ring, guest, templatesRes] = await Promise.all([
+        apiFetch<{ summary: RingSummary[] }>('/api/ring/summary'),
+        apiFetch<{ links: GuestLink[] }>('/api/guest-links'),
+        apiFetch<{ templates: GuestLinkTemplate[] }>('/api/guest-link-templates')
+      ]);
       setSummary(ring.summary);
       setLinks(guest.links);
       setTemplates(templatesRes.templates);
+    } catch (err: any) {
+      console.error('Failed to load guest links data', err);
+      setLoadError(err?.message ?? t('common.error'));
     } finally {
       setInitializing(false);
     }
   };
 
   useEffect(() => {
-    loadData().catch(() => null);
+    void loadData();
   }, []);
 
   useEffect(() => {
@@ -130,23 +137,45 @@ export default function GuestLinks() {
   }, [searchLabel, statusFilters]);
 
   useEffect(() => {
-    if (!startsAt && !expiresAt) {
-      const start = new Date();
-      const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
-      setStartsAt(toDateTimeLocalValue(start));
-      setExpiresAt(toDateTimeLocalValue(end));
-    }
-  }, [startsAt, expiresAt]);
-
-  useEffect(() => {
     if (!templateModalOpen) return;
+    const previousActiveElement = document.activeElement as HTMLElement | null;
+    templateFirstFieldRef.current?.focus();
+
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setTemplateModalOpen(false);
+        return;
+      }
+      if (event.key !== 'Tab') {
+        return;
+      }
+
+      const container = modalCardRef.current;
+      if (!container) return;
+      const focusables = Array.from(
+        container.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const current = document.activeElement as HTMLElement | null;
+
+      if (event.shiftKey && current === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && current === last) {
+        event.preventDefault();
+        first.focus();
       }
     };
     window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      const fallback = templateTriggerRef.current ?? previousActiveElement;
+      fallback?.focus();
+    };
   }, [templateModalOpen]);
 
   const handleCreate = async () => {
@@ -183,7 +212,7 @@ export default function GuestLinks() {
         (link) =>
           (link.label ?? '').trim().toLowerCase() ===
             normalizedLabel.toLowerCase() &&
-          isLinkValidForNow(link.startsAt, link.expiresAt)
+          getLinkStatus(link) === 'valid'
       );
       if (duplicateActive) {
         nextErrors.label = t('guest_links.error_duplicate_active_label');
@@ -250,7 +279,7 @@ export default function GuestLinks() {
     setError(null);
     setToast(null);
     if (!templateName || !templateDuration) {
-      setError('Template name and duration are required.');
+      setError(t('guest_links.template_required'));
       return;
     }
     try {
@@ -355,6 +384,7 @@ export default function GuestLinks() {
             type="button"
             className="btn ghost nav-link"
             onClick={() => setTemplateModalOpen(true)}
+            ref={templateTriggerRef}
           >
             <UiIcon name="template" />
             {t('guest_links.manage_templates')}
@@ -473,6 +503,7 @@ export default function GuestLinks() {
           </label>
         </div>
         <button
+          type="button"
           className="btn guest-link-create-btn"
           onClick={handleCreate}
           disabled={!isCreateReady || initializing}
@@ -498,6 +529,8 @@ export default function GuestLinks() {
           <span className="muted">{t('guest_links.used_up_desc')}</span>
           <span className="badge disabled">{t('guest_links.disabled')}</span>
           <span className="muted">{t('guest_links.disabled_desc')}</span>
+          <span className="badge danger">{t('guest_links.invalid_date')}</span>
+          <span className="muted">{t('guest_links.invalid_date_desc')}</span>
         </div>
         <div className="links-filters">
           <label className="field links-search">
@@ -511,7 +544,7 @@ export default function GuestLinks() {
           </label>
           <div className="links-status-toggles">
             {(
-              ['valid', 'scheduled', 'expired', 'used_up', 'disabled'] as GuestLinkStatus[]
+              ['valid', 'scheduled', 'expired', 'used_up', 'disabled', 'invalid_date'] as GuestLinkStatus[]
             ).map((status) => (
               <button
                 key={status}
@@ -527,8 +560,11 @@ export default function GuestLinks() {
           </div>
         </div>
         {linksError ? <div className="error">{linksError}</div> : null}
+        {loadError ? <div className="error">{loadError}</div> : null}
         {filteredLinks.length === 0 ? (
-          <p className="muted">{t('guest_links.no_links')}</p>
+          <p className="muted">
+            {links.length === 0 ? t('guest_links.no_links') : t('guest_links.no_results')}
+          </p>
         ) : (
           <div className="stack">
             <div className="links-table-wrap">
@@ -547,7 +583,7 @@ export default function GuestLinks() {
                 <tbody>
                   {pagedLinks.map((link) => (
                     <tr key={link.id}>
-                      <td>{link.label || 'Guest Link'}</td>
+                      <td>{link.label || t('profile.guest_link')}</td>
                       <td>
                         <span className={`badge ${statusClassFor(getLinkStatus(link))}`}>
                           {statusLabelFor(getLinkStatus(link), t)}
@@ -583,12 +619,14 @@ export default function GuestLinks() {
                           {editingLinkId === link.id ? (
                             <>
                               <button
+                                type="button"
                                 className="btn ghost"
                                 onClick={() => handleCancelEdit()}
                               >
                                 {t('guest_links.cancel')}
                               </button>
                               <button
+                                type="button"
                                 className="btn"
                                 onClick={() => handleSaveEdit(link)}
                                 disabled={!editExpiresAt}
@@ -598,6 +636,7 @@ export default function GuestLinks() {
                             </>
                           ) : (
                             <button
+                              type="button"
                               className="btn ghost"
                               onClick={() => handleStartEdit(link)}
                               disabled={link.disabled === 1}
@@ -606,6 +645,7 @@ export default function GuestLinks() {
                             </button>
                           )}
                           <button
+                            type="button"
                             className="btn"
                             onClick={() => handleDisable(link.id)}
                             disabled={link.disabled === 1 || editingLinkId === link.id}
@@ -621,6 +661,7 @@ export default function GuestLinks() {
             </div>
             <div className="links-pagination">
               <button
+                type="button"
                 className="btn ghost"
                 disabled={currentPage <= 1}
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
@@ -631,6 +672,7 @@ export default function GuestLinks() {
                 {t('guest_links.page')} {currentPage} / {totalPages}
               </span>
               <button
+                type="button"
                 className="btn ghost"
                 disabled={currentPage >= totalPages}
                 onClick={() =>
@@ -646,7 +688,14 @@ export default function GuestLinks() {
 
       {templateModalOpen ? (
         <div className="modal-backdrop" onClick={() => setTemplateModalOpen(false)}>
-          <section className="card modal-card" onClick={(e) => e.stopPropagation()}>
+          <section
+            className="card modal-card"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={templateModalTitleId}
+            ref={modalCardRef}
+          >
             <button
               type="button"
               className="modal-close"
@@ -656,7 +705,7 @@ export default function GuestLinks() {
               ×
             </button>
             <div className="actions">
-              <h2 className="section-title">
+              <h2 className="section-title" id={templateModalTitleId}>
                 <UiIcon name="template" />
                 {t('guest_links.templates_title')}
               </h2>
@@ -676,6 +725,7 @@ export default function GuestLinks() {
                   {t('guest_links.template_name')}
                 </span>
                 <input
+                  ref={templateFirstFieldRef}
                   value={templateName}
                   onChange={(e) => setTemplateName(e.target.value)}
                 />
@@ -705,7 +755,7 @@ export default function GuestLinks() {
                 />
               </label>
             </div>
-            <button className="btn nav-link" onClick={handleCreateTemplate}>
+            <button type="button" className="btn nav-link" onClick={handleCreateTemplate}>
               <UiIcon name="create" />
               {t('guest_links.template_create')}
             </button>
@@ -727,6 +777,7 @@ export default function GuestLinks() {
                       </div>
                     </div>
                     <button
+                      type="button"
                       className="btn ghost"
                       onClick={() => handleDeleteTemplate(tmpl.id)}
                     >
@@ -748,6 +799,7 @@ function statusLabelFor(status: GuestLinkStatus, t: (key: string) => string): st
   if (status === 'used_up') return t('guest_links.used_up');
   if (status === 'scheduled') return t('guest_links.scheduled');
   if (status === 'expired') return t('guest_links.expired');
+  if (status === 'invalid_date') return t('guest_links.invalid_date');
   return t('guest_links.valid');
 }
 

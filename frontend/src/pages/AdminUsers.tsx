@@ -280,7 +280,9 @@ export default function AdminUsers() {
           e.source,
           e.success,
           e.error_message ?? '',
-          formatDateTime(e.created_at)
+          Number.isFinite(Date.parse(e.created_at))
+            ? new Date(e.created_at).toISOString()
+            : e.created_at
         ])
       ]
         .map((row) => row.map(escapeCsv).join(','))

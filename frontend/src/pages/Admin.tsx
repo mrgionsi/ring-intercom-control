@@ -5,9 +5,13 @@ import { formatDateTime } from '../utils/dateTime';
 import { Icon } from '../components/Icon';
 
 type RingSummary = {
+  ringAccountId: number;
+  ringAccountLabel: string;
   locationId: string;
   locationName: string;
   intercoms: Array<{
+    ringAccountId: number;
+    ringAccountLabel: string;
     id: string;
     name: string;
     kind: string;
@@ -85,14 +89,14 @@ export default function Admin() {
     return () => clearInterval(timer);
   }, []);
 
-  const handleUnlock = async (intercomId: string) => {
+  const handleUnlock = async (intercomId: string, ringAccountId: number) => {
     setLoading(true);
     setError(null);
     setMessage(null);
     try {
       await apiFetch('/api/ring/unlock', {
         method: 'POST',
-        body: JSON.stringify({ intercomId })
+        body: JSON.stringify({ intercomId, ringAccountId })
       });
       setMessage(t('messages.unlock_sent'));
       setToast(t('messages.unlock_sent'));
@@ -162,6 +166,9 @@ export default function Admin() {
           summary.map((location) => (
             <div key={location.locationId} className="stack">
               <h3>{location.locationName}</h3>
+              <div className="muted">
+                {t('intercoms.account')}: {location.ringAccountLabel}
+              </div>
               {location.intercoms.length === 0 ? (
                 <p className="muted">{t('intercoms.no_intercoms')}</p>
               ) : (
@@ -256,7 +263,7 @@ export default function Admin() {
                       </div>
                       <button
                         className="btn nav-link"
-                        onClick={() => handleUnlock(intercom.id)}
+                        onClick={() => handleUnlock(intercom.id, intercom.ringAccountId)}
                         disabled={loading || initializing}
                       >
                         <Icon name="unlock" />

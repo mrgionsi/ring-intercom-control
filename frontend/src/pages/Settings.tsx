@@ -2,9 +2,20 @@ import { useEffect, useState } from 'react';
 import { apiFetch } from '../api';
 import { useTranslation } from 'react-i18next';
 
+type RingAccount = {
+  id: number;
+  label: string;
+  isDefault: boolean;
+  configured: boolean;
+  updatedAt: string;
+};
+
 export default function Settings() {
   const { t } = useTranslation();
   const [configured, setConfigured] = useState(false);
+  const [accounts, setAccounts] = useState<RingAccount[]>([]);
+  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
+  const [newAccountLabel, setNewAccountLabel] = useState('');
   const [refreshToken, setRefreshToken] = useState('');
   const [editingToken, setEditingToken] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -23,8 +34,16 @@ export default function Settings() {
   const [testLoading, setTestLoading] = useState(false);
 
   const loadStatus = async () => {
-    const status = await apiFetch<{ configured: boolean }>('/api/ring/status');
+    const status = await apiFetch<{ configured: boolean; accounts: RingAccount[] }>(
+      '/api/ring/status'
+    );
     setConfigured(status.configured);
+    setAccounts(status.accounts);
+    setSelectedAccountId((prev) => {
+      if (prev && status.accounts.some((a) => a.id === prev)) return prev;
+      const fallback = status.accounts.find((a) => a.isDefault) ?? status.accounts[0];
+      return fallback ? fallback.id : null;
+    });
   };
 
   useEffect(() => {
@@ -34,6 +53,11 @@ export default function Settings() {
       .finally(() => setInitializing(false));
   }, []);
 
+  useEffect(() => {
+    setEditingToken(false);
+    setRefreshToken('');
+  }, [selectedAccountId]);
+
   const saveRefreshToken = async (token: string) => {
     setLoading(true);
     setError(null);
@@ -41,12 +65,17 @@ export default function Settings() {
     try {
       await apiFetch('/api/ring/refresh-token', {
         method: 'POST',
-        body: JSON.stringify({ refreshToken: token })
+        body: JSON.stringify({
+          refreshToken: token,
+          ringAccountId: selectedAccountId ?? undefined,
+          accountLabel: selectedAccountId ? undefined : newAccountLabel.trim() || undefined
+        })
       });
       setMessage(t('messages.token_saved'));
       setConfigured(true);
       setEditingToken(false);
       setRefreshToken('');
+      await loadStatus();
       setToast(t('messages.token_saved'));
       setTimeout(() => setToast(null), 3000);
     } catch (err: any) {
@@ -58,6 +87,10 @@ export default function Settings() {
 
   const handleSaveToken = async () => {
     if (!refreshToken.trim()) return;
+    if (!selectedAccountId && !newAccountLabel.trim()) {
+      setError(t('settings.account_required'));
+      return;
+    }
     await saveRefreshToken(refreshToken);
   };
 
@@ -107,7 +140,12 @@ export default function Settings() {
         prompt?: string;
       }>('/api/ring/auth/start', {
         method: 'POST',
-        body: JSON.stringify({ email: authEmail, password: authPassword })
+        body: JSON.stringify({
+          email: authEmail,
+          password: authPassword,
+          ringAccountId: selectedAccountId ?? undefined,
+          accountLabel: selectedAccountId ? undefined : newAccountLabel.trim() || undefined
+        })
       });
       if (result.requires2fa && result.authSessionId) {
         setAuthSessionId(result.authSessionId);
@@ -125,6 +163,27 @@ export default function Settings() {
       setAuthLoading(false);
     }
   };
+
+  const handleCreateAccount = async () => {
+    if (!newAccountLabel.trim()) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await apiFetch<{ account: RingAccount }>('/api/ring/accounts', {
+        method: 'POST',
+        body: JSON.stringify({ label: newAccountLabel.trim() })
+      });
+      setAccounts((prev) => [...prev, result.account]);
+      setSelectedAccountId(result.account.id);
+      setNewAccountLabel('');
+    } catch (err: any) {
+      setError(err.message ?? t('common.error'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const selectedAccount = accounts.find((a) => a.id === selectedAccountId) ?? null;
 
   const handleAuthVerify = async () => {
     if (!authSessionId || !authCode.trim()) return;
@@ -169,7 +228,39 @@ export default function Settings() {
         <h2>{t('ring.connection_title')}</h2>
         <p>{t('ring.connection_desc')}</p>
         <div className="stack">
-          {configured && !editingToken ? (
+          <label className="field">
+            <span>{t('settings.ring_account')}</span>
+            <select
+              value={selectedAccountId ?? ''}
+              onChange={(e) => setSelectedAccountId(Number(e.target.value) || null)}
+            >
+              <option value="">{t('settings.select_account')}</option>
+              {accounts.map((account) => (
+                <option key={account.id} value={account.id}>
+                  {account.label}
+                  {account.isDefault ? ` (${t('settings.default_account')})` : ''}
+                  {account.configured
+                    ? ` - ${t('settings.account_configured')}`
+                    : ` - ${t('settings.account_not_configured')}`}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="actions">
+            <input
+              value={newAccountLabel}
+              onChange={(e) => setNewAccountLabel(e.target.value)}
+              placeholder={t('settings.new_account_placeholder')}
+            />
+            <button
+              className="btn ghost"
+              onClick={handleCreateAccount}
+              disabled={loading || !newAccountLabel.trim()}
+            >
+              {t('settings.add_account')}
+            </button>
+          </div>
+          {selectedAccount?.configured && !editingToken ? (
             <div className="token-status">
               <div>
                 <strong>{t('ring.token_stored')}</strong>
@@ -224,7 +315,7 @@ export default function Settings() {
               </div>
             </>
           )}
-          {configured ? (
+          {selectedAccount?.configured ? (
             <p className="success">{t('ring.configured')}</p>
           ) : (
             <p className="muted">{t('ring.not_configured')}</p>

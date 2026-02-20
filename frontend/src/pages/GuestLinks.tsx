@@ -11,9 +11,13 @@ import { filterGuestLinks, paginateGuestLinks } from './guestLinksTable';
 const PAGE_SIZE = 20;
 
 type RingSummary = {
+  ringAccountId: number;
+  ringAccountLabel: string;
   locationId: string;
   locationName: string;
   intercoms: Array<{
+    ringAccountId: number;
+    ringAccountLabel: string;
     id: string;
     name: string;
   }>;
@@ -23,6 +27,7 @@ type GuestLink = {
   id: number;
   token: string;
   label: string | null;
+  ringAccountId: number;
   intercomId: string;
   startsAt: string;
   expiresAt: string;
@@ -44,6 +49,7 @@ export default function GuestLinks() {
   const [links, setLinks] = useState<GuestLink[]>([]);
   const [templates, setTemplates] = useState<GuestLinkTemplate[]>([]);
   const [label, setLabel] = useState('');
+  const [ringAccountId, setRingAccountId] = useState('');
   const [intercomId, setIntercomId] = useState('');
   const [startsAt, setStartsAt] = useState(() => toDateTimeLocalValue(new Date()));
   const [expiresAt, setExpiresAt] = useState(() =>
@@ -78,6 +84,7 @@ export default function GuestLinks() {
   const modalCardRef = useRef<HTMLElement | null>(null);
   const templateModalTitleId = 'template-modal-title';
   const isCreateReady = Boolean(
+    ringAccountId &&
     intercomId &&
       startsAt &&
       expiresAt &&
@@ -91,10 +98,22 @@ export default function GuestLinks() {
       summary.flatMap((location) =>
         location.intercoms.map((intercom) => ({
           id: intercom.id,
+          ringAccountId: String(intercom.ringAccountId),
+          ringAccountLabel: intercom.ringAccountLabel,
           name: `${intercom.name} (${location.locationName})`
         }))
       ),
     [summary]
+  );
+  const availableAccounts = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const location of summary) {
+      map.set(String(location.ringAccountId), location.ringAccountLabel);
+    }
+    return Array.from(map.entries()).map(([id, label]) => ({ id, label }));
+  }, [summary]);
+  const filteredIntercoms = allIntercoms.filter(
+    (item) => !ringAccountId || item.ringAccountId === ringAccountId
   );
 
   const filteredLinks = filterGuestLinks(links, searchLabel, statusFilters);
@@ -131,6 +150,12 @@ export default function GuestLinks() {
       setCurrentPage(totalPages);
     }
   }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    if (!ringAccountId && availableAccounts.length > 0) {
+      setRingAccountId(availableAccounts[0].id);
+    }
+  }, [ringAccountId, availableAccounts]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -182,6 +207,9 @@ export default function GuestLinks() {
     setError(null);
     setToast(null);
     const nextErrors: Record<string, string> = {};
+    if (!ringAccountId) {
+      nextErrors.ringAccountId = t('guest_links.error_account_required');
+    }
     if (!intercomId) {
       nextErrors.intercomId = t('guest_links.error_intercom_required');
     }
@@ -210,6 +238,7 @@ export default function GuestLinks() {
     if (normalizedLabel) {
       const duplicateActive = links.some(
         (link) =>
+          String(link.ringAccountId) === ringAccountId &&
           (link.label ?? '').trim().toLowerCase() ===
             normalizedLabel.toLowerCase() &&
           getLinkStatus(link) === 'valid'
@@ -230,6 +259,7 @@ export default function GuestLinks() {
     try {
       const payload = {
         label: normalizedLabel || undefined,
+        ringAccountId: Number(ringAccountId),
         intercomId,
         startsAt: startDate.toISOString(),
         expiresAt: new Date(expiresAt).toISOString(),
@@ -413,6 +443,30 @@ export default function GuestLinks() {
         <div className="grid two guest-link-form-grid guest-link-main-row">
           <label className="field">
             <span className="field-label">
+              <UiIcon name="intercom" />
+              {t('guest_links.account')}
+            </span>
+            <select
+              value={ringAccountId}
+              onChange={(e) => {
+                setRingAccountId(e.target.value);
+                setIntercomId('');
+                clearFieldError('ringAccountId');
+              }}
+            >
+              <option value="">{t('guest_links.select_account')}</option>
+              {availableAccounts.map((account) => (
+                <option key={account.id} value={account.id}>
+                  {account.label}
+                </option>
+              ))}
+            </select>
+            {fieldErrors.ringAccountId ? (
+              <span className="error">{fieldErrors.ringAccountId}</span>
+            ) : null}
+          </label>
+          <label className="field">
+            <span className="field-label">
               <UiIcon name="label" />
               {t('guest_links.label')}
             </span>
@@ -438,8 +492,8 @@ export default function GuestLinks() {
               }}
             >
               <option value="">{t('profile.select_intercom')}</option>
-              {allIntercoms.map((intercom) => (
-                <option key={intercom.id} value={intercom.id}>
+              {filteredIntercoms.map((intercom) => (
+                <option key={`${intercom.ringAccountId}:${intercom.id}`} value={intercom.id}>
                   {intercom.name}
                 </option>
               ))}
@@ -577,6 +631,7 @@ export default function GuestLinks() {
                     <th>{t('guest_links.expires_at')}</th>
                     <th>{t('guest_links.uses')}</th>
                     <th>{t('guest_links.intercom')}</th>
+                    <th>{t('guest_links.account')}</th>
                     <th>{t('guest_links.actions')}</th>
                   </tr>
                 </thead>
@@ -606,6 +661,11 @@ export default function GuestLinks() {
                         {link.maxUses ? ` / ${link.maxUses}` : ''}
                       </td>
                       <td>{link.intercomId}</td>
+                      <td>
+                        {availableAccounts.find(
+                          (account) => Number(account.id) === link.ringAccountId
+                        )?.label ?? `#${link.ringAccountId}`}
+                      </td>
                       <td>
                         <div className="links-table-actions">
                           <a

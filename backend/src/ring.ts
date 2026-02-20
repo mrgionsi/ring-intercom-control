@@ -1,16 +1,23 @@
 import { RingApi } from 'ring-client-api';
 import { decrypt, encrypt } from './crypto.js';
 import {
+  getDefaultRingAccountForUser,
   getLastDeviceHealthSample,
-  getUserToken,
+  getRingAccountByIdForUser,
+  getRingAccountToken,
+  listRingAccountsForUser,
   recordDeviceHealthSample,
-  setUserToken
+  setRingAccountToken
 } from './db.js';
 
 type RingSummary = {
+  ringAccountId: number;
+  ringAccountLabel: string;
   locationId: string;
   locationName: string;
   intercoms: Array<{
+    ringAccountId: number;
+    ringAccountLabel: string;
     id: string;
     name: string;
     kind: string;
@@ -24,68 +31,82 @@ type RingSummary = {
   }>;
 };
 
-const ringApiByUser = new Map<number, RingApi>();
-const ringInitByUser = new Map<number, Promise<RingApi>>();
+const ringApiByUser = new Map<string, RingApi>();
+const ringInitByUser = new Map<string, Promise<RingApi>>();
 
-export async function setUserRefreshToken(
+function accountCacheKey(userId: number, ringAccountId: number): string {
+  return `${userId}:${ringAccountId}`;
+}
+
+export async function setRingAccountRefreshToken(
   userId: number,
+  ringAccountId: number,
   refreshToken: string
 ): Promise<void> {
   const encrypted = encrypt(refreshToken);
-  await setUserToken(userId, encrypted);
-  ringApiByUser.delete(userId);
-  ringInitByUser.delete(userId);
+  await setRingAccountToken(userId, ringAccountId, encrypted);
+  const key = accountCacheKey(userId, ringAccountId);
+  ringApiByUser.delete(key);
+  ringInitByUser.delete(key);
 }
 
-export async function hasUserRefreshToken(userId: number): Promise<boolean> {
-  return (await getUserToken(userId)) !== null;
-}
-
-async function getUserRefreshToken(userId: number): Promise<string> {
-  const encrypted = await getUserToken(userId);
+async function getRingAccountRefreshToken(
+  userId: number,
+  ringAccountId: number
+): Promise<string> {
+  const encrypted = await getRingAccountToken(userId, ringAccountId);
   if (!encrypted) {
     throw new Error('RING_NOT_CONFIGURED');
   }
   return decrypt(encrypted);
 }
 
-export async function getRingApiForUser(userId: number): Promise<RingApi> {
-  const cached = ringApiByUser.get(userId);
+export async function getRingApiForAccount(
+  userId: number,
+  ringAccountId: number
+): Promise<RingApi> {
+  const key = accountCacheKey(userId, ringAccountId);
+  const cached = ringApiByUser.get(key);
   if (cached) {
     return cached;
   }
-  const inflight = ringInitByUser.get(userId);
+  const inflight = ringInitByUser.get(key);
   if (inflight) {
     return inflight;
   }
 
   const init = (async () => {
-    const refreshToken = await getUserRefreshToken(userId);
+    const refreshToken = await getRingAccountRefreshToken(userId, ringAccountId);
     const api = new RingApi({ refreshToken });
 
     api.onRefreshTokenUpdated.subscribe(async ({ newRefreshToken }) => {
       if (newRefreshToken) {
-        await setUserRefreshToken(userId, newRefreshToken);
+        await setRingAccountRefreshToken(userId, ringAccountId, newRefreshToken);
       }
     });
 
-    ringApiByUser.set(userId, api);
-    ringInitByUser.delete(userId);
+    ringApiByUser.set(key, api);
+    ringInitByUser.delete(key);
     return api;
   })();
 
-  ringInitByUser.set(userId, init);
+  ringInitByUser.set(key, init);
   return init;
 }
 
 export async function getRingSummaryForUser(
   userId: number
 ): Promise<RingSummary[]> {
-  const api = await getRingApiForUser(userId);
-  const locations = await api.getLocations();
-
-  return locations.map((location: any) => {
-    const intercoms = (location.intercoms ?? []).map((intercom: any) => {
+  const accounts = await listRingAccountsForUser(userId);
+  const summaries: RingSummary[] = [];
+  for (const account of accounts) {
+    if (!account.refresh_token) {
+      continue;
+    }
+    const api = await getRingApiForAccount(userId, account.id);
+    const locations = await api.getLocations();
+    for (const location of locations as any[]) {
+      const intercoms = (location.intercoms ?? []).map((intercom: any) => {
       const raw = intercom.data ?? intercom;
       const batteryLifeRaw =
         typeof raw?.battery_life === 'string'
@@ -124,6 +145,8 @@ export async function getRingSummaryForUser(
       });
 
       return {
+        ringAccountId: account.id,
+        ringAccountLabel: account.label,
         id: String(raw.id ?? intercom.id),
         name:
           raw.name ??
@@ -155,13 +178,17 @@ export async function getRingSummaryForUser(
       data: camera.data ?? camera
     }));
 
-    return {
-      locationId: String(location.id),
-      locationName: location.name ?? `Location ${location.id}`,
-      intercoms,
-      cameras
-    };
-  });
+      summaries.push({
+        ringAccountId: account.id,
+        ringAccountLabel: account.label,
+        locationId: String(location.id),
+        locationName: location.name ?? `Location ${location.id}`,
+        intercoms,
+        cameras
+      });
+    }
+  }
+  return summaries;
 }
 
 async function maybeRecordHealthSample(
@@ -194,26 +221,46 @@ async function maybeRecordHealthSample(
 
 export async function unlockIntercomForUser(
   userId: number,
-  intercomId: string
+  intercomId: string,
+  ringAccountId?: number
 ): Promise<void> {
-  const api = await getRingApiForUser(userId);
-  const locations = await api.getLocations();
-  const allIntercoms: any[] = [];
-
-  for (const location of locations as any[]) {
-    const intercoms = location.intercoms ?? [];
-    allIntercoms.push(...intercoms);
+  if (typeof ringAccountId === 'number') {
+    const account = await getRingAccountByIdForUser(userId, ringAccountId);
+    if (!account || !account.refresh_token) {
+      throw new Error('RING_NOT_CONFIGURED');
+    }
+    const api = await getRingApiForAccount(userId, ringAccountId);
+    const locations = await api.getLocations();
+    const allIntercoms: any[] = [];
+    for (const location of locations as any[]) {
+      allIntercoms.push(...(location.intercoms ?? []));
+    }
+    const intercom = allIntercoms.find(
+      (item) => String(item.id) === String(intercomId)
+    );
+    if (!intercom) {
+      throw new Error('INTERCOM_NOT_FOUND');
+    }
+    await tryUnlock(intercom);
+    return;
   }
 
-  const intercom = allIntercoms.find(
-    (item) => String(item.id) === String(intercomId)
-  );
-
-  if (!intercom) {
-    throw new Error('INTERCOM_NOT_FOUND');
+  const fallback = await getDefaultRingAccountForUser(userId);
+  if (fallback && fallback.refresh_token) {
+    await unlockIntercomForUser(userId, intercomId, fallback.id);
+    return;
   }
-
-  await tryUnlock(intercom);
+  const accounts = await listRingAccountsForUser(userId);
+  for (const account of accounts) {
+    if (!account.refresh_token) continue;
+    try {
+      await unlockIntercomForUser(userId, intercomId, account.id);
+      return;
+    } catch {
+      // continue
+    }
+  }
+  throw new Error('INTERCOM_NOT_FOUND');
 }
 
 async function tryUnlock(device: any): Promise<void> {

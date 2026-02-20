@@ -16,17 +16,9 @@
     "username": "Benutzername",
     "password": "Passwort",
     "sign_in": "Anmelden",
-    "signing_in": "Anmeldung…",
-    "error": "Anmeldung fehlgeschlagen"
+    "signing_in": "Anmeldung…"
   },
   "ring": {
-    "connection_title": "Ring Verbindung",
-    "connection_desc": "Speichere ein Ring-Refresh-Token sicher. Du kannst es mit der CLI von ring-client-api erzeugen. Hier einfügen und speichern.",
-    "generate_title": "Refresh-Token erstellen",
-    "generate_desc": "Hier anmelden, um einen Refresh-Token ohne CLI zu erzeugen.",
-    "generate_note": "Die Zugangsdaten werden nur verwendet, um den Refresh-Token zu erhalten, und nie gespeichert.",
-    "generate_show": "Login anzeigen",
-    "generate_hide": "Login ausblenden",
     "email": "E-Mail",
     "password": "Passwort",
     "start_auth": "Code senden",
@@ -36,7 +28,6 @@
     "verify_code": "Code prüfen",
     "verifying": "Prüfe…",
     "resend_code": "Code erneut senden",
-    "auth_cancel": "Abbrechen",
     "test_token": "Token testen",
     "testing": "Teste…",
     "test_success": "Token gültig. Standorte: {{count}}.",
@@ -44,11 +35,8 @@
     "refresh_token": "Refresh Token",
     "save_token": "Token speichern",
     "saving": "Speichern…",
-    "configured": "Ring ist konfiguriert.",
     "not_configured": "Kein Token gespeichert.",
     "token_stored": "Das Refresh-Token ist bereits gespeichert.",
-    "token_stored_desc": "Du musst es nicht erneut einfügen, außer du willst es ersetzen.",
-    "edit_token": "Token bearbeiten",
     "cancel": "Abbrechen"
   },
   "intercoms": {
@@ -77,11 +65,7 @@
     "unlock_sent": "Entriegelung angefordert.",
     "devices_refreshed": "Geräte aktualisiert."
   },
-  "devices": {
-    "title": "Kameras & Geräte",
-    "none": "Keine Daten verfügbar.",
-    "no_cameras": "Keine Kameras gefunden."
-  },
+  "devices": {},
   "guest_links": {
     "create_title": "Gäste-Link erstellen",
     "template_optional": "Vorlage (optional)",
@@ -188,21 +172,15 @@
   "settings": {
     "title": "Einstellungen",
     "desc": "Verwalte verbundene Ring-Konten und deren Intercom-Ger?te.",
-    "manage_desc": "Verwalte den Ring-Refresh-Token und die Authentifizierung.",
-    "open": "Einstellungen öffnen",
     "account_required": "Bitte zuerst ein Ring-Konto erstellen oder ausw?hlen.",
     "ring_account": "Ring-Konto",
-    "select_account": "Konto ausw?hlen",
     "default_account": "Standard",
     "account_configured": "konfiguriert",
     "account_not_configured": "nicht konfiguriert",
     "new_account_placeholder": "Neues Ring-Konto-Label",
-    "add_account": "Konto hinzuf?gen",
     "accounts_overview": "Verbundene Konten und Ger?te",
     "accounts_overview_desc": "{{accounts}} Konten verbunden, {{intercoms}} Intercoms verf?gbar.",
-    "manage_account": "Konto verwalten",
     "token_state": "Token",
-    "credentials_state": "Anmeldedaten werden nach der Token-Erstellung nicht gespeichert",
     "connected_intercoms": "Verbundene Intercoms",
     "last_updated": "Zuletzt aktualisiert",
     "add_integration": "Intercom-Integration hinzuf?gen",

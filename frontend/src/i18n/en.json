@@ -16,17 +16,9 @@
     "username": "Username",
     "password": "Password",
     "sign_in": "Sign in",
-    "signing_in": "Signing in…",
-    "error": "Login failed"
+    "signing_in": "Signing in…"
   },
   "ring": {
-    "connection_title": "Ring Connection",
-    "connection_desc": "Store a Ring refresh token securely. You can generate one with the Ring CLI from ring-client-api. Paste it below and save.",
-    "generate_title": "Generate Refresh Token",
-    "generate_desc": "Sign in here to create a refresh token without using the CLI.",
-    "generate_note": "Credentials are used only to obtain the refresh token and are never stored.",
-    "generate_show": "Show login",
-    "generate_hide": "Hide login",
     "email": "Email",
     "password": "Password",
     "start_auth": "Send code",
@@ -36,7 +28,6 @@
     "verify_code": "Verify code",
     "verifying": "Verifying…",
     "resend_code": "Resend code",
-    "auth_cancel": "Cancel",
     "test_token": "Test token",
     "testing": "Testing…",
     "test_success": "Token valid. Locations: {{count}}.",
@@ -44,11 +35,8 @@
     "refresh_token": "Refresh Token",
     "save_token": "Save Token",
     "saving": "Saving…",
-    "configured": "Ring is configured.",
     "not_configured": "No token stored yet.",
     "token_stored": "Refresh token is already stored.",
-    "token_stored_desc": "You do not need to paste it again unless you want to replace it.",
-    "edit_token": "Edit token",
     "cancel": "Cancel"
   },
   "intercoms": {
@@ -77,11 +65,7 @@
     "unlock_sent": "Unlock request sent.",
     "devices_refreshed": "Devices refreshed."
   },
-  "devices": {
-    "title": "Cameras & Devices",
-    "none": "No device data available.",
-    "no_cameras": "No cameras detected."
-  },
+  "devices": {},
   "guest_links": {
     "create_title": "Create Guest Link",
     "template_optional": "Template (optional)",
@@ -188,21 +172,15 @@
   "settings": {
     "title": "Settings",
     "desc": "Manage connected Ring accounts and their intercom devices.",
-    "manage_desc": "Manage your Ring refresh token and authentication flow.",
-    "open": "Open settings",
     "account_required": "Please create or select a Ring account first.",
     "ring_account": "Ring Account",
-    "select_account": "Select account",
     "default_account": "Default",
     "account_configured": "configured",
     "account_not_configured": "not configured",
     "new_account_placeholder": "New Ring account label",
-    "add_account": "Add account",
     "accounts_overview": "Connected Accounts & Devices",
     "accounts_overview_desc": "{{accounts}} accounts connected, {{intercoms}} intercoms available.",
-    "manage_account": "Manage account",
     "token_state": "Token",
-    "credentials_state": "Credentials are never stored after token generation",
     "connected_intercoms": "Connected intercoms",
     "last_updated": "Last updated",
     "add_integration": "Add Intercom Integration",

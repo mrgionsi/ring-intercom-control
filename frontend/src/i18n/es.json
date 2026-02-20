@@ -16,17 +16,9 @@
     "username": "Usuario",
     "password": "Contraseña",
     "sign_in": "Entrar",
-    "signing_in": "Entrando…",
-    "error": "Error de inicio de sesión"
+    "signing_in": "Entrando…"
   },
   "ring": {
-    "connection_title": "Conexión Ring",
-    "connection_desc": "Guarda un refresh token de Ring de forma segura. Puedes generarlo con la CLI de ring-client-api. Pégalo aquí y guarda.",
-    "generate_title": "Generar refresh token",
-    "generate_desc": "Inicia sesión aquí para crear un refresh token sin usar la CLI.",
-    "generate_note": "Las credenciales se usan solo para obtener el refresh token y nunca se almacenan.",
-    "generate_show": "Mostrar acceso",
-    "generate_hide": "Ocultar acceso",
     "email": "Email",
     "password": "Contraseña",
     "start_auth": "Enviar código",
@@ -36,7 +28,6 @@
     "verify_code": "Verificar código",
     "verifying": "Verificando…",
     "resend_code": "Reenviar código",
-    "auth_cancel": "Cancelar",
     "test_token": "Probar token",
     "testing": "Probando…",
     "test_success": "Token válido. Ubicaciones: {{count}}.",
@@ -44,11 +35,8 @@
     "refresh_token": "Refresh Token",
     "save_token": "Guardar Token",
     "saving": "Guardando…",
-    "configured": "Ring está configurado.",
     "not_configured": "No hay token guardado.",
     "token_stored": "El refresh token ya está guardado.",
-    "token_stored_desc": "No necesitas pegarlo de nuevo a menos que quieras reemplazarlo.",
-    "edit_token": "Editar token",
     "cancel": "Cancelar"
   },
   "intercoms": {
@@ -77,11 +65,7 @@
     "unlock_sent": "Solicitud de desbloqueo enviada.",
     "devices_refreshed": "Dispositivos actualizados."
   },
-  "devices": {
-    "title": "Cámaras y Dispositivos",
-    "none": "No hay datos disponibles.",
-    "no_cameras": "No se detectaron cámaras."
-  },
+  "devices": {},
   "guest_links": {
     "create_title": "Crear enlace de invitado",
     "template_optional": "Plantilla (opcional)",
@@ -188,21 +172,15 @@
   "settings": {
     "title": "Configuración",
     "desc": "Administra las cuentas Ring conectadas y sus intercomunicadores.",
-    "manage_desc": "Gestiona el refresh token de Ring y la autenticación.",
-    "open": "Abrir configuración",
     "account_required": "Crea o selecciona primero una cuenta Ring.",
     "ring_account": "Cuenta Ring",
-    "select_account": "Selecciona cuenta",
     "default_account": "Predeterminada",
     "account_configured": "configurada",
     "account_not_configured": "no configurada",
     "new_account_placeholder": "Nueva etiqueta de cuenta Ring",
-    "add_account": "Agregar cuenta",
     "accounts_overview": "Cuentas y Dispositivos Conectados",
     "accounts_overview_desc": "{{accounts}} cuentas conectadas, {{intercoms}} intercomunicadores disponibles.",
-    "manage_account": "Administrar cuenta",
     "token_state": "Token",
-    "credentials_state": "Las credenciales nunca se guardan despu?s de generar el token",
     "connected_intercoms": "Intercomunicadores conectados",
     "last_updated": "?ltima actualizaci?n",
     "add_integration": "Agregar integraci?n de intercomunicador",

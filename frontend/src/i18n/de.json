@@ -37,7 +37,10 @@
     "saving": "Speichern…",
     "not_configured": "Kein Token gespeichert.",
     "token_stored": "Das Refresh-Token ist bereits gespeichert.",
-    "cancel": "Abbrechen"
+    "cancel": "Abbrechen",
+    "error_invalid_credentials": "Ung?ltige Ring-E-Mail oder falsches Passwort.",
+    "error_invalid_2fa": "Ung?ltiger oder abgelaufener 2FA-Code. Bitte erneut versuchen.",
+    "error_auth_session_expired": "Authentifizierungssitzung abgelaufen. Bitte neu starten."
   },
   "intercoms": {
     "title": "Intercoms",

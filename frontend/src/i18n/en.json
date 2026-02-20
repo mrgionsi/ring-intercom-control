@@ -37,7 +37,10 @@
     "saving": "Saving…",
     "not_configured": "No token stored yet.",
     "token_stored": "Refresh token is already stored.",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "error_invalid_credentials": "Invalid Ring email or password.",
+    "error_invalid_2fa": "Invalid or expired 2FA code. Please try again.",
+    "error_auth_session_expired": "Authentication session expired. Start again."
   },
   "intercoms": {
     "title": "Intercoms",

@@ -690,7 +690,7 @@ function formatBattery(
   return 'n/a';
 }
 
-function mapRingAuthError(
+export function mapRingAuthError(
   message: string | undefined,
   t: (key: string) => string
 ): string {

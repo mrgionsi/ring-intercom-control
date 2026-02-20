@@ -119,6 +119,44 @@ async function main() {
     throw new Error('/api/auth/me returned unexpected payload after login');
   }
   console.log(`PASS /api/auth/me authenticated as ${me.username} (${me.role})`);
+
+  const ringStatusRes = await assertStatus('/api/ring/status', 200);
+  const ringStatus = await readJson(ringStatusRes);
+  if (!ringStatus || !Array.isArray(ringStatus.accounts)) {
+    throw new Error('/api/ring/status returned unexpected payload');
+  }
+  console.log('PASS /api/ring/status authenticated');
+
+  const createAccountLabel = `Smoke Account ${Date.now()}`;
+  const createAccountRes = await assertStatus('/api/ring/accounts', 200, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': csrf.csrfToken
+    },
+    body: JSON.stringify({ label: createAccountLabel })
+  });
+  const createAccount = await readJson(createAccountRes);
+  const createdId = createAccount?.account?.id;
+  if (!createdId) {
+    throw new Error('/api/ring/accounts create did not return account id');
+  }
+  console.log('PASS /api/ring/accounts create');
+
+  const listAccountsRes = await assertStatus('/api/ring/accounts', 200);
+  const listAccounts = await readJson(listAccountsRes);
+  if (!listAccounts?.accounts?.some((a) => a.id === createdId)) {
+    throw new Error('/api/ring/accounts list missing created account');
+  }
+  console.log('PASS /api/ring/accounts list');
+
+  await assertStatus(`/api/ring/accounts/${createdId}`, 200, {
+    method: 'DELETE',
+    headers: {
+      'X-CSRF-Token': csrf.csrfToken
+    }
+  });
+  console.log('PASS /api/ring/accounts delete');
 }
 
 main().catch((err) => {

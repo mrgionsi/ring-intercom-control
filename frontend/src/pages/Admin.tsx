@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from '../api';
 import { useTranslation } from 'react-i18next';
+import { formatDateTime } from '../utils/dateTime';
 
 type RingSummary = {
   locationId: string;
@@ -229,7 +230,7 @@ export default function Admin() {
                                 <div key={sample.id} className="tile">
                                   <div>
                                     <strong>
-                                      {new Date(sample.created_at).toLocaleString()}
+                                      {formatDateTime(sample.created_at)}
                                     </strong>
                                     <div className="muted">
                                       {t('intercoms.battery')}:{' '}
@@ -283,7 +284,7 @@ export default function Admin() {
                     {event.source === 'guest'
                       ? t('profile.guest_link')
                       : t('profile.user')}{' '}
-                    - {new Date(event.created_at).toLocaleString()}
+                    - {formatDateTime(event.created_at)}
                   </div>
                   {event.error_message ? (
                     <div className="muted">

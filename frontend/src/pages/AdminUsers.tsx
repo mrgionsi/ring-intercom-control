@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from '../api';
 import { useTranslation } from 'react-i18next';
+import { formatDateTime } from '../utils/dateTime';
 
 type UserRow = {
   id: number;
@@ -279,7 +280,7 @@ export default function AdminUsers() {
           e.source,
           e.success,
           e.error_message ?? '',
-          e.created_at
+          formatDateTime(e.created_at)
         ])
       ]
         .map((row) => row.map(escapeCsv).join(','))
@@ -422,11 +423,11 @@ export default function AdminUsers() {
                   ) : null}
                   {user.lockoutUntil ? (
                     <div className="muted">
-                      {t('admin.locked_until')}: {new Date(user.lockoutUntil).toLocaleString()}
+                      {t('admin.locked_until')}: {formatDateTime(user.lockoutUntil)}
                     </div>
                   ) : null}
                   <div className="muted">
-                    {t('common.created')}: {new Date(user.createdAt).toLocaleString()}
+                    {t('common.created')}: {formatDateTime(user.createdAt)}
                   </div>
                 </div>
                 <div className="actions">
@@ -593,7 +594,7 @@ export default function AdminUsers() {
                   <strong>Intercom {event.intercom_id}</strong>
                   <div className="muted">
                     {event.source === 'guest' ? 'Guest link' : 'User'} ·{' '}
-                    {new Date(event.created_at).toLocaleString()}
+                    {formatDateTime(event.created_at)}
                   </div>
                   {event.error_message ? (
                     <div className="muted">Error: {event.error_message}</div>
@@ -619,7 +620,7 @@ export default function AdminUsers() {
                 <div>
                   <strong>{event.username}</strong>
                   <div className="muted">
-                    {new Date(event.created_at).toLocaleString()}
+                    {formatDateTime(event.created_at)}
                   </div>
                   {event.ip ? <div className="muted">IP: {event.ip}</div> : null}
                 </div>

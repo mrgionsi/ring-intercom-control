@@ -8,6 +8,7 @@ export type GuestLink = {
   label: string | null;
   intercomId: string;
   userId: number;
+  startsAt: string;
   expiresAt: string;
   maxUses: number | null;
   uses: number;
@@ -114,6 +115,7 @@ export async function initDb(): Promise<void> {
       user_id INTEGER NOT NULL,
       label TEXT,
       intercom_id TEXT NOT NULL,
+      starts_at TEXT NOT NULL,
       expires_at TEXT NOT NULL,
       max_uses INTEGER,
       uses INTEGER NOT NULL DEFAULT 0,
@@ -176,6 +178,7 @@ export async function initDb(): Promise<void> {
   await ensureUsersProfileColumns();
   await ensureUsersDisabledColumn();
   await ensureGuestLinksUserIdColumn();
+  await ensureGuestLinksStartsAtColumn();
   await ensureUnlockEventsTable();
   await ensureLoginAttemptsTable();
   await ensureGuestLinkTemplatesTable();
@@ -219,6 +222,7 @@ export async function createGuestLink(input: {
   userId: number;
   label?: string;
   intercomId: string;
+  startsAt: string;
   expiresAt: string;
   maxUses?: number | null;
 }): Promise<GuestLink> {
@@ -226,13 +230,14 @@ export async function createGuestLink(input: {
   await getDb().run(
     `
       INSERT INTO guest_links
-        (token, user_id, label, intercom_id, expires_at, max_uses, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+        (token, user_id, label, intercom_id, starts_at, expires_at, max_uses, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `,
     input.token,
     input.userId,
     input.label ?? null,
     input.intercomId,
+    input.startsAt,
     input.expiresAt,
     input.maxUses ?? null,
     now
@@ -288,6 +293,55 @@ export async function disableGuestLink(
     id,
     userId
   );
+}
+
+export async function getGuestLinkByIdForUser(
+  id: number,
+  userId: number
+): Promise<GuestLink | null> {
+  const row = await getDb().get<GuestLink>(
+    'SELECT * FROM guest_links WHERE id = ? AND user_id = ?',
+    id,
+    userId
+  );
+  return row ? mapGuestLink(row) : null;
+}
+
+export async function updateGuestLinkExpiresAt(
+  id: number,
+  userId: number,
+  expiresAtIso: string
+): Promise<void> {
+  await getDb().run(
+    'UPDATE guest_links SET expires_at = ? WHERE id = ? AND user_id = ?',
+    expiresAtIso,
+    id,
+    userId
+  );
+}
+
+export async function hasActiveGuestLinkWithLabel(
+  userId: number,
+  label: string,
+  nowIso: string
+): Promise<boolean> {
+  const row = await getDb().get<{ count: number }>(
+    `
+      SELECT COUNT(1) as count
+      FROM guest_links
+      WHERE user_id = ?
+        AND disabled = 0
+        AND label = ?
+        AND starts_at <= ?
+        AND expires_at > ?
+        AND (max_uses IS NULL OR uses < max_uses)
+    `,
+    userId,
+    label,
+    nowIso,
+    nowIso
+  );
+  return (row?.count ?? 0) > 0;
 }
 
 export async function createUser(input: {
@@ -733,6 +787,11 @@ function mapGuestLink(row: GuestLink): GuestLink {
     ...row,
     userId: row.userId ?? (row as any).user_id,
     intercomId: row.intercomId ?? (row as any).intercom_id,
+    startsAt:
+      row.startsAt ??
+      (row as any).starts_at ??
+      (row as any).created_at ??
+      new Date(0).toISOString(),
     expiresAt: row.expiresAt ?? (row as any).expires_at,
     maxUses: row.maxUses ?? (row as any).max_uses,
     createdAt: row.createdAt ?? (row as any).created_at
@@ -746,6 +805,19 @@ async function ensureGuestLinksUserIdColumn(): Promise<void> {
   const hasUserId = columns.some((col) => col.name === 'user_id');
   if (!hasUserId) {
     await getDb().exec('ALTER TABLE guest_links ADD COLUMN user_id INTEGER');
+  }
+}
+
+async function ensureGuestLinksStartsAtColumn(): Promise<void> {
+  const columns = await getDb().all<Array<{ name: string }>>(
+    'PRAGMA table_info(guest_links)'
+  );
+  const hasStartsAt = columns.some((col) => col.name === 'starts_at');
+  if (!hasStartsAt) {
+    await getDb().exec('ALTER TABLE guest_links ADD COLUMN starts_at TEXT');
+    await getDb().exec(
+      "UPDATE guest_links SET starts_at = COALESCE(created_at, expires_at) WHERE starts_at IS NULL OR starts_at = ''"
+    );
   }
 }
 

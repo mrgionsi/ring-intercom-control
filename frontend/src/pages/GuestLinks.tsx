@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '../api';
 import { useTranslation } from 'react-i18next';
+import { formatDateTime, toDateTimeLocalValue } from '../utils/dateTime';
+import {
+  getLinkStatus,
+  isLinkValidForNow,
+  statusClassFor,
+  type GuestLinkStatus
+} from './guestLinkStatus';
+import { filterGuestLinks, paginateGuestLinks } from './guestLinksTable';
 
 type RingSummary = {
   locationId: string;
@@ -16,6 +24,7 @@ type GuestLink = {
   token: string;
   label: string | null;
   intercomId: string;
+  startsAt: string;
   expiresAt: string;
   maxUses: number | null;
   uses: number;
@@ -30,21 +39,45 @@ type GuestLinkTemplate = {
 };
 
 export default function GuestLinks() {
+  const PAGE_SIZE = 20;
   const { t } = useTranslation();
   const [summary, setSummary] = useState<RingSummary[]>([]);
   const [links, setLinks] = useState<GuestLink[]>([]);
   const [templates, setTemplates] = useState<GuestLinkTemplate[]>([]);
   const [label, setLabel] = useState('');
   const [intercomId, setIntercomId] = useState('');
+  const [startsAt, setStartsAt] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
   const [maxUses, setMaxUses] = useState('');
   const [templateId, setTemplateId] = useState('');
   const [templateName, setTemplateName] = useState('');
   const [templateDuration, setTemplateDuration] = useState('24');
   const [templateMaxUses, setTemplateMaxUses] = useState('');
-  const [message, setMessage] = useState<string | null>(null);
+  const [templateModalOpen, setTemplateModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [editingLinkId, setEditingLinkId] = useState<number | null>(null);
+  const [editExpiresAt, setEditExpiresAt] = useState('');
+  const [searchLabel, setSearchLabel] = useState('');
+  const [statusFilters, setStatusFilters] = useState<Record<GuestLinkStatus, boolean>>({
+    valid: true,
+    scheduled: true,
+    expired: true,
+    used_up: true,
+    disabled: true
+  });
+  const [toast, setToast] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [linksError, setLinksError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [initializing, setInitializing] = useState(true);
+  const isCreateReady = Boolean(
+    intercomId &&
+      startsAt &&
+      expiresAt &&
+      Number.isFinite(new Date(startsAt).getTime()) &&
+      Number.isFinite(new Date(expiresAt).getTime()) &&
+      new Date(expiresAt).getTime() > new Date(startsAt).getTime()
+  );
 
   const allIntercoms = useMemo(
     () =>
@@ -56,6 +89,11 @@ export default function GuestLinks() {
       ),
     [summary]
   );
+
+  const filteredLinks = filterGuestLinks(links, searchLabel, statusFilters);
+
+  const totalPages = Math.max(1, Math.ceil(filteredLinks.length / PAGE_SIZE));
+  const pagedLinks = paginateGuestLinks(filteredLinks, currentPage, PAGE_SIZE);
 
   const loadData = async () => {
     setInitializing(true);
@@ -81,17 +119,90 @@ export default function GuestLinks() {
     loadData().catch(() => null);
   }, []);
 
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchLabel, statusFilters]);
+
+  useEffect(() => {
+    if (!startsAt && !expiresAt) {
+      const start = new Date();
+      const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+      setStartsAt(toDateTimeLocalValue(start));
+      setExpiresAt(toDateTimeLocalValue(end));
+    }
+  }, [startsAt, expiresAt]);
+
+  useEffect(() => {
+    if (!templateModalOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setTemplateModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [templateModalOpen]);
+
   const handleCreate = async () => {
     setError(null);
-    setMessage(null);
-    if (!intercomId || !expiresAt) {
-      setError('Intercom and expiration are required.');
+    setToast(null);
+    const nextErrors: Record<string, string> = {};
+    if (!intercomId) {
+      nextErrors.intercomId = t('guest_links.error_intercom_required');
+    }
+    if (!startsAt) {
+      nextErrors.startsAt = t('guest_links.error_start_required');
+    }
+    if (!expiresAt) {
+      nextErrors.expiresAt = t('guest_links.error_end_required');
+    }
+    const startDate = new Date(startsAt);
+    const endDate = new Date(expiresAt);
+    if (startsAt && !Number.isFinite(startDate.getTime())) {
+      nextErrors.startsAt = t('guest_links.error_start_invalid');
+    }
+    if (expiresAt && !Number.isFinite(endDate.getTime())) {
+      nextErrors.expiresAt = t('guest_links.error_end_invalid');
+    }
+    if (
+      Number.isFinite(startDate.getTime()) &&
+      Number.isFinite(endDate.getTime()) &&
+      endDate.getTime() <= startDate.getTime()
+    ) {
+      nextErrors.expiresAt = t('guest_links.error_range');
+    }
+    const normalizedLabel = label.trim();
+    if (normalizedLabel) {
+      const duplicateActive = links.some(
+        (link) =>
+          (link.label ?? '').trim().toLowerCase() ===
+            normalizedLabel.toLowerCase() &&
+          isLinkValidForNow(link.startsAt, link.expiresAt)
+      );
+      if (duplicateActive) {
+        nextErrors.label = t('guest_links.error_duplicate_active_label');
+      }
+    }
+    if (maxUses && (!Number.isInteger(Number(maxUses)) || Number(maxUses) <= 0)) {
+      nextErrors.maxUses = t('guest_links.error_max_uses_invalid');
+    }
+
+    setFieldErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
       return;
     }
+
     try {
       const payload = {
-        label: label || undefined,
+        label: normalizedLabel || undefined,
         intercomId,
+        startsAt: startDate.toISOString(),
         expiresAt: new Date(expiresAt).toISOString(),
         maxUses: maxUses ? Number(maxUses) : undefined
       };
@@ -103,25 +214,41 @@ export default function GuestLinks() {
         }
       );
       const url = `${window.location.origin}/guest/${result.link.token}`;
-      setMessage(t('guest_links.created', { url }));
+      setToast(t('guest_links.created', { url }));
+      setTimeout(() => setToast(null), 4000);
       await loadData();
+      setCurrentPage(1);
     } catch (err: any) {
       setError(err.message ?? t('common.error'));
     }
+  };
+
+  const clearFieldError = (field: string) => {
+    if (!fieldErrors[field]) return;
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
   };
 
   const handleSelectTemplate = (id: string) => {
     setTemplateId(id);
     const tmpl = templates.find((t) => String(t.id) === id);
     if (!tmpl) return;
-    const exp = new Date(Date.now() + tmpl.duration_hours * 60 * 60 * 1000);
-    setExpiresAt(exp.toISOString().slice(0, 16));
+    const start = new Date();
+    const exp = new Date(start.getTime() + tmpl.duration_hours * 60 * 60 * 1000);
+    setStartsAt(toDateTimeLocalValue(start));
+    setExpiresAt(toDateTimeLocalValue(exp));
     setMaxUses(tmpl.max_uses ? String(tmpl.max_uses) : '');
+    clearFieldError('startsAt');
+    clearFieldError('expiresAt');
+    clearFieldError('maxUses');
   };
 
   const handleCreateTemplate = async () => {
     setError(null);
-    setMessage(null);
+    setToast(null);
     if (!templateName || !templateDuration) {
       setError('Template name and duration are required.');
       return;
@@ -138,7 +265,8 @@ export default function GuestLinks() {
       setTemplateName('');
       setTemplateDuration('24');
       setTemplateMaxUses('');
-      setMessage('Template created.');
+      setToast(t('guest_links.template_created'));
+      setTimeout(() => setToast(null), 3000);
       await loadData();
     } catch (err: any) {
       setError(err.message ?? t('common.error'));
@@ -146,17 +274,70 @@ export default function GuestLinks() {
   };
 
   const handleDeleteTemplate = async (id: number) => {
-    await apiFetch(`/api/guest-link-templates/${id}`, { method: 'DELETE' });
-    await loadData();
+    const confirmed = window.confirm(t('guest_links.template_delete_confirm'));
+    if (!confirmed) return;
+    try {
+      await apiFetch(`/api/guest-link-templates/${id}`, { method: 'DELETE' });
+      setToast(t('guest_links.template_deleted'));
+      setTimeout(() => setToast(null), 2500);
+      await loadData();
+    } catch (err: any) {
+      setError(err.message ?? t('common.error'));
+    }
   };
 
   const handleDisable = async (id: number) => {
-    await apiFetch(`/api/guest-links/${id}`, { method: 'DELETE' });
-    await loadData();
+    setLinksError(null);
+    try {
+      await apiFetch(`/api/guest-links/${id}`, { method: 'DELETE' });
+      await loadData();
+    } catch (err: any) {
+      console.error('Failed to disable guest link', err);
+      setLinksError(err.message ?? t('common.error'));
+    }
+  };
+
+  const handleStartEdit = (link: GuestLink) => {
+    setEditingLinkId(link.id);
+    setEditExpiresAt(toDateTimeLocalValue(link.expiresAt));
+    setLinksError(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingLinkId(null);
+    setEditExpiresAt('');
+  };
+
+  const handleSaveEdit = async (link: GuestLink) => {
+    setLinksError(null);
+    const next = new Date(editExpiresAt);
+    if (!Number.isFinite(next.getTime())) {
+      setLinksError(t('guest_links.error_end_invalid'));
+      return;
+    }
+    const start = Date.parse(link.startsAt);
+    if (Number.isFinite(start) && next.getTime() <= start) {
+      setLinksError(t('guest_links.error_range'));
+      return;
+    }
+    try {
+      await apiFetch(`/api/guest-links/${link.id}/expires-at`, {
+        method: 'PATCH',
+        body: JSON.stringify({ expiresAt: next.toISOString() })
+      });
+      setToast(t('guest_links.updated'));
+      setTimeout(() => setToast(null), 3000);
+      handleCancelEdit();
+      await loadData();
+    } catch (err: any) {
+      console.error('Failed to update guest link expiresAt', err);
+      setLinksError(err.message ?? t('common.error'));
+    }
   };
 
   return (
     <div className={`stack ${initializing ? 'disabled' : ''}`}>
+      {toast ? <div className="toast">{toast}</div> : null}
       {initializing ? (
         <div className="overlay">
           <div className="spinner" />
@@ -164,10 +345,27 @@ export default function GuestLinks() {
         </div>
       ) : null}
       <section className="card">
-        <h2>{t('guest_links.create_title')}</h2>
-        <div className="grid two">
+        <h2 className="section-title">
+          <UiIcon name="create" />
+          {t('guest_links.create_title')}
+        </h2>
+        <div className="actions guest-link-actions">
+          <p>{t('guest_links.template_hint')}</p>
+          <button
+            type="button"
+            className="btn ghost nav-link"
+            onClick={() => setTemplateModalOpen(true)}
+          >
+            <UiIcon name="template" />
+            {t('guest_links.manage_templates')}
+          </button>
+        </div>
+        <div className="grid two guest-link-form-grid guest-link-template-row">
           <label className="field">
-            <span>{t('guest_links.template_optional')}</span>
+            <span className="field-label">
+              <UiIcon name="template" />
+              {t('guest_links.template_optional')}
+            </span>
             <select
               value={templateId}
               onChange={(e) => handleSelectTemplate(e.target.value)}
@@ -182,16 +380,32 @@ export default function GuestLinks() {
             </select>
           </label>
         </div>
-        <div className="grid two">
+        <div className="grid two guest-link-form-grid guest-link-main-row">
           <label className="field">
-            <span>{t('guest_links.label')}</span>
-            <input value={label} onChange={(e) => setLabel(e.target.value)} />
+            <span className="field-label">
+              <UiIcon name="label" />
+              {t('guest_links.label')}
+            </span>
+            <input
+              value={label}
+              onChange={(e) => {
+                setLabel(e.target.value);
+                clearFieldError('label');
+              }}
+            />
+            {fieldErrors.label ? <span className="error">{fieldErrors.label}</span> : null}
           </label>
           <label className="field">
-            <span>{t('guest_links.intercom')}</span>
+            <span className="field-label">
+              <UiIcon name="intercom" />
+              {t('guest_links.intercom')}
+            </span>
             <select
               value={intercomId}
-              onChange={(e) => setIntercomId(e.target.value)}
+              onChange={(e) => {
+                setIntercomId(e.target.value);
+                clearFieldError('intercomId');
+              }}
             >
               <option value="">{t('profile.select_intercom')}</option>
               {allIntercoms.map((intercom) => (
@@ -200,131 +414,415 @@ export default function GuestLinks() {
                 </option>
               ))}
             </select>
+            {fieldErrors.intercomId ? (
+              <span className="error">{fieldErrors.intercomId}</span>
+            ) : null}
           </label>
           <label className="field">
-            <span>{t('guest_links.expires_at')}</span>
+            <span className="field-label">
+              <UiIcon name="calendar" />
+              {t('guest_links.starts_at')}
+            </span>
+            <input
+              type="datetime-local"
+              value={startsAt}
+              onChange={(e) => {
+                setStartsAt(e.target.value);
+                clearFieldError('startsAt');
+              }}
+            />
+            {fieldErrors.startsAt ? (
+              <span className="error">{fieldErrors.startsAt}</span>
+            ) : null}
+          </label>
+          <label className="field">
+            <span className="field-label">
+              <UiIcon name="calendar" />
+              {t('guest_links.expires_at')}
+            </span>
             <input
               type="datetime-local"
               value={expiresAt}
-              onChange={(e) => setExpiresAt(e.target.value)}
+              onChange={(e) => {
+                setExpiresAt(e.target.value);
+                clearFieldError('expiresAt');
+              }}
             />
+            {fieldErrors.expiresAt ? (
+              <span className="error">{fieldErrors.expiresAt}</span>
+            ) : null}
+            <span className="muted">{t('guest_links.date_format_hint')}</span>
           </label>
           <label className="field">
-            <span>{t('guest_links.max_uses')}</span>
+            <span className="field-label">
+              <UiIcon name="uses" />
+              {t('guest_links.max_uses')}
+            </span>
             <input
               type="number"
               min="1"
               value={maxUses}
-              onChange={(e) => setMaxUses(e.target.value)}
+              onChange={(e) => {
+                setMaxUses(e.target.value);
+                clearFieldError('maxUses');
+              }}
             />
+            {fieldErrors.maxUses ? (
+              <span className="error">{fieldErrors.maxUses}</span>
+            ) : null}
           </label>
         </div>
-        <button className="btn" onClick={handleCreate}>
+        <button
+          className="btn guest-link-create-btn"
+          onClick={handleCreate}
+          disabled={!isCreateReady || initializing}
+        >
           {t('guest_links.create')}
         </button>
-        {message ? <div className="success">{message}</div> : null}
         {error ? <div className="error">{error}</div> : null}
       </section>
 
       <section className="card">
-        <h2>{t('guest_links.templates_title')}</h2>
-        <div className="grid two">
-          <label className="field">
-            <span>{t('guest_links.template_name')}</span>
-            <input
-              value={templateName}
-              onChange={(e) => setTemplateName(e.target.value)}
-            />
-          </label>
-          <label className="field">
-            <span>{t('guest_links.template_duration')}</span>
-            <input
-              type="number"
-              min="1"
-              value={templateDuration}
-              onChange={(e) => setTemplateDuration(e.target.value)}
-            />
-          </label>
-          <label className="field">
-            <span>{t('guest_links.template_max_uses')}</span>
-            <input
-              type="number"
-              min="1"
-              value={templateMaxUses}
-              onChange={(e) => setTemplateMaxUses(e.target.value)}
-            />
-          </label>
+        <h2 className="section-title">
+          <UiIcon name="links" />
+          {t('guest_links.existing')}
+        </h2>
+        <div className="status-legend">
+          <span className="badge ok">{t('guest_links.valid')}</span>
+          <span className="muted">{t('guest_links.valid_desc')}</span>
+          <span className="badge warn">{t('guest_links.scheduled')}</span>
+          <span className="muted">{t('guest_links.scheduled_desc')}</span>
+          <span className="badge danger">{t('guest_links.expired')}</span>
+          <span className="muted">{t('guest_links.expired_desc')}</span>
+          <span className="badge warn">{t('guest_links.used_up')}</span>
+          <span className="muted">{t('guest_links.used_up_desc')}</span>
+          <span className="badge disabled">{t('guest_links.disabled')}</span>
+          <span className="muted">{t('guest_links.disabled_desc')}</span>
         </div>
-        <button className="btn" onClick={handleCreateTemplate}>
-          {t('guest_links.template_create')}
-        </button>
-        {templates.length === 0 ? (
-          <p className="muted">{t('guest_links.template_none')}</p>
+        <div className="links-filters">
+          <label className="field links-search">
+            <span>{t('guest_links.search_label')}</span>
+            <input
+              type="text"
+              value={searchLabel}
+              onChange={(e) => setSearchLabel(e.target.value)}
+              placeholder={t('guest_links.search_placeholder')}
+            />
+          </label>
+          <div className="links-status-toggles">
+            {(
+              ['valid', 'scheduled', 'expired', 'used_up', 'disabled'] as GuestLinkStatus[]
+            ).map((status) => (
+              <button
+                key={status}
+                type="button"
+                className={`btn ghost filter-chip ${statusFilters[status] ? 'active' : ''}`}
+                onClick={() =>
+                  setStatusFilters((prev) => ({ ...prev, [status]: !prev[status] }))
+                }
+              >
+                {statusLabelFor(status, t)}
+              </button>
+            ))}
+          </div>
+        </div>
+        {linksError ? <div className="error">{linksError}</div> : null}
+        {filteredLinks.length === 0 ? (
+          <p className="muted">{t('guest_links.no_links')}</p>
         ) : (
           <div className="stack">
-            {templates.map((tmpl) => (
-              <div key={tmpl.id} className="tile">
-                <div>
-                  <strong>{tmpl.name}</strong>
-                  <div className="muted">
-                    {t('guest_links.template_duration')}: {tmpl.duration_hours}h
-                  </div>
-                  <div className="muted">
-                    {t('guest_links.template_max_uses')}: {tmpl.max_uses ?? t('guest_links.template_unlimited')}
-                  </div>
-                </div>
-                <button
-                  className="btn ghost"
-                  onClick={() => handleDeleteTemplate(tmpl.id)}
-                >
-                  {t('guest_links.disable')}
-                </button>
-              </div>
-            ))}
+            <div className="links-table-wrap">
+              <table className="links-table">
+                <thead>
+                  <tr>
+                    <th>{t('guest_links.label')}</th>
+                    <th>{t('common.status')}</th>
+                    <th>{t('guest_links.starts_at')}</th>
+                    <th>{t('guest_links.expires_at')}</th>
+                    <th>{t('guest_links.uses')}</th>
+                    <th>{t('guest_links.intercom')}</th>
+                    <th>{t('guest_links.actions')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pagedLinks.map((link) => (
+                    <tr key={link.id}>
+                      <td>{link.label || 'Guest Link'}</td>
+                      <td>
+                        <span className={`badge ${statusClassFor(getLinkStatus(link))}`}>
+                          {statusLabelFor(getLinkStatus(link), t)}
+                        </span>
+                      </td>
+                      <td>{formatDateTime(link.startsAt)}</td>
+                      <td>
+                        {editingLinkId === link.id ? (
+                          <input
+                            type="datetime-local"
+                            value={editExpiresAt}
+                            onChange={(e) => setEditExpiresAt(e.target.value)}
+                          />
+                        ) : (
+                          formatDateTime(link.expiresAt)
+                        )}
+                      </td>
+                      <td>
+                        {link.uses}
+                        {link.maxUses ? ` / ${link.maxUses}` : ''}
+                      </td>
+                      <td>{link.intercomId}</td>
+                      <td>
+                        <div className="links-table-actions">
+                          <a
+                            className="btn ghost"
+                            href={`/guest/${link.token}`}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {t('guest_links.open')}
+                          </a>
+                          {editingLinkId === link.id ? (
+                            <>
+                              <button
+                                className="btn ghost"
+                                onClick={() => handleCancelEdit()}
+                              >
+                                {t('guest_links.cancel')}
+                              </button>
+                              <button
+                                className="btn"
+                                onClick={() => handleSaveEdit(link)}
+                                disabled={!editExpiresAt}
+                              >
+                                {t('guest_links.save')}
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              className="btn ghost"
+                              onClick={() => handleStartEdit(link)}
+                              disabled={link.disabled === 1}
+                            >
+                              {t('guest_links.edit')}
+                            </button>
+                          )}
+                          <button
+                            className="btn"
+                            onClick={() => handleDisable(link.id)}
+                            disabled={link.disabled === 1 || editingLinkId === link.id}
+                          >
+                            {t('guest_links.disable')}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="links-pagination">
+              <button
+                className="btn ghost"
+                disabled={currentPage <= 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              >
+                {t('guest_links.prev')}
+              </button>
+              <span className="muted">
+                {t('guest_links.page')} {currentPage} / {totalPages}
+              </span>
+              <button
+                className="btn ghost"
+                disabled={currentPage >= totalPages}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
+              >
+                {t('guest_links.next')}
+              </button>
+            </div>
           </div>
         )}
       </section>
 
-      <section className="card">
-        <h2>{t('guest_links.existing')}</h2>
-        {links.length === 0 ? (
-          <p className="muted">{t('guest_links.no_links')}</p>
-        ) : (
-          <div className="stack">
-            {links.map((link) => (
-              <div key={link.id} className="tile">
-                <div>
-                  <strong>{link.label || 'Guest Link'}</strong>
-                  <div className="muted">
-                    Expires: {new Date(link.expiresAt).toLocaleString()}
+      {templateModalOpen ? (
+        <div className="modal-backdrop" onClick={() => setTemplateModalOpen(false)}>
+          <section className="card modal-card" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="modal-close"
+              onClick={() => setTemplateModalOpen(false)}
+              aria-label={t('guest_links.close_templates')}
+            >
+              ×
+            </button>
+            <div className="actions">
+              <h2 className="section-title">
+                <UiIcon name="template" />
+                {t('guest_links.templates_title')}
+              </h2>
+              <button
+                type="button"
+                className="btn ghost"
+                onClick={() => setTemplateModalOpen(false)}
+              >
+                {t('guest_links.close_templates')}
+              </button>
+            </div>
+
+            <div className="grid two">
+              <label className="field">
+                <span className="field-label">
+                  <UiIcon name="label" />
+                  {t('guest_links.template_name')}
+                </span>
+                <input
+                  value={templateName}
+                  onChange={(e) => setTemplateName(e.target.value)}
+                />
+              </label>
+              <label className="field">
+                <span className="field-label">
+                  <UiIcon name="calendar" />
+                  {t('guest_links.template_duration')}
+                </span>
+                <input
+                  type="number"
+                  min="1"
+                  value={templateDuration}
+                  onChange={(e) => setTemplateDuration(e.target.value)}
+                />
+              </label>
+              <label className="field">
+                <span className="field-label">
+                  <UiIcon name="uses" />
+                  {t('guest_links.template_max_uses')}
+                </span>
+                <input
+                  type="number"
+                  min="1"
+                  value={templateMaxUses}
+                  onChange={(e) => setTemplateMaxUses(e.target.value)}
+                />
+              </label>
+            </div>
+            <button className="btn nav-link" onClick={handleCreateTemplate}>
+              <UiIcon name="create" />
+              {t('guest_links.template_create')}
+            </button>
+
+            {templates.length === 0 ? (
+              <p className="muted">{t('guest_links.template_none')}</p>
+            ) : (
+              <div className="stack">
+                {templates.map((tmpl) => (
+                  <div key={tmpl.id} className="tile">
+                    <div>
+                      <strong>{tmpl.name}</strong>
+                      <div className="muted">
+                        {t('guest_links.template_duration')}: {tmpl.duration_hours}h
+                      </div>
+                      <div className="muted">
+                        {t('guest_links.template_max_uses')}:{' '}
+                        {tmpl.max_uses ?? t('guest_links.template_unlimited')}
+                      </div>
+                    </div>
+                    <button
+                      className="btn ghost"
+                      onClick={() => handleDeleteTemplate(tmpl.id)}
+                    >
+                      {t('guest_links.template_delete')}
+                    </button>
                   </div>
-                  <div className="muted">
-                    Uses: {link.uses}
-                    {link.maxUses ? ` / ${link.maxUses}` : ''}
-                  </div>
-                  <div className="muted">Intercom ID: {link.intercomId}</div>
-                </div>
-                <div className="actions">
-                  <a
-                    className="btn ghost"
-                    href={`/guest/${link.token}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {t('guest_links.open')}
-                  </a>
-                  <button
-                    className="btn"
-                    onClick={() => handleDisable(link.id)}
-                  >
-                    {t('guest_links.disable')}
-                  </button>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
-        )}
-      </section>
+            )}
+          </section>
+        </div>
+      ) : null}
     </div>
+  );
+}
+
+function statusLabelFor(status: GuestLinkStatus, t: (key: string) => string): string {
+  if (status === 'disabled') return t('guest_links.disabled');
+  if (status === 'used_up') return t('guest_links.used_up');
+  if (status === 'scheduled') return t('guest_links.scheduled');
+  if (status === 'expired') return t('guest_links.expired');
+  return t('guest_links.valid');
+}
+
+function UiIcon({
+  name
+}: {
+  name: 'create' | 'template' | 'intercom' | 'calendar' | 'uses' | 'label' | 'links';
+}) {
+  const common = {
+    className: 'nav-icon',
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: '2',
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    'aria-hidden': true
+  };
+
+  if (name === 'create') {
+    return (
+      <svg {...common}>
+        <line x1="12" y1="5" x2="12" y2="19" />
+        <line x1="5" y1="12" x2="19" y2="12" />
+      </svg>
+    );
+  }
+  if (name === 'template') {
+    return (
+      <svg {...common}>
+        <rect x="4" y="3" width="16" height="18" rx="2" />
+        <line x1="8" y1="8" x2="16" y2="8" />
+        <line x1="8" y1="12" x2="16" y2="12" />
+      </svg>
+    );
+  }
+  if (name === 'intercom') {
+    return (
+      <svg {...common}>
+        <rect x="4" y="3" width="16" height="18" rx="2" />
+        <circle cx="12" cy="14" r="1.5" />
+      </svg>
+    );
+  }
+  if (name === 'calendar') {
+    return (
+      <svg {...common}>
+        <rect x="3" y="5" width="18" height="16" rx="2" />
+        <line x1="3" y1="10" x2="21" y2="10" />
+        <line x1="8" y1="3" x2="8" y2="7" />
+        <line x1="16" y1="3" x2="16" y2="7" />
+      </svg>
+    );
+  }
+  if (name === 'uses') {
+    return (
+      <svg {...common}>
+        <path d="M8 10h8" />
+        <path d="M8 14h5" />
+        <circle cx="12" cy="12" r="9" />
+      </svg>
+    );
+  }
+  if (name === 'label') {
+    return (
+      <svg {...common}>
+        <path d="M20 10l-8 8-8-8V4h10z" />
+        <circle cx="11" cy="9" r="1.5" />
+      </svg>
+    );
+  }
+  return (
+    <svg {...common}>
+      <path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 1 0-7.07-7.07L11 5" />
+      <path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 1 0 7.07 7.07L13 19" />
+    </svg>
   );
 }

@@ -2,14 +2,17 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { apiFetch } from '../api';
 import { useTranslation } from 'react-i18next';
+import { formatDateTime } from '../utils/dateTime';
 
 type GuestStatus = {
   token: string;
   label: string | null;
+  startsAt: string;
   expiresAt: string;
   maxUses: number | null;
   uses: number;
   valid: boolean;
+  state?: 'scheduled' | 'expired' | 'used_up' | 'valid';
 };
 
 export default function Guest() {
@@ -50,7 +53,10 @@ export default function Guest() {
           <>
             <p>{status.label || t('guest.welcome')}</p>
             <p className="muted">
-              {t('guest.expires')}: {new Date(status.expiresAt).toLocaleString()}
+              {t('guest.starts')}: {formatDateTime(status.startsAt)}
+            </p>
+            <p className="muted">
+              {t('guest.expires')}: {formatDateTime(status.expiresAt)}
             </p>
             <button
               className="btn"

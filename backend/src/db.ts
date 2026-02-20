@@ -8,6 +8,7 @@ export type GuestLink = {
   label: string | null;
   intercomId: string;
   userId: number;
+  startsAt: string;
   expiresAt: string;
   maxUses: number | null;
   uses: number;
@@ -114,6 +115,7 @@ export async function initDb(): Promise<void> {
       user_id INTEGER NOT NULL,
       label TEXT,
       intercom_id TEXT NOT NULL,
+      starts_at TEXT NOT NULL,
       expires_at TEXT NOT NULL,
       max_uses INTEGER,
       uses INTEGER NOT NULL DEFAULT 0,
@@ -176,6 +178,7 @@ export async function initDb(): Promise<void> {
   await ensureUsersProfileColumns();
   await ensureUsersDisabledColumn();
   await ensureGuestLinksUserIdColumn();
+  await ensureGuestLinksStartsAtColumn();
   await ensureUnlockEventsTable();
   await ensureLoginAttemptsTable();
   await ensureGuestLinkTemplatesTable();
@@ -219,6 +222,7 @@ export async function createGuestLink(input: {
   userId: number;
   label?: string;
   intercomId: string;
+  startsAt: string;
   expiresAt: string;
   maxUses?: number | null;
 }): Promise<GuestLink> {
@@ -226,20 +230,36 @@ export async function createGuestLink(input: {
   await getDb().run(
     `
       INSERT INTO guest_links
-        (token, user_id, label, intercom_id, expires_at, max_uses, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+        (token, user_id, label, intercom_id, starts_at, expires_at, max_uses, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `,
     input.token,
     input.userId,
     input.label ?? null,
     input.intercomId,
+    input.startsAt,
     input.expiresAt,
     input.maxUses ?? null,
     now
   );
 
   const row = await getDb().get<GuestLink>(
-    'SELECT * FROM guest_links WHERE token = ?',
+    `
+      SELECT
+        id,
+        token,
+        label,
+        intercom_id AS intercomId,
+        user_id AS userId,
+        starts_at AS startsAt,
+        expires_at AS expiresAt,
+        max_uses AS maxUses,
+        uses,
+        disabled,
+        created_at AS createdAt
+      FROM guest_links
+      WHERE token = ?
+    `,
     input.token
   );
   return mapGuestLink(row!);
@@ -247,7 +267,22 @@ export async function createGuestLink(input: {
 
 export async function listGuestLinks(): Promise<GuestLink[]> {
   const rows = await getDb().all<GuestLink[]>(
-    'SELECT * FROM guest_links ORDER BY created_at DESC'
+    `
+      SELECT
+        id,
+        token,
+        label,
+        intercom_id AS intercomId,
+        user_id AS userId,
+        starts_at AS startsAt,
+        expires_at AS expiresAt,
+        max_uses AS maxUses,
+        uses,
+        disabled,
+        created_at AS createdAt
+      FROM guest_links
+      ORDER BY created_at DESC
+    `
   );
   return rows.map(mapGuestLink);
 }
@@ -256,7 +291,23 @@ export async function listGuestLinksForUser(
   userId: number
 ): Promise<GuestLink[]> {
   const rows = await getDb().all<GuestLink[]>(
-    'SELECT * FROM guest_links WHERE user_id = ? ORDER BY created_at DESC',
+    `
+      SELECT
+        id,
+        token,
+        label,
+        intercom_id AS intercomId,
+        user_id AS userId,
+        starts_at AS startsAt,
+        expires_at AS expiresAt,
+        max_uses AS maxUses,
+        uses,
+        disabled,
+        created_at AS createdAt
+      FROM guest_links
+      WHERE user_id = ?
+      ORDER BY created_at DESC
+    `,
     userId
   );
   return rows.map(mapGuestLink);
@@ -266,7 +317,22 @@ export async function getGuestLinkByToken(
   token: string
 ): Promise<GuestLink | null> {
   const row = await getDb().get<GuestLink>(
-    'SELECT * FROM guest_links WHERE token = ?',
+    `
+      SELECT
+        id,
+        token,
+        label,
+        intercom_id AS intercomId,
+        user_id AS userId,
+        starts_at AS startsAt,
+        expires_at AS expiresAt,
+        max_uses AS maxUses,
+        uses,
+        disabled,
+        created_at AS createdAt
+      FROM guest_links
+      WHERE token = ?
+    `,
     token
   );
   return row ? mapGuestLink(row) : null;
@@ -288,6 +354,89 @@ export async function disableGuestLink(
     id,
     userId
   );
+}
+
+export async function getGuestLinkByIdForUser(
+  id: number,
+  userId: number
+): Promise<GuestLink | null> {
+  const row = await getDb().get<GuestLink>(
+    `
+      SELECT
+        id,
+        token,
+        label,
+        intercom_id AS intercomId,
+        user_id AS userId,
+        starts_at AS startsAt,
+        expires_at AS expiresAt,
+        max_uses AS maxUses,
+        uses,
+        disabled,
+        created_at AS createdAt
+      FROM guest_links
+      WHERE id = ? AND user_id = ?
+    `,
+    id,
+    userId
+  );
+  return row ? mapGuestLink(row) : null;
+}
+
+export async function updateGuestLinkExpiresAt(
+  id: number,
+  userId: number,
+  expiresAtIso: string
+): Promise<GuestLink | null> {
+  await getDb().run(
+    'UPDATE guest_links SET expires_at = ? WHERE id = ? AND user_id = ?',
+    expiresAtIso,
+    id,
+    userId
+  );
+  const updated = await getDb().get<GuestLink>(
+    `
+      SELECT
+        id,
+        token,
+        label,
+        intercom_id AS intercomId,
+        user_id AS userId,
+        starts_at AS startsAt,
+        expires_at AS expiresAt,
+        max_uses AS maxUses,
+        uses,
+        disabled,
+        created_at AS createdAt
+      FROM guest_links
+      WHERE id = ? AND user_id = ?
+    `,
+    id,
+    userId
+  );
+  return updated ? mapGuestLink(updated) : null;
+}
+
+export async function hasActiveGuestLinkWithLabel(
+  userId: number,
+  label: string,
+  nowIso: string
+): Promise<boolean> {
+  const row = await getDb().get<{ count: number }>(
+    `
+      SELECT COUNT(1) as count
+      FROM guest_links
+      WHERE user_id = ?
+        AND disabled = 0
+        AND label = ?
+        AND expires_at > ?
+        AND (max_uses IS NULL OR uses < max_uses)
+    `,
+    userId,
+    label,
+    nowIso
+  );
+  return (row?.count ?? 0) > 0;
 }
 
 export async function createUser(input: {
@@ -729,14 +878,7 @@ export async function listDeviceHealthHistory(
 }
 
 function mapGuestLink(row: GuestLink): GuestLink {
-  return {
-    ...row,
-    userId: row.userId ?? (row as any).user_id,
-    intercomId: row.intercomId ?? (row as any).intercom_id,
-    expiresAt: row.expiresAt ?? (row as any).expires_at,
-    maxUses: row.maxUses ?? (row as any).max_uses,
-    createdAt: row.createdAt ?? (row as any).created_at
-  };
+  return row;
 }
 
 async function ensureGuestLinksUserIdColumn(): Promise<void> {
@@ -746,6 +888,19 @@ async function ensureGuestLinksUserIdColumn(): Promise<void> {
   const hasUserId = columns.some((col) => col.name === 'user_id');
   if (!hasUserId) {
     await getDb().exec('ALTER TABLE guest_links ADD COLUMN user_id INTEGER');
+  }
+}
+
+async function ensureGuestLinksStartsAtColumn(): Promise<void> {
+  const columns = await getDb().all<Array<{ name: string }>>(
+    'PRAGMA table_info(guest_links)'
+  );
+  const hasStartsAt = columns.some((col) => col.name === 'starts_at');
+  if (!hasStartsAt) {
+    await getDb().exec('ALTER TABLE guest_links ADD COLUMN starts_at TEXT');
+    await getDb().exec(
+      "UPDATE guest_links SET starts_at = COALESCE(created_at, expires_at) WHERE starts_at IS NULL OR starts_at = ''"
+    );
   }
 }
 

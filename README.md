@@ -12,7 +12,7 @@ It supports secure Ring token management, one-click unlock from web, expiring gu
 - Refresh token validation before save
 - Ring token update/edit flow per user
 - Manual unlock from dashboard
-- Guest unlock links with expiration date
+- Guest unlock links with start/end date range
 - Optional maximum uses per guest link
 
 ### User and Admin Management
@@ -39,6 +39,7 @@ It supports secure Ring token management, one-click unlock from web, expiring gu
 - Languages: English, Italian, Spanish, German
 - Browser language auto-detection
 - Live language switch without page reload
+- Unified date display format across UI: `dd/mm/yyyy hh:mm`
 
 ## Application Screenshot
 

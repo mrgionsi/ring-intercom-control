@@ -67,7 +67,8 @@
     "raw_data": "Rohdaten",
     "health_history": "Statusverlauf",
     "health_loading": "Verlauf wird geladen…",
-    "health_none": "Kein Verlauf."
+    "health_none": "Kein Verlauf.",
+    "account": "Konto"
   },
   "messages": {
     "token_saved": "Refresh-Token gespeichert.",
@@ -140,7 +141,10 @@
     "template_required": "Vorlagenname und Dauer sind erforderlich.",
     "no_results": "Keine Ergebnisse f?r die aktuellen Filter.",
     "invalid_date": "Ung?ltiges Datum",
-    "invalid_date_desc": "Der Link enth?lt ung?ltige Start-/Enddaten."
+    "invalid_date_desc": "Der Link enth?lt ung?ltige Start-/Enddaten.",
+    "account": "Konto",
+    "select_account": "Konto ausw?hlen",
+    "error_account_required": "Bitte ein Ring-Konto ausw?hlen."
   },
   "guest": {
     "title": "Gästezugang",
@@ -183,7 +187,15 @@
     "title": "Einstellungen",
     "desc": "Verwalte die Ring-Verbindung und Refresh-Tokens.",
     "manage_desc": "Verwalte den Ring-Refresh-Token und die Authentifizierung.",
-    "open": "Einstellungen öffnen"
+    "open": "Einstellungen öffnen",
+    "account_required": "Bitte zuerst ein Ring-Konto erstellen oder ausw?hlen.",
+    "ring_account": "Ring-Konto",
+    "select_account": "Konto ausw?hlen",
+    "default_account": "Standard",
+    "account_configured": "konfiguriert",
+    "account_not_configured": "nicht konfiguriert",
+    "new_account_placeholder": "Neues Ring-Konto-Label",
+    "add_account": "Konto hinzuf?gen"
   },
   "common": {
     "success": "erfolgreich",

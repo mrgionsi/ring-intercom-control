@@ -67,7 +67,8 @@
     "raw_data": "Dati grezzi",
     "health_history": "Storico stato",
     "health_loading": "Caricamento storico…",
-    "health_none": "Nessuno storico."
+    "health_none": "Nessuno storico.",
+    "account": "Account"
   },
   "messages": {
     "token_saved": "Refresh token salvato.",
@@ -140,7 +141,10 @@
     "template_required": "Nome e durata del template sono obbligatori.",
     "no_results": "Nessun risultato per i filtri correnti.",
     "invalid_date": "Data non valida",
-    "invalid_date_desc": "Il link contiene date di inizio/fine non valide."
+    "invalid_date_desc": "Il link contiene date di inizio/fine non valide.",
+    "account": "Account",
+    "select_account": "Seleziona account",
+    "error_account_required": "Seleziona un account Ring."
   },
   "guest": {
     "title": "Accesso Ospiti",
@@ -183,7 +187,15 @@
     "title": "Impostazioni",
     "desc": "Gestisci la connessione Ring e i refresh token.",
     "manage_desc": "Gestisci il refresh token Ring e l'autenticazione.",
-    "open": "Apri impostazioni"
+    "open": "Apri impostazioni",
+    "account_required": "Crea o seleziona prima un account Ring.",
+    "ring_account": "Account Ring",
+    "select_account": "Seleziona account",
+    "default_account": "Predefinito",
+    "account_configured": "configurato",
+    "account_not_configured": "non configurato",
+    "new_account_placeholder": "Nuova etichetta account Ring",
+    "add_account": "Aggiungi account"
   },
   "common": {
     "success": "successo",

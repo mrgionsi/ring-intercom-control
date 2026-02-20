@@ -67,7 +67,8 @@
     "raw_data": "Datos sin procesar",
     "health_history": "Historial de estado",
     "health_loading": "Cargando historial…",
-    "health_none": "Sin historial."
+    "health_none": "Sin historial.",
+    "account": "Cuenta"
   },
   "messages": {
     "token_saved": "Refresh token guardado.",
@@ -140,7 +141,10 @@
     "template_required": "El nombre y la duraci?n de la plantilla son obligatorios.",
     "no_results": "No hay resultados para los filtros actuales.",
     "invalid_date": "Fecha inv?lida",
-    "invalid_date_desc": "El enlace tiene fechas de inicio/fin inv?lidas."
+    "invalid_date_desc": "El enlace tiene fechas de inicio/fin inv?lidas.",
+    "account": "Cuenta",
+    "select_account": "Selecciona cuenta",
+    "error_account_required": "Selecciona una cuenta Ring."
   },
   "guest": {
     "title": "Acceso de Invitados",
@@ -183,7 +187,15 @@
     "title": "Configuración",
     "desc": "Gestiona la conexión de Ring y los refresh tokens.",
     "manage_desc": "Gestiona el refresh token de Ring y la autenticación.",
-    "open": "Abrir configuración"
+    "open": "Abrir configuración",
+    "account_required": "Crea o selecciona primero una cuenta Ring.",
+    "ring_account": "Cuenta Ring",
+    "select_account": "Selecciona cuenta",
+    "default_account": "Predeterminada",
+    "account_configured": "configurada",
+    "account_not_configured": "no configurada",
+    "new_account_placeholder": "Nueva etiqueta de cuenta Ring",
+    "add_account": "Agregar cuenta"
   },
   "common": {
     "success": "éxito",

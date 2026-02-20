@@ -67,7 +67,8 @@
     "raw_data": "Raw Data",
     "health_history": "Health History",
     "health_loading": "Loading history…",
-    "health_none": "No history yet."
+    "health_none": "No history yet.",
+    "account": "Account"
   },
   "messages": {
     "token_saved": "Refresh token saved.",
@@ -140,7 +141,10 @@
     "open": "Open",
     "page": "Page",
     "prev": "Prev",
-    "next": "Next"
+    "next": "Next",
+    "account": "Account",
+    "select_account": "Select account",
+    "error_account_required": "Select a Ring account."
   },
   "guest": {
     "title": "Guest Access",
@@ -183,7 +187,15 @@
     "title": "Settings",
     "desc": "Manage your Ring connection and refresh tokens.",
     "manage_desc": "Manage your Ring refresh token and authentication flow.",
-    "open": "Open settings"
+    "open": "Open settings",
+    "account_required": "Please create or select a Ring account first.",
+    "ring_account": "Ring Account",
+    "select_account": "Select account",
+    "default_account": "Default",
+    "account_configured": "configured",
+    "account_not_configured": "not configured",
+    "new_account_placeholder": "New Ring account label",
+    "add_account": "Add account"
   },
   "common": {
     "success": "success",

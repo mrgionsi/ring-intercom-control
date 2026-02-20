@@ -16,17 +16,9 @@
     "username": "Username",
     "password": "Password",
     "sign_in": "Sign in",
-    "signing_in": "Signing in…",
-    "error": "Login failed"
+    "signing_in": "Signing in…"
   },
   "ring": {
-    "connection_title": "Ring Connection",
-    "connection_desc": "Store a Ring refresh token securely. You can generate one with the Ring CLI from ring-client-api. Paste it below and save.",
-    "generate_title": "Generate Refresh Token",
-    "generate_desc": "Sign in here to create a refresh token without using the CLI.",
-    "generate_note": "Credentials are used only to obtain the refresh token and are never stored.",
-    "generate_show": "Show login",
-    "generate_hide": "Hide login",
     "email": "Email",
     "password": "Password",
     "start_auth": "Send code",
@@ -36,7 +28,6 @@
     "verify_code": "Verify code",
     "verifying": "Verifying…",
     "resend_code": "Resend code",
-    "auth_cancel": "Cancel",
     "test_token": "Test token",
     "testing": "Testing…",
     "test_success": "Token valid. Locations: {{count}}.",
@@ -44,11 +35,8 @@
     "refresh_token": "Refresh Token",
     "save_token": "Save Token",
     "saving": "Saving…",
-    "configured": "Ring is configured.",
     "not_configured": "No token stored yet.",
     "token_stored": "Refresh token is already stored.",
-    "token_stored_desc": "You do not need to paste it again unless you want to replace it.",
-    "edit_token": "Edit token",
     "cancel": "Cancel"
   },
   "intercoms": {
@@ -67,18 +55,17 @@
     "raw_data": "Raw Data",
     "health_history": "Health History",
     "health_loading": "Loading history…",
-    "health_none": "No history yet."
+    "health_none": "No history yet.",
+    "account": "Account",
+    "location_count": "Locations",
+    "intercom_count": "Intercoms"
   },
   "messages": {
     "token_saved": "Refresh token saved.",
     "unlock_sent": "Unlock request sent.",
     "devices_refreshed": "Devices refreshed."
   },
-  "devices": {
-    "title": "Cameras & Devices",
-    "none": "No device data available.",
-    "no_cameras": "No cameras detected."
-  },
+  "devices": {},
   "guest_links": {
     "create_title": "Create Guest Link",
     "template_optional": "Template (optional)",
@@ -140,7 +127,10 @@
     "open": "Open",
     "page": "Page",
     "prev": "Prev",
-    "next": "Next"
+    "next": "Next",
+    "account": "Account",
+    "select_account": "Select account",
+    "error_account_required": "Select a Ring account."
   },
   "guest": {
     "title": "Guest Access",
@@ -181,9 +171,29 @@
   },
   "settings": {
     "title": "Settings",
-    "desc": "Manage your Ring connection and refresh tokens.",
-    "manage_desc": "Manage your Ring refresh token and authentication flow.",
-    "open": "Open settings"
+    "desc": "Manage connected Ring accounts and their intercom devices.",
+    "account_required": "Please create or select a Ring account first.",
+    "ring_account": "Ring Account",
+    "default_account": "Default",
+    "account_configured": "configured",
+    "account_not_configured": "not configured",
+    "new_account_placeholder": "New Ring account label",
+    "accounts_overview": "Connected Accounts & Devices",
+    "accounts_overview_desc": "{{accounts}} accounts connected, {{intercoms}} intercoms available.",
+    "token_state": "Token",
+    "connected_intercoms": "Connected intercoms",
+    "last_updated": "Last updated",
+    "add_integration": "Add Intercom Integration",
+    "no_accounts": "No Ring accounts connected yet.",
+    "renew_credentials": "Renew credentials",
+    "delete_account": "Delete account",
+    "delete_account_confirm": "Delete account \"{{label}}\" permanently? This will remove related guest links.",
+    "account_deleted": "Account deleted.",
+    "new_modal_title": "Add Intercom Integration",
+    "renew_modal_title": "Renew credentials for {{label}}",
+    "modal_desc": "Connect a new account or renew credentials using login + 2FA, or provide a refresh token.",
+    "mode_auth": "Login + 2FA",
+    "mode_token": "Refresh token"
   },
   "common": {
     "success": "success",

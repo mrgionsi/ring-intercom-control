@@ -1,30 +1,72 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import {
+  clearRingAccountCache,
   getRingSummaryForUser,
-  hasUserRefreshToken,
-  setUserRefreshToken,
+  setRingAccountRefreshToken,
   unlockIntercomForUser
 } from '../ring.js';
 import { startRingAuth, verifyRingAuth } from '../ringAuth.js';
 import { RingApi } from 'ring-client-api';
-import { recordUnlockEvent } from '../db.js';
-import { listDeviceHealthHistory } from '../db.js';
+import {
+  createRingAccount,
+  deleteRingAccountPermanently,
+  getDefaultRingAccountForUser,
+  getRingAccountByIdForUser,
+  getUserTokenStatus,
+  listDeviceHealthHistory,
+  listRingAccountsForUser,
+  recordUnlockEvent,
+  setRingAccountDefault,
+  updateRingAccountLabel
+} from '../db.js';
 
 const router = Router();
 
+function sanitizeAccount(account: any) {
+  return {
+    id: account.id,
+    userId: account.user_id,
+    label: account.label,
+    isDefault: Boolean(account.is_default),
+    configured: Boolean(account.refresh_token),
+    updatedAt: account.updated_at,
+    createdAt: account.created_at
+  };
+}
+
 router.get('/status', requireAuth, async (req, res) => {
-  const configured = await hasUserRefreshToken(req.session.auth!.id);
-  res.json({ configured });
+  const status = await getUserTokenStatus(req.session.auth!.id);
+  const accounts = await listRingAccountsForUser(req.session.auth!.id);
+  res.json({ ...status, accounts: accounts.map(sanitizeAccount) });
 });
 
 router.post('/refresh-token', requireAuth, async (req, res) => {
-  const { refreshToken } = req.body ?? {};
+  const { refreshToken, ringAccountId, accountLabel } = req.body ?? {};
   if (!refreshToken || typeof refreshToken !== 'string') {
     return res.status(400).json({ error: 'refreshToken is required' });
   }
-  await setUserRefreshToken(req.session.auth!.id, refreshToken.trim());
-  res.json({ ok: true });
+  let targetAccountId = Number(ringAccountId);
+  if (!targetAccountId) {
+    const fallback = await getDefaultRingAccountForUser(req.session.auth!.id);
+    if (fallback) {
+      targetAccountId = fallback.id;
+    } else {
+      const created = await createRingAccount(
+        req.session.auth!.id,
+        typeof accountLabel === 'string' && accountLabel.trim()
+          ? accountLabel.trim()
+          : 'Primary Ring Account'
+      );
+      targetAccountId = created.id;
+    }
+  }
+  await setRingAccountRefreshToken(
+    req.session.auth!.id,
+    targetAccountId,
+    refreshToken.trim()
+  );
+  res.json({ ok: true, ringAccountId: targetAccountId });
 });
 
 router.post('/refresh-token/test', requireAuth, async (req, res) => {
@@ -44,7 +86,7 @@ router.post('/refresh-token/test', requireAuth, async (req, res) => {
 });
 
 router.post('/auth/start', requireAuth, async (req, res) => {
-  const { email, password } = req.body ?? {};
+  const { email, password, ringAccountId, accountLabel } = req.body ?? {};
   if (
     typeof email !== 'string' ||
     typeof password !== 'string' ||
@@ -61,7 +103,12 @@ router.post('/auth/start', requireAuth, async (req, res) => {
       password
     );
     if ('refreshToken' in result) {
-      return res.json({ refreshToken: result.refreshToken });
+      return res.json({
+        refreshToken: result.refreshToken,
+        ringAccountId: Number(ringAccountId) || undefined,
+        accountLabel:
+          typeof accountLabel === 'string' ? accountLabel.trim() : undefined
+      });
     }
     return res.json({
       requires2fa: true,
@@ -103,6 +150,50 @@ router.post('/auth/verify', requireAuth, async (req, res) => {
   }
 });
 
+router.get('/accounts', requireAuth, async (req, res) => {
+  const accounts = await listRingAccountsForUser(req.session.auth!.id);
+  res.json({ accounts: accounts.map(sanitizeAccount) });
+});
+
+router.post('/accounts', requireAuth, async (req, res) => {
+  const { label } = req.body ?? {};
+  if (typeof label !== 'string' || !label.trim()) {
+    return res.status(400).json({ error: 'label is required' });
+  }
+  const account = await createRingAccount(req.session.auth!.id, label.trim());
+  res.json({ account: sanitizeAccount(account) });
+});
+
+router.patch('/accounts/:id', requireAuth, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!id) {
+    return res.status(400).json({ error: 'Invalid account id' });
+  }
+  const account = await getRingAccountByIdForUser(req.session.auth!.id, id);
+  if (!account) {
+    return res.status(404).json({ error: 'Account not found' });
+  }
+  const { label, isDefault } = req.body ?? {};
+  if (typeof label === 'string' && label.trim()) {
+    await updateRingAccountLabel(req.session.auth!.id, id, label.trim());
+  }
+  if (isDefault === true || isDefault === 1) {
+    await setRingAccountDefault(req.session.auth!.id, id);
+  }
+  const updated = await getRingAccountByIdForUser(req.session.auth!.id, id);
+  res.json({ account: updated ? sanitizeAccount(updated) : null });
+});
+
+router.delete('/accounts/:id', requireAuth, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!id) {
+    return res.status(400).json({ error: 'Invalid account id' });
+  }
+  clearRingAccountCache(req.session.auth!.id, id);
+  await deleteRingAccountPermanently(req.session.auth!.id, id);
+  res.json({ ok: true });
+});
+
 router.get('/summary', requireAuth, async (req, res) => {
   try {
     const summary = await getRingSummaryForUser(req.session.auth!.id);
@@ -113,12 +204,18 @@ router.get('/summary', requireAuth, async (req, res) => {
 });
 
 router.post('/unlock', requireAuth, async (req, res) => {
-  const { intercomId } = req.body ?? {};
+  const { intercomId, ringAccountId } = req.body ?? {};
   if (!intercomId) {
     return res.status(400).json({ error: 'intercomId is required' });
   }
   try {
-    await unlockIntercomForUser(req.session.auth!.id, String(intercomId));
+    await unlockIntercomForUser(
+      req.session.auth!.id,
+      String(intercomId),
+      Number.isFinite(Number(ringAccountId)) && Number(ringAccountId) > 0
+        ? Number(ringAccountId)
+        : undefined
+    );
     await recordUnlockEvent({
       userId: req.session.auth!.id,
       intercomId: String(intercomId),

@@ -7,6 +7,7 @@ import {
   deleteGuestLinkTemplate,
   getGuestLinkByIdForUser,
   getGuestLinkByToken,
+  getRingAccountByIdForUser,
   hasActiveGuestLinkWithLabel,
   incrementGuestLinkUses,
   listGuestLinksForUser,
@@ -22,7 +23,7 @@ import { validateGuestLinkExpiresAtUpdate } from '../guestLinkEditValidation.js'
 const router = Router();
 
 router.post('/guest-links', requireAuth, async (req, res) => {
-  const { label, intercomId, startsAt, expiresAt, maxUses } = req.body ?? {};
+  const { label, intercomId, startsAt, expiresAt, maxUses, ringAccountId } = req.body ?? {};
   const validated = validateGuestLinkCreateInput({
     intercomId,
     startsAt,
@@ -33,13 +34,26 @@ router.post('/guest-links', requireAuth, async (req, res) => {
     return res.status(validated.status).json({ error: validated.error });
   }
 
+  const parsedRingAccountId = Number(ringAccountId);
+  if (!Number.isFinite(parsedRingAccountId) || parsedRingAccountId <= 0) {
+    return res.status(400).json({ error: 'ringAccountId is required' });
+  }
+  const ringAccount = await getRingAccountByIdForUser(
+    req.session.auth!.id,
+    parsedRingAccountId
+  );
+  if (!ringAccount) {
+    return res.status(404).json({ error: 'Ring account not found' });
+  }
+
   const normalizedLabel =
     typeof label === 'string' ? label.trim() : '';
   if (normalizedLabel) {
     const duplicateActive = await hasActiveGuestLinkWithLabel(
       req.session.auth!.id,
       normalizedLabel,
-      new Date().toISOString()
+      new Date().toISOString(),
+      parsedRingAccountId
     );
     if (duplicateActive) {
       return res.status(409).json({
@@ -52,6 +66,7 @@ router.post('/guest-links', requireAuth, async (req, res) => {
   const link = await createGuestLink({
     token,
     userId: req.session.auth!.id,
+    ringAccountId: parsedRingAccountId,
     label: normalizedLabel || undefined,
     intercomId: validated.intercomId,
     startsAt: validated.startsAtIso,
@@ -189,7 +204,7 @@ router.post('/guest/:token/unlock', async (req, res) => {
   }
 
   try {
-    await unlockIntercomForUser(link.userId, link.intercomId);
+    await unlockIntercomForUser(link.userId, link.intercomId, link.ringAccountId);
     await incrementGuestLinkUses(link.id);
     await recordUnlockEvent({
       userId: link.userId,

@@ -16,17 +16,9 @@
     "username": "Benutzername",
     "password": "Passwort",
     "sign_in": "Anmelden",
-    "signing_in": "Anmeldung…",
-    "error": "Anmeldung fehlgeschlagen"
+    "signing_in": "Anmeldung…"
   },
   "ring": {
-    "connection_title": "Ring Verbindung",
-    "connection_desc": "Speichere ein Ring-Refresh-Token sicher. Du kannst es mit der CLI von ring-client-api erzeugen. Hier einfügen und speichern.",
-    "generate_title": "Refresh-Token erstellen",
-    "generate_desc": "Hier anmelden, um einen Refresh-Token ohne CLI zu erzeugen.",
-    "generate_note": "Die Zugangsdaten werden nur verwendet, um den Refresh-Token zu erhalten, und nie gespeichert.",
-    "generate_show": "Login anzeigen",
-    "generate_hide": "Login ausblenden",
     "email": "E-Mail",
     "password": "Passwort",
     "start_auth": "Code senden",
@@ -36,7 +28,6 @@
     "verify_code": "Code prüfen",
     "verifying": "Prüfe…",
     "resend_code": "Code erneut senden",
-    "auth_cancel": "Abbrechen",
     "test_token": "Token testen",
     "testing": "Teste…",
     "test_success": "Token gültig. Standorte: {{count}}.",
@@ -44,11 +35,8 @@
     "refresh_token": "Refresh Token",
     "save_token": "Token speichern",
     "saving": "Speichern…",
-    "configured": "Ring ist konfiguriert.",
     "not_configured": "Kein Token gespeichert.",
     "token_stored": "Das Refresh-Token ist bereits gespeichert.",
-    "token_stored_desc": "Du musst es nicht erneut einfügen, außer du willst es ersetzen.",
-    "edit_token": "Token bearbeiten",
     "cancel": "Abbrechen"
   },
   "intercoms": {
@@ -67,18 +55,17 @@
     "raw_data": "Rohdaten",
     "health_history": "Statusverlauf",
     "health_loading": "Verlauf wird geladen…",
-    "health_none": "Kein Verlauf."
+    "health_none": "Kein Verlauf.",
+    "account": "Konto",
+    "location_count": "Standorte",
+    "intercom_count": "Intercoms"
   },
   "messages": {
     "token_saved": "Refresh-Token gespeichert.",
     "unlock_sent": "Entriegelung angefordert.",
     "devices_refreshed": "Geräte aktualisiert."
   },
-  "devices": {
-    "title": "Kameras & Geräte",
-    "none": "Keine Daten verfügbar.",
-    "no_cameras": "Keine Kameras gefunden."
-  },
+  "devices": {},
   "guest_links": {
     "create_title": "Gäste-Link erstellen",
     "template_optional": "Vorlage (optional)",
@@ -140,7 +127,10 @@
     "template_required": "Vorlagenname und Dauer sind erforderlich.",
     "no_results": "Keine Ergebnisse f?r die aktuellen Filter.",
     "invalid_date": "Ung?ltiges Datum",
-    "invalid_date_desc": "Der Link enth?lt ung?ltige Start-/Enddaten."
+    "invalid_date_desc": "Der Link enth?lt ung?ltige Start-/Enddaten.",
+    "account": "Konto",
+    "select_account": "Konto ausw?hlen",
+    "error_account_required": "Bitte ein Ring-Konto ausw?hlen."
   },
   "guest": {
     "title": "Gästezugang",
@@ -181,9 +171,29 @@
   },
   "settings": {
     "title": "Einstellungen",
-    "desc": "Verwalte die Ring-Verbindung und Refresh-Tokens.",
-    "manage_desc": "Verwalte den Ring-Refresh-Token und die Authentifizierung.",
-    "open": "Einstellungen öffnen"
+    "desc": "Verwalte verbundene Ring-Konten und deren Intercom-Ger?te.",
+    "account_required": "Bitte zuerst ein Ring-Konto erstellen oder ausw?hlen.",
+    "ring_account": "Ring-Konto",
+    "default_account": "Standard",
+    "account_configured": "konfiguriert",
+    "account_not_configured": "nicht konfiguriert",
+    "new_account_placeholder": "Neues Ring-Konto-Label",
+    "accounts_overview": "Verbundene Konten und Ger?te",
+    "accounts_overview_desc": "{{accounts}} Konten verbunden, {{intercoms}} Intercoms verf?gbar.",
+    "token_state": "Token",
+    "connected_intercoms": "Verbundene Intercoms",
+    "last_updated": "Zuletzt aktualisiert",
+    "add_integration": "Intercom-Integration hinzuf?gen",
+    "no_accounts": "Noch keine Ring-Konten verbunden.",
+    "renew_credentials": "Anmeldedaten erneuern",
+    "delete_account": "Konto l?schen",
+    "delete_account_confirm": "Konto \"{{label}}\" dauerhaft l?schen? Zugeh?rige Gast-Links werden entfernt.",
+    "account_deleted": "Konto gel?scht.",
+    "new_modal_title": "Intercom-Integration hinzuf?gen",
+    "renew_modal_title": "Anmeldedaten f?r {{label}} erneuern",
+    "modal_desc": "Verbinde ein neues Konto oder erneuere Anmeldedaten mit Login + 2FA, oder f?ge ein Refresh-Token ein.",
+    "mode_auth": "Login + 2FA",
+    "mode_token": "Refresh-Token"
   },
   "common": {
     "success": "erfolgreich",

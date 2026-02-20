@@ -120,18 +120,42 @@ function Shell({
   return (
     <div className="page">
       <header className="header">
-        <div>
-          <div className="brand-title">
-            <img
-              src="/ring_intercom_logo.png"
-              alt="Ring Intercom Control logo"
-              className="brand-logo"
-            />
-            <h1>{t('app.title')}</h1>
+        <div className="header-top">
+          <div>
+            <div className="brand-title">
+              <img
+                src="/ring_intercom_logo.png"
+                alt="Ring Intercom Control logo"
+                className="brand-logo"
+              />
+              <h1>{t('app.title')}</h1>
+            </div>
+            <p>{t('app.signed_in_as', { username: user.username })}</p>
           </div>
-          <p>{t('app.signed_in_as', { username: user.username })}</p>
+          <div className="header-controls">
+            <div className="lang-select">
+              <span className="lang-label">
+                <Icon name="language" />
+                {t('app.language')}
+              </span>
+              <select
+                className="btn ghost lang-native-select"
+                onChange={(e) => setLang(e.target.value)}
+                value={currentLanguage}
+              >
+                <option value="en">EN</option>
+                <option value="it">IT</option>
+                <option value="es">ES</option>
+                <option value="de">DE</option>
+              </select>
+            </div>
+            <button className="btn nav-link" onClick={handleLogout}>
+              <Icon name="logout" />
+              {t('app.logout')}
+            </button>
+          </div>
         </div>
-        <div className="actions">
+        <div className="actions menu-links">
           <Link to="/" className="btn ghost nav-link">
             <Icon name="dashboard" />
             {t('app.dashboard')}
@@ -150,26 +174,6 @@ function Shell({
               {t('app.users')}
             </Link>
           ) : null}
-          <div className="lang-select">
-            <span className="lang-label">
-              <Icon name="language" />
-              {t('app.language')}
-            </span>
-            <select
-              className="btn ghost lang-native-select"
-              onChange={(e) => setLang(e.target.value)}
-              value={currentLanguage}
-            >
-              <option value="en">EN</option>
-              <option value="it">IT</option>
-              <option value="es">ES</option>
-              <option value="de">DE</option>
-            </select>
-          </div>
-          <button className="btn nav-link" onClick={handleLogout}>
-            <Icon name="logout" />
-            {t('app.logout')}
-          </button>
         </div>
       </header>
       <main>{children}</main>

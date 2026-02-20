@@ -16,17 +16,9 @@
     "username": "Nome utente",
     "password": "Password",
     "sign_in": "Accedi",
-    "signing_in": "Accesso…",
-    "error": "Accesso non riuscito"
+    "signing_in": "Accesso…"
   },
   "ring": {
-    "connection_title": "Connessione Ring",
-    "connection_desc": "Salva in modo sicuro un refresh token Ring. Puoi generarlo con la CLI di ring-client-api. Incollalo qui e salva.",
-    "generate_title": "Genera Refresh Token",
-    "generate_desc": "Accedi qui per creare un refresh token senza usare la CLI.",
-    "generate_note": "Le credenziali sono usate solo per ottenere il refresh token e non vengono mai salvate.",
-    "generate_show": "Mostra accesso",
-    "generate_hide": "Nascondi accesso",
     "email": "Email",
     "password": "Password",
     "start_auth": "Invia codice",
@@ -36,7 +28,6 @@
     "verify_code": "Verifica codice",
     "verifying": "Verifica…",
     "resend_code": "Reinvia codice",
-    "auth_cancel": "Annulla",
     "test_token": "Test token",
     "testing": "Verifica…",
     "test_success": "Token valido. Sedi: {{count}}.",
@@ -44,11 +35,8 @@
     "refresh_token": "Refresh Token",
     "save_token": "Salva Token",
     "saving": "Salvataggio…",
-    "configured": "Ring è configurato.",
     "not_configured": "Nessun token salvato.",
     "token_stored": "Il refresh token è già salvato.",
-    "token_stored_desc": "Non devi reinserirlo a meno che tu voglia sostituirlo.",
-    "edit_token": "Modifica token",
     "cancel": "Annulla"
   },
   "intercoms": {
@@ -67,18 +55,17 @@
     "raw_data": "Dati grezzi",
     "health_history": "Storico stato",
     "health_loading": "Caricamento storico…",
-    "health_none": "Nessuno storico."
+    "health_none": "Nessuno storico.",
+    "account": "Account",
+    "location_count": "Posizioni",
+    "intercom_count": "Citofoni"
   },
   "messages": {
     "token_saved": "Refresh token salvato.",
     "unlock_sent": "Richiesta di sblocco inviata.",
     "devices_refreshed": "Dispositivi aggiornati."
   },
-  "devices": {
-    "title": "Telecamere e Dispositivi",
-    "none": "Nessun dato disponibile.",
-    "no_cameras": "Nessuna telecamera rilevata."
-  },
+  "devices": {},
   "guest_links": {
     "create_title": "Crea Link Ospite",
     "template_optional": "Template (opzionale)",
@@ -140,7 +127,10 @@
     "template_required": "Nome e durata del template sono obbligatori.",
     "no_results": "Nessun risultato per i filtri correnti.",
     "invalid_date": "Data non valida",
-    "invalid_date_desc": "Il link contiene date di inizio/fine non valide."
+    "invalid_date_desc": "Il link contiene date di inizio/fine non valide.",
+    "account": "Account",
+    "select_account": "Seleziona account",
+    "error_account_required": "Seleziona un account Ring."
   },
   "guest": {
     "title": "Accesso Ospiti",
@@ -181,9 +171,29 @@
   },
   "settings": {
     "title": "Impostazioni",
-    "desc": "Gestisci la connessione Ring e i refresh token.",
-    "manage_desc": "Gestisci il refresh token Ring e l'autenticazione.",
-    "open": "Apri impostazioni"
+    "desc": "Gestisci gli account Ring collegati e i relativi citofoni.",
+    "account_required": "Crea o seleziona prima un account Ring.",
+    "ring_account": "Account Ring",
+    "default_account": "Predefinito",
+    "account_configured": "configurato",
+    "account_not_configured": "non configurato",
+    "new_account_placeholder": "Nuova etichetta account Ring",
+    "accounts_overview": "Account e Dispositivi Collegati",
+    "accounts_overview_desc": "{{accounts}} account collegati, {{intercoms}} citofoni disponibili.",
+    "token_state": "Token",
+    "connected_intercoms": "Citofoni collegati",
+    "last_updated": "Ultimo aggiornamento",
+    "add_integration": "Aggiungi integrazione citofono",
+    "no_accounts": "Nessun account Ring collegato.",
+    "renew_credentials": "Rinnova credenziali",
+    "delete_account": "Elimina account",
+    "delete_account_confirm": "Eliminare definitivamente l'account \"{{label}}\"? I guest link collegati verranno rimossi.",
+    "account_deleted": "Account eliminato.",
+    "new_modal_title": "Aggiungi integrazione citofono",
+    "renew_modal_title": "Rinnova credenziali per {{label}}",
+    "modal_desc": "Collega un nuovo account o rinnova le credenziali con login + 2FA, oppure inserisci un refresh token.",
+    "mode_auth": "Login + 2FA",
+    "mode_token": "Refresh token"
   },
   "common": {
     "success": "successo",

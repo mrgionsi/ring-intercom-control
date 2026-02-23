@@ -203,10 +203,12 @@ docker run --rm -p 5173:5173 \
 Notes:
 
 - `BACKEND_URL` is optional. If set, `/api/*` requests are proxied to backend.
+- `host.docker.internal` works by default on Docker Desktop (Windows/macOS). On Linux, add:
+  - `--add-host=host.docker.internal:host-gateway`
 - Health endpoint inside container: `GET /health` returns `{ "ok": true }`.
 - Static cache policy:
   - `index.html`: `no-cache`
-  - `dist/assets/*`: `public, max-age=31536000, immutable`
+  - `/assets/*`: `public, max-age=31536000, immutable`
 
 ## Validation and QA
 

@@ -1,7 +1,7 @@
 import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
-import { createReadStream, existsSync, statSync } from 'node:fs';
-import { extname, join, normalize } from 'node:path';
+import { readFile, stat } from 'node:fs/promises';
+import { createReadStream } from 'node:fs';
+import { extname, join, normalize, sep } from 'node:path';
 
 const port = Number(process.env.PORT || 5173);
 const distDir = normalize(join(process.cwd(), 'dist'));
@@ -64,13 +64,14 @@ async function proxyApi(req, res) {
       signal: controller.signal
     });
   } catch (error) {
-    clearTimeout(timeout);
     if (error && error.name === 'AbortError') {
       res.writeHead(504, { 'content-type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ error: 'Upstream timeout' }));
       return;
     }
-    throw error;
+    res.writeHead(502, { 'content-type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ error: 'Bad gateway' }));
+    return;
   } finally {
     clearTimeout(timeout);
   }
@@ -115,7 +116,8 @@ async function handleStatic(req, res) {
   }
 
   const filePath = sanitizePath(pathname);
-  const inDist = filePath.startsWith(distDir);
+  const inDist =
+    filePath === distDir || filePath.startsWith(`${distDir}${sep}`);
   if (!inDist) {
     res.writeHead(403, { 'content-type': 'text/plain; charset=utf-8' });
     res.end('Forbidden');
@@ -132,12 +134,30 @@ async function handleStatic(req, res) {
       headers['cache-control'] = 'public, max-age=31536000, immutable';
     }
     res.writeHead(200, headers);
-    createReadStream(targetPath).pipe(res);
+    const stream = createReadStream(targetPath);
+    stream.on('error', (error) => {
+      console.error('Failed to read static asset', error);
+      stream.destroy();
+      if (!res.headersSent) {
+        res.writeHead(500, { 'content-type': 'text/plain; charset=utf-8' });
+        res.end('Internal Server Error');
+      } else if (!res.writableEnded) {
+        res.end();
+      }
+    });
+    stream.pipe(res);
   };
 
-  if (existsSync(filePath) && statSync(filePath).isFile()) {
-    serveFile(filePath);
-    return;
+  try {
+    const fileStat = await stat(filePath);
+    if (fileStat.isFile()) {
+      serveFile(filePath);
+      return;
+    }
+  } catch (error) {
+    if (error?.code !== 'ENOENT') {
+      throw error;
+    }
   }
 
   const indexPath = join(distDir, 'index.html');
@@ -157,8 +177,16 @@ async function handleStatic(req, res) {
 createServer((req, res) => {
   handleStatic(req, res).catch((error) => {
     console.error('Frontend server error', error);
-    res.writeHead(500, { 'content-type': 'text/plain; charset=utf-8' });
-    res.end('Internal Server Error');
+    if (!res.headersSent) {
+      res.writeHead(500, { 'content-type': 'text/plain; charset=utf-8' });
+      res.end('Internal Server Error');
+      return;
+    }
+    if (!res.writableEnded) {
+      res.end();
+      return;
+    }
+    console.error('Headers were already sent for failed request');
   });
 }).listen(port, () => {
   console.log(`Frontend listening on http://localhost:${port}`);

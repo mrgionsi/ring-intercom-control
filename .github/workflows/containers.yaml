@@ -37,6 +37,7 @@ jobs:
         uses: docker/build-push-action@v6.9.0
         with:
           call: check
+          context: ${{ matrix.component }}
       
       - name: Build image
         uses: docker/build-push-action@v6.9.0

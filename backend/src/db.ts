@@ -6,8 +6,10 @@ export type GuestLink = {
   id: number;
   token: string;
   label: string | null;
+  ringAccountId: number;
   intercomId: string;
   userId: number;
+  startsAt: string;
   expiresAt: string;
   maxUses: number | null;
   uses: number;
@@ -60,6 +62,17 @@ export type GuestLinkTemplate = {
   max_uses: number | null;
   created_at: string;
 };
+
+export type RingAccount = {
+  id: number;
+  user_id: number;
+  label: string;
+  refresh_token: string | null;
+  is_default: number;
+  disabled: number;
+  created_at: string;
+  updated_at: string;
+};
 export type User = {
   id: number;
   username: string;
@@ -73,6 +86,20 @@ export type User = {
 };
 
 let db: Database<sqlite3.Database, sqlite3.Statement> | null = null;
+const GUEST_LINK_COLUMNS = `
+  id,
+  token,
+  label,
+  ring_account_id AS ringAccountId,
+  intercom_id AS intercomId,
+  user_id AS userId,
+  starts_at AS startsAt,
+  expires_at AS expiresAt,
+  max_uses AS maxUses,
+  uses,
+  disabled,
+  created_at AS createdAt
+`;
 
 export async function initDb(): Promise<void> {
   db = await open({
@@ -108,18 +135,33 @@ export async function initDb(): Promise<void> {
       FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS ring_accounts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      label TEXT NOT NULL,
+      refresh_token TEXT,
+      is_default INTEGER NOT NULL DEFAULT 0,
+      disabled INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
     CREATE TABLE IF NOT EXISTS guest_links (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       token TEXT UNIQUE NOT NULL,
       user_id INTEGER NOT NULL,
+      ring_account_id INTEGER,
       label TEXT,
       intercom_id TEXT NOT NULL,
+      starts_at TEXT NOT NULL,
       expires_at TEXT NOT NULL,
       max_uses INTEGER,
       uses INTEGER NOT NULL DEFAULT 0,
       disabled INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL,
-      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY(ring_account_id) REFERENCES ring_accounts(id) ON DELETE CASCADE
     );
 
     CREATE TABLE IF NOT EXISTS unlock_events (
@@ -175,7 +217,11 @@ export async function initDb(): Promise<void> {
 
   await ensureUsersProfileColumns();
   await ensureUsersDisabledColumn();
+  await ensureRingAccountsTable();
+  await migrateUserTokensToRingAccounts();
   await ensureGuestLinksUserIdColumn();
+  await ensureGuestLinksRingAccountIdColumn();
+  await ensureGuestLinksStartsAtColumn();
   await ensureUnlockEventsTable();
   await ensureLoginAttemptsTable();
   await ensureGuestLinkTemplatesTable();
@@ -217,8 +263,10 @@ export async function setSetting(key: string, value: string): Promise<void> {
 export async function createGuestLink(input: {
   token: string;
   userId: number;
+  ringAccountId: number;
   label?: string;
   intercomId: string;
+  startsAt: string;
   expiresAt: string;
   maxUses?: number | null;
 }): Promise<GuestLink> {
@@ -226,20 +274,26 @@ export async function createGuestLink(input: {
   await getDb().run(
     `
       INSERT INTO guest_links
-        (token, user_id, label, intercom_id, expires_at, max_uses, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+        (token, user_id, ring_account_id, label, intercom_id, starts_at, expires_at, max_uses, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     input.token,
     input.userId,
+    input.ringAccountId,
     input.label ?? null,
     input.intercomId,
+    input.startsAt,
     input.expiresAt,
     input.maxUses ?? null,
     now
   );
 
   const row = await getDb().get<GuestLink>(
-    'SELECT * FROM guest_links WHERE token = ?',
+    `
+      SELECT ${GUEST_LINK_COLUMNS}
+      FROM guest_links
+      WHERE token = ?
+    `,
     input.token
   );
   return mapGuestLink(row!);
@@ -247,7 +301,11 @@ export async function createGuestLink(input: {
 
 export async function listGuestLinks(): Promise<GuestLink[]> {
   const rows = await getDb().all<GuestLink[]>(
-    'SELECT * FROM guest_links ORDER BY created_at DESC'
+    `
+      SELECT ${GUEST_LINK_COLUMNS}
+      FROM guest_links
+      ORDER BY created_at DESC
+    `
   );
   return rows.map(mapGuestLink);
 }
@@ -256,7 +314,12 @@ export async function listGuestLinksForUser(
   userId: number
 ): Promise<GuestLink[]> {
   const rows = await getDb().all<GuestLink[]>(
-    'SELECT * FROM guest_links WHERE user_id = ? ORDER BY created_at DESC',
+    `
+      SELECT ${GUEST_LINK_COLUMNS}
+      FROM guest_links
+      WHERE user_id = ?
+      ORDER BY created_at DESC
+    `,
     userId
   );
   return rows.map(mapGuestLink);
@@ -266,7 +329,11 @@ export async function getGuestLinkByToken(
   token: string
 ): Promise<GuestLink | null> {
   const row = await getDb().get<GuestLink>(
-    'SELECT * FROM guest_links WHERE token = ?',
+    `
+      SELECT ${GUEST_LINK_COLUMNS}
+      FROM guest_links
+      WHERE token = ?
+    `,
     token
   );
   return row ? mapGuestLink(row) : null;
@@ -290,21 +357,91 @@ export async function disableGuestLink(
   );
 }
 
+export async function getGuestLinkByIdForUser(
+  id: number,
+  userId: number
+): Promise<GuestLink | null> {
+  const row = await getDb().get<GuestLink>(
+    `
+      SELECT ${GUEST_LINK_COLUMNS}
+      FROM guest_links
+      WHERE id = ? AND user_id = ?
+    `,
+    id,
+    userId
+  );
+  return row ? mapGuestLink(row) : null;
+}
+
+export async function updateGuestLinkExpiresAt(
+  id: number,
+  userId: number,
+  expiresAtIso: string
+): Promise<GuestLink | null> {
+  await getDb().run(
+    'UPDATE guest_links SET expires_at = ? WHERE id = ? AND user_id = ?',
+    expiresAtIso,
+    id,
+    userId
+  );
+  const updated = await getDb().get<GuestLink>(
+    `
+      SELECT ${GUEST_LINK_COLUMNS}
+      FROM guest_links
+      WHERE id = ? AND user_id = ?
+    `,
+    id,
+    userId
+  );
+  return updated ? mapGuestLink(updated) : null;
+}
+
+export async function hasActiveGuestLinkWithLabel(
+  userId: number,
+  label: string,
+  nowIso: string,
+  ringAccountId?: number
+): Promise<boolean> {
+  const accountFilter =
+    typeof ringAccountId === 'number' ? 'AND ring_account_id = ?' : '';
+  const args: Array<number | string> = [userId, label, nowIso];
+  if (typeof ringAccountId === 'number') {
+    args.push(ringAccountId);
+  }
+  const row = await getDb().get<{ count: number }>(
+    `
+      SELECT COUNT(1) as count
+      FROM guest_links
+      WHERE user_id = ?
+        AND disabled = 0
+        AND label = ?
+        AND expires_at > ?
+        ${accountFilter}
+        AND (max_uses IS NULL OR uses < max_uses)
+    `,
+    ...args
+  );
+  return (row?.count ?? 0) > 0;
+}
+
 export async function createUser(input: {
   username: string;
   passwordHash: string;
+  role?: 'user' | 'admin';
   firstName?: string | null;
   lastName?: string | null;
   structure?: string | null;
 }): Promise<User> {
   const now = new Date().toISOString();
+  const role = input.role === 'admin' ? 'admin' : 'user';
   await getDb().run(
     `
       INSERT INTO users (username, password_hash, role, first_name, last_name, structure, disabled, created_at)
-      VALUES (?, ?, 'user', ?, ?, ?, 0, ?)
+      VALUES (?, ?, ?, ?, ?, ?, 0, ?)
     `,
     input.username,
     input.passwordHash,
+    role,
     input.firstName ?? null,
     input.lastName ?? null,
     input.structure ?? null,
@@ -425,31 +562,244 @@ export async function deleteUser(id: number): Promise<void> {
   await updateUser(id, { disabled: 1 });
 }
 
-export async function setUserToken(
+export async function hardDeleteUser(id: number): Promise<void> {
+  await getDb().run('DELETE FROM users WHERE id = ?', id);
+}
+
+export async function createRingAccount(
   userId: number,
+  label: string
+): Promise<RingAccount> {
+  if (!Number.isFinite(userId) || userId <= 0) {
+    throw new Error('Invalid userId for ring account');
+  }
+  const now = new Date().toISOString();
+  const existingCount = await getDb().get<{ count: number }>(
+    'SELECT COUNT(1) as count FROM ring_accounts WHERE user_id = ? AND disabled = 0',
+    userId
+  );
+  const isDefault = (existingCount?.count ?? 0) === 0 ? 1 : 0;
+  await getDb().run(
+    `
+      INSERT INTO ring_accounts (user_id, label, is_default, disabled, created_at, updated_at)
+      VALUES (?, ?, ?, 0, ?, ?)
+    `,
+    userId,
+    label,
+    isDefault,
+    now,
+    now
+  );
+  const row = await getDb().get<RingAccount>(
+    'SELECT * FROM ring_accounts WHERE user_id = ? ORDER BY id DESC LIMIT 1',
+    userId
+  );
+  return row!;
+}
+
+export async function listRingAccountsForUser(userId: number): Promise<RingAccount[]> {
+  return await getDb().all<RingAccount[]>(
+    'SELECT * FROM ring_accounts WHERE user_id = ? AND disabled = 0 ORDER BY id ASC',
+    userId
+  );
+}
+
+export async function getRingAccountByIdForUser(
+  userId: number,
+  ringAccountId: number
+): Promise<RingAccount | null> {
+  const row = await getDb().get<RingAccount>(
+    'SELECT * FROM ring_accounts WHERE id = ? AND user_id = ? AND disabled = 0',
+    ringAccountId,
+    userId
+  );
+  return row ?? null;
+}
+
+export async function getDefaultRingAccountForUser(
+  userId: number
+): Promise<RingAccount | null> {
+  const row = await getDb().get<RingAccount>(
+    `SELECT * FROM ring_accounts
+     WHERE user_id = ? AND disabled = 0
+     ORDER BY is_default DESC, id ASC
+     LIMIT 1`,
+    userId
+  );
+  return row ?? null;
+}
+
+export async function setRingAccountDefault(
+  userId: number,
+  ringAccountId: number
+): Promise<void> {
+  const now = new Date().toISOString();
+  await getDb().exec('BEGIN');
+  try {
+    await getDb().run(
+      'UPDATE ring_accounts SET is_default = 0, updated_at = ? WHERE user_id = ?',
+      now,
+      userId
+    );
+    await getDb().run(
+      'UPDATE ring_accounts SET is_default = 1, updated_at = ? WHERE id = ? AND user_id = ?',
+      now,
+      ringAccountId,
+      userId
+    );
+    await getDb().exec('COMMIT');
+  } catch (error) {
+    await getDb().exec('ROLLBACK');
+    throw error;
+  }
+}
+
+export async function updateRingAccountLabel(
+  userId: number,
+  ringAccountId: number,
+  label: string
+): Promise<void> {
+  await getDb().run(
+    'UPDATE ring_accounts SET label = ?, updated_at = ? WHERE id = ? AND user_id = ? AND disabled = 0',
+    label,
+    new Date().toISOString(),
+    ringAccountId,
+    userId
+  );
+}
+
+export async function disableRingAccount(
+  userId: number,
+  ringAccountId: number
+): Promise<void> {
+  await getDb().run(
+    'UPDATE ring_accounts SET disabled = 1, is_default = 0, updated_at = ? WHERE id = ? AND user_id = ?',
+    new Date().toISOString(),
+    ringAccountId,
+    userId
+  );
+  const hasDefault = await getDb().get<{ count: number }>(
+    'SELECT COUNT(1) as count FROM ring_accounts WHERE user_id = ? AND disabled = 0 AND is_default = 1',
+    userId
+  );
+  if ((hasDefault?.count ?? 0) === 0) {
+    const next = await getDefaultRingAccountForUser(userId);
+    if (next) {
+      await setRingAccountDefault(userId, next.id);
+    }
+  }
+}
+
+export async function deleteRingAccountPermanently(
+  userId: number,
+  ringAccountId: number
+): Promise<void> {
+  const existing = await getDb().get<{ is_default: number }>(
+    'SELECT is_default FROM ring_accounts WHERE id = ? AND user_id = ? AND disabled = 0',
+    ringAccountId,
+    userId
+  );
+  if (!existing) {
+    return;
+  }
+
+  await getDb().run(
+    'DELETE FROM ring_accounts WHERE id = ? AND user_id = ?',
+    ringAccountId,
+    userId
+  );
+
+  if (existing.is_default) {
+    const next = await getDefaultRingAccountForUser(userId);
+    if (next) {
+      await setRingAccountDefault(userId, next.id);
+    }
+  }
+}
+
+export async function setRingAccountToken(
+  userId: number,
+  ringAccountId: number,
   encryptedRefreshToken: string
 ): Promise<void> {
   const now = new Date().toISOString();
   await getDb().run(
     `
-      INSERT INTO user_tokens (user_id, refresh_token, updated_at)
-      VALUES (?, ?, ?)
-      ON CONFLICT(user_id) DO UPDATE SET
-        refresh_token = excluded.refresh_token,
-        updated_at = excluded.updated_at
+      UPDATE ring_accounts
+      SET refresh_token = ?,
+          updated_at = ?
+      WHERE id = ? AND user_id = ? AND disabled = 0
     `,
-    userId,
     encryptedRefreshToken,
-    now
+    now,
+    ringAccountId,
+    userId
   );
+}
+
+export async function setUserToken(
+  userId: number,
+  encryptedRefreshToken: string
+): Promise<void> {
+  const defaultAccount = await getDefaultRingAccountForUser(userId);
+  if (!defaultAccount) {
+    const account = await createRingAccount(userId, 'Primary Ring Account');
+    await setRingAccountToken(userId, account.id, encryptedRefreshToken);
+    return;
+  }
+  await setRingAccountToken(userId, defaultAccount.id, encryptedRefreshToken);
+}
+
+export async function getRingAccountToken(
+  userId: number,
+  ringAccountId: number
+): Promise<string | null> {
+  const row = await getDb().get<{ refresh_token: string | null }>(
+    'SELECT refresh_token FROM ring_accounts WHERE id = ? AND user_id = ? AND disabled = 0',
+    ringAccountId,
+    userId
+  );
+  return row?.refresh_token ?? null;
 }
 
 export async function getUserToken(userId: number): Promise<string | null> {
   const row = await getDb().get<{ refresh_token: string }>(
+    `SELECT refresh_token
+     FROM ring_accounts
+     WHERE user_id = ? AND disabled = 0 AND refresh_token IS NOT NULL
+     ORDER BY is_default DESC, id ASC
+     LIMIT 1`,
+    userId
+  );
+  if (row?.refresh_token) {
+    return row.refresh_token;
+  }
+  const legacy = await getDb().get<{ refresh_token: string }>(
     'SELECT refresh_token FROM user_tokens WHERE user_id = ?',
     userId
   );
-  return row?.refresh_token ?? null;
+  return legacy?.refresh_token ?? null;
+}
+
+export async function getUserTokenStatus(
+  userId: number
+): Promise<{ configured: boolean; updatedAt: string | null }> {
+  const row = await getDb().get<{ updated_at: string }>(
+    `SELECT updated_at
+     FROM ring_accounts
+     WHERE user_id = ? AND disabled = 0 AND refresh_token IS NOT NULL
+     ORDER BY is_default DESC, id ASC
+     LIMIT 1`,
+    userId
+  );
+  if (row) {
+    return { configured: true, updatedAt: row.updated_at };
+  }
+  const legacy = await getDb().get<{ updated_at: string }>(
+    'SELECT updated_at FROM user_tokens WHERE user_id = ?',
+    userId
+  );
+  return { configured: Boolean(legacy), updatedAt: legacy?.updated_at ?? null };
 }
 
 export async function listUsersWithTokens(): Promise<
@@ -473,13 +823,38 @@ export async function listUsersWithTokens(): Promise<
     }>
   >(
     `
-      SELECT users.id, users.username, users.first_name, users.last_name, users.structure, user_tokens.refresh_token
+      SELECT users.id, users.username, users.first_name, users.last_name, users.structure,
+             (
+               SELECT ra.refresh_token
+               FROM ring_accounts ra
+               WHERE ra.user_id = users.id AND ra.disabled = 0
+               ORDER BY ra.is_default DESC, ra.id ASC
+               LIMIT 1
+             ) AS refresh_token
       FROM users
-      LEFT JOIN user_tokens ON user_tokens.user_id = users.id
       ORDER BY users.created_at DESC
     `
   );
   return rows;
+}
+
+export async function setLegacyUserToken(
+  userId: number,
+  encryptedRefreshToken: string
+): Promise<void> {
+  const now = new Date().toISOString();
+  await getDb().run(
+    `
+      INSERT INTO user_tokens (user_id, refresh_token, updated_at)
+      VALUES (?, ?, ?)
+      ON CONFLICT(user_id) DO UPDATE SET
+        refresh_token = excluded.refresh_token,
+        updated_at = excluded.updated_at
+    `,
+    userId,
+    encryptedRefreshToken,
+    now
+  );
 }
 
 export async function recordUnlockEvent(input: {
@@ -505,11 +880,27 @@ export async function recordUnlockEvent(input: {
     input.errorMessage ?? null,
     now
   );
+  const maxEvents = Number.isFinite(config.UNLOCK_EVENTS_MAX)
+    ? Math.max(1000, Math.floor(config.UNLOCK_EVENTS_MAX))
+    : 10000;
+  await getDb().run(
+    `
+      DELETE FROM unlock_events
+      WHERE id NOT IN (
+        SELECT id
+        FROM unlock_events
+        ORDER BY created_at DESC
+        LIMIT ?
+      )
+    `,
+    maxEvents
+  );
 }
 
 export async function listUnlockEventsForUser(
   userId: number,
-  limit = 50
+  limit = 50,
+  offset = 0
 ): Promise<UnlockEvent[]> {
   const rows = await getDb().all<UnlockEvent[]>(
     `
@@ -517,25 +908,52 @@ export async function listUnlockEventsForUser(
       WHERE user_id = ?
       ORDER BY created_at DESC
       LIMIT ?
+      OFFSET ?
     `,
     userId,
-    limit
+    limit,
+    offset
   );
   return rows;
 }
 
 export async function listUnlockEventsAll(
-  limit = 200
+  limit = 200,
+  offset = 0
 ): Promise<UnlockEvent[]> {
   const rows = await getDb().all<UnlockEvent[]>(
     `
       SELECT * FROM unlock_events
       ORDER BY created_at DESC
       LIMIT ?
+      OFFSET ?
     `,
-    limit
+    limit,
+    offset
   );
   return rows;
+}
+
+export async function countUnlockEventsForUser(userId: number): Promise<number> {
+  const row = await getDb().get<{ count: number }>(
+    `
+      SELECT COUNT(1) as count
+      FROM unlock_events
+      WHERE user_id = ?
+    `,
+    userId
+  );
+  return row?.count ?? 0;
+}
+
+export async function countUnlockEventsAll(): Promise<number> {
+  const row = await getDb().get<{ count: number }>(
+    `
+      SELECT COUNT(1) as count
+      FROM unlock_events
+    `
+  );
+  return row?.count ?? 0;
 }
 
 export async function getLoginAttempt(
@@ -728,15 +1146,70 @@ export async function listDeviceHealthHistory(
   return rows;
 }
 
+// SQL aliases already match GuestLink; this is an intentional no-op extension point.
 function mapGuestLink(row: GuestLink): GuestLink {
-  return {
-    ...row,
-    userId: row.userId ?? (row as any).user_id,
-    intercomId: row.intercomId ?? (row as any).intercom_id,
-    expiresAt: row.expiresAt ?? (row as any).expires_at,
-    maxUses: row.maxUses ?? (row as any).max_uses,
-    createdAt: row.createdAt ?? (row as any).created_at
-  };
+  return row;
+}
+
+async function ensureRingAccountsTable(): Promise<void> {
+  // Legacy migration helper for DBs created before ring_accounts existed in initDb.
+  // TODO(2026-12): remove once support for pre-v0.4 databases is dropped.
+  const tables = await getDb().all<Array<{ name: string }>>(
+    "SELECT name FROM sqlite_master WHERE type='table' AND name='ring_accounts'"
+  );
+  if (tables.length > 0) {
+    return;
+  }
+  await getDb().exec(`
+    CREATE TABLE IF NOT EXISTS ring_accounts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      label TEXT NOT NULL,
+      refresh_token TEXT,
+      is_default INTEGER NOT NULL DEFAULT 0,
+      disabled INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+  `);
+}
+
+async function migrateUserTokensToRingAccounts(): Promise<void> {
+  const rows = await getDb().all<
+    Array<{ user_id: number; refresh_token: string; updated_at: string }>
+  >('SELECT user_id, refresh_token, updated_at FROM user_tokens');
+  for (const row of rows) {
+    if (!Number.isFinite(row.user_id) || row.user_id <= 0) {
+      continue;
+    }
+    const existing = await getDb().get<{ id: number }>(
+      'SELECT id FROM ring_accounts WHERE user_id = ? AND disabled = 0 ORDER BY is_default DESC, id ASC LIMIT 1',
+      row.user_id
+    );
+    if (existing) {
+      await getDb().run(
+        `UPDATE ring_accounts
+         SET refresh_token = COALESCE(refresh_token, ?),
+             updated_at = CASE WHEN refresh_token IS NULL THEN ? ELSE updated_at END
+         WHERE id = ?`,
+        row.refresh_token,
+        row.updated_at,
+        existing.id
+      );
+      continue;
+    }
+    await getDb().run(
+      `INSERT INTO ring_accounts
+        (user_id, label, refresh_token, is_default, disabled, created_at, updated_at)
+       VALUES (?, ?, ?, 1, 0, ?, ?)`,
+      row.user_id,
+      'Primary Ring Account',
+      row.refresh_token,
+      row.updated_at,
+      row.updated_at
+    );
+  }
 }
 
 async function ensureGuestLinksUserIdColumn(): Promise<void> {
@@ -746,6 +1219,57 @@ async function ensureGuestLinksUserIdColumn(): Promise<void> {
   const hasUserId = columns.some((col) => col.name === 'user_id');
   if (!hasUserId) {
     await getDb().exec('ALTER TABLE guest_links ADD COLUMN user_id INTEGER');
+  }
+}
+
+async function ensureGuestLinksRingAccountIdColumn(): Promise<void> {
+  const columns = await getDb().all<Array<{ name: string }>>(
+    'PRAGMA table_info(guest_links)'
+  );
+  const hasRingAccountId = columns.some((col) => col.name === 'ring_account_id');
+  if (!hasRingAccountId) {
+    await getDb().exec('ALTER TABLE guest_links ADD COLUMN ring_account_id INTEGER');
+  }
+  const rows = await getDb().all<Array<{ id: number; user_id: number; ring_account_id: number }>>(
+    `SELECT id, user_id, ring_account_id
+     FROM guest_links
+     WHERE ring_account_id IS NULL OR ring_account_id <= 0`
+  );
+  for (const row of rows) {
+    if (row.ring_account_id && row.ring_account_id > 0) {
+      continue;
+    }
+    if (!Number.isFinite(row.user_id) || row.user_id <= 0) {
+      continue;
+    }
+    const fallback = await getDefaultRingAccountForUser(row.user_id);
+    if (!fallback) {
+      const created = await createRingAccount(row.user_id, 'Primary Ring Account');
+      await getDb().run(
+        'UPDATE guest_links SET ring_account_id = ? WHERE id = ?',
+        created.id,
+        row.id
+      );
+      continue;
+    }
+    await getDb().run(
+      'UPDATE guest_links SET ring_account_id = ? WHERE id = ?',
+      fallback.id,
+      row.id
+    );
+  }
+}
+
+async function ensureGuestLinksStartsAtColumn(): Promise<void> {
+  const columns = await getDb().all<Array<{ name: string }>>(
+    'PRAGMA table_info(guest_links)'
+  );
+  const hasStartsAt = columns.some((col) => col.name === 'starts_at');
+  if (!hasStartsAt) {
+    await getDb().exec('ALTER TABLE guest_links ADD COLUMN starts_at TEXT');
+    await getDb().exec(
+      "UPDATE guest_links SET starts_at = COALESCE(created_at, expires_at) WHERE starts_at IS NULL OR starts_at = ''"
+    );
   }
 }
 

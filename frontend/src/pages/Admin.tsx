@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from '../api';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { formatDateTime } from '../utils/dateTime';
+import { Icon } from '../components/Icon';
 
 type RingSummary = {
+  ringAccountId: number;
+  ringAccountLabel: string;
   locationId: string;
   locationName: string;
   intercoms: Array<{
+    ringAccountId: number;
+    ringAccountLabel: string;
     id: string;
     name: string;
     kind: string;
@@ -46,6 +51,11 @@ type HealthSample = {
   created_at: string;
 };
 
+type IntercomEntry = RingSummary['intercoms'][number] & {
+  locationId: string;
+  locationName: string;
+};
+
 export default function Admin() {
   const { t } = useTranslation();
   const [summary, setSummary] = useState<RingSummary[]>([]);
@@ -56,10 +66,33 @@ export default function Admin() {
   const [initializing, setInitializing] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
   const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
   const [healthHistory, setHealthHistory] = useState<Record<string, HealthSample[]>>(
     {}
   );
   const [healthLoading, setHealthLoading] = useState<Record<string, boolean>>({});
+  const intercomEntries: IntercomEntry[] = summary
+    .flatMap((location) =>
+      location.intercoms.map((intercom) => ({
+        ...intercom,
+        locationId: location.locationId,
+        locationName: location.locationName
+      }))
+    )
+    .sort(
+      (a, b) =>
+        a.ringAccountLabel.localeCompare(b.ringAccountLabel) ||
+        a.locationName.localeCompare(b.locationName) ||
+        a.name.localeCompare(b.name)
+    );
+  const accountCount = new Set(summary.map((item) => item.ringAccountId)).size;
+  const locationCount = summary.length;
+  const intercomNameById = new Map<string, string>();
+  for (const intercom of intercomEntries) {
+    if (!intercomNameById.has(intercom.id)) {
+      intercomNameById.set(intercom.id, intercom.name);
+    }
+  }
 
   const loadSummary = async () => {
     const data = await apiFetch<{ summary: RingSummary[] }>('/api/ring/summary');
@@ -67,53 +100,60 @@ export default function Admin() {
   };
 
   const loadAudit = async () => {
-    const data = await apiFetch<{ events: AuditEvent[] }>('/api/audit');
-    setAuditEvents(data.events);
+    setAuditLoading(true);
+    try {
+      const data = await apiFetch<{ events: AuditEvent[] }>('/api/audit');
+      setAuditEvents(data.events);
+    } finally {
+      setAuditLoading(false);
+    }
   };
 
   useEffect(() => {
     setInitializing(true);
-    Promise.all([loadSummary(), loadAudit()]).catch(() => null)
+    loadSummary().catch(() => null)
       .finally(() => setInitializing(false));
+    loadAudit().catch(() => null);
   }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      Promise.all([loadSummary(), loadAudit()]).catch(() => null);
+      loadSummary().catch(() => null);
+      loadAudit().catch(() => null);
     }, 60_000);
     return () => clearInterval(timer);
   }, []);
 
-  const handleUnlock = async (intercomId: string) => {
+  const handleUnlock = async (intercomId: string, ringAccountId: number) => {
     setLoading(true);
     setError(null);
     setMessage(null);
     try {
       await apiFetch('/api/ring/unlock', {
         method: 'POST',
-        body: JSON.stringify({ intercomId })
+        body: JSON.stringify({ intercomId, ringAccountId })
       });
       setMessage(t('messages.unlock_sent'));
       setToast(t('messages.unlock_sent'));
       setTimeout(() => setToast(null), 3000);
     } catch (err: any) {
-      setError(err.message ?? t('guest.error'));
+      setError(err.message ?? t('common.error'));
     } finally {
       setLoading(false);
     }
   };
 
-  const loadHealthHistory = async (intercomId: string) => {
-    setHealthLoading((prev) => ({ ...prev, [intercomId]: true }));
+  const loadHealthHistory = async (intercomId: string, cacheKey: string) => {
+    setHealthLoading((prev) => ({ ...prev, [cacheKey]: true }));
     try {
       const data = await apiFetch<{ history: HealthSample[] }>(
         `/api/ring/health/history?intercomId=${encodeURIComponent(intercomId)}`
       );
-      setHealthHistory((prev) => ({ ...prev, [intercomId]: data.history }));
+      setHealthHistory((prev) => ({ ...prev, [cacheKey]: data.history }));
     } catch {
-      setHealthHistory((prev) => ({ ...prev, [intercomId]: [] }));
+      setHealthHistory((prev) => ({ ...prev, [cacheKey]: [] }));
     } finally {
-      setHealthLoading((prev) => ({ ...prev, [intercomId]: false }));
+      setHealthLoading((prev) => ({ ...prev, [cacheKey]: false }));
     }
   };
 
@@ -141,15 +181,10 @@ export default function Admin() {
       ) : null}
 
       <section className="card">
-        <h2>{t('settings.title')}</h2>
-        <p>{t('settings.manage_desc')}</p>
-        <Link to="/settings" className="btn">
-          {t('settings.open')}
-        </Link>
-      </section>
-
-      <section className="card">
-        <h2>{t('intercoms.title')}</h2>
+        <h2 className="section-title">
+          <Icon name="intercom" />
+          {t('intercoms.title')}
+        </h2>
         <div className="actions">
           <p>{t('intercoms.desc')}</p>
           <button
@@ -160,58 +195,70 @@ export default function Admin() {
             {refreshing ? t('intercoms.reloading') : t('intercoms.reload')}
           </button>
         </div>
+        <div className="meta">
+          <span className="badge">{t('settings.ring_account')}: {accountCount}</span>
+          <span className="badge">{t('intercoms.location_count')}: {locationCount}</span>
+          <span className="badge ok">{t('intercoms.intercom_count')}: {intercomEntries.length}</span>
+        </div>
         {summary.length === 0 ? (
           <p className="muted">{t('intercoms.none')}</p>
         ) : (
-          summary.map((location) => (
-            <div key={location.locationId} className="stack">
-              <h3>{location.locationName}</h3>
-              {location.intercoms.length === 0 ? (
-                <p className="muted">{t('intercoms.no_intercoms')}</p>
-              ) : (
-                <div className="grid">
-                  {location.intercoms.map((intercom) => (
-                    <div key={intercom.id} className="tile">
-                      <div>
-                        <strong>{intercom.name}</strong>
-                        <div className="muted">ID: {intercom.id}</div>
-                        <div className="meta">
-                          <span>
-                            {t('intercoms.battery')}:{' '}
-                            {formatBattery(intercom.batteryPercent, intercom.data)}
+          <div className="grid">
+            {intercomEntries.length === 0 ? (
+              <p className="muted">{t('intercoms.no_intercoms')}</p>
+            ) : (
+              intercomEntries.map((intercom) => {
+                const intercomKey = `${intercom.ringAccountId}:${intercom.locationId}:${intercom.id}`;
+                return (
+                  <div key={intercomKey} className="tile intercom-card">
+                      <div className="intercom-main">
+                        <div className="intercom-head">
+                          <strong className="intercom-name intercom-name-line">
+                            <Icon name="phone" />
+                            {intercom.name}
+                          </strong>
+                          <span className="intercom-id">ID: {intercom.id}</span>
+                          <div className="meta">
+                            <span className="badge">{t('intercoms.account')}: {intercom.ringAccountLabel}</span>
+                            <span className="badge">{intercom.locationName}</span>
+                          </div>
+                        </div>
+                        <div className="intercom-stats">
+                            <span className="stat-pill">
+                            <Icon name="battery" />
+                            {t('intercoms.battery')}: {formatBattery(intercom.batteryPercent, intercom.data)}
                           </span>
-                          {intercom.batteryCategory ? (
-                            <span className="badge">
-                              {intercom.batteryCategory}
+                          {intercom.rssi !== null &&
+                          intercom.rssi !== undefined ? (
+                            <span className="stat-pill">
+                              <Icon name="signal" />
+                              {t('intercoms.rssi')}: {intercom.rssi}
                             </span>
                           ) : null}
                           {intercom.connection ? (
-                            <span className="badge">
+                            <span className="stat-pill">
+                              <Icon name="status" />
                               {intercom.connection}
                             </span>
                           ) : null}
-                          {intercom.rssi !== null &&
-                          intercom.rssi !== undefined ? (
-                            <span className="badge">
-                              {t('intercoms.rssi')} {intercom.rssi}
-                            </span>
+                        </div>
+                        <div className="intercom-secondary">
+                          {intercom.firmware ? (
+                            <div className="muted">
+                              <Icon name="firmware" /> {t('intercoms.firmware')}: {intercom.firmware}
+                            </div>
+                          ) : null}
+                          {intercom.wifiName ? (
+                            <div className="muted">
+                              <Icon name="wifi" /> {t('intercoms.wifi')}: {intercom.wifiName}
+                            </div>
+                          ) : null}
+                          {intercom.otaStatus ? (
+                            <div className="muted">
+                              <Icon name="ota" /> {t('intercoms.ota')}: {intercom.otaStatus}
+                            </div>
                           ) : null}
                         </div>
-                        {intercom.firmware ? (
-                          <div className="muted">
-                            {t('intercoms.firmware')}: {intercom.firmware}
-                          </div>
-                        ) : null}
-                        {intercom.wifiName ? (
-                          <div className="muted">
-                            {t('intercoms.wifi')}: {intercom.wifiName}
-                          </div>
-                        ) : null}
-                        {intercom.otaStatus ? (
-                          <div className="muted">
-                            {t('intercoms.ota')}: {intercom.otaStatus}
-                          </div>
-                        ) : null}
                         <details className="details">
                           <summary>{t('intercoms.raw_data')}</summary>
                           <pre>{JSON.stringify(intercom.data, null, 2)}</pre>
@@ -220,21 +267,21 @@ export default function Admin() {
                           className="details"
                           onToggle={(e) => {
                             const open = (e.currentTarget as HTMLDetailsElement).open;
-                            if (open && !healthHistory[intercom.id]) {
-                              loadHealthHistory(intercom.id);
+                            if (open && !healthHistory[intercomKey]) {
+                              loadHealthHistory(intercom.id, intercomKey);
                             }
                           }}
                         >
                           <summary>{t('intercoms.health_history')}</summary>
-                          {healthLoading[intercom.id] ? (
+                          {healthLoading[intercomKey] ? (
                             <p className="muted">{t('intercoms.health_loading')}</p>
-                          ) : healthHistory[intercom.id]?.length ? (
+                          ) : healthHistory[intercomKey]?.length ? (
                             <div className="stack">
-                              {healthHistory[intercom.id].map((sample) => (
+                              {healthHistory[intercomKey].map((sample) => (
                                 <div key={sample.id} className="tile">
                                   <div>
                                     <strong>
-                                      {new Date(sample.created_at).toLocaleString()}
+                                      {formatDateTime(sample.created_at)}
                                     </strong>
                                     <div className="muted">
                                       {t('intercoms.battery')}:{' '}
@@ -258,67 +305,42 @@ export default function Admin() {
                         </details>
                       </div>
                       <button
-                        className="btn"
-                        onClick={() => handleUnlock(intercom.id)}
+                        className="btn nav-link"
+                        onClick={() => handleUnlock(intercom.id, intercom.ringAccountId)}
                         disabled={loading || initializing}
                       >
+                        <Icon name="unlock" />
                         {t('intercoms.unlock')}
                       </button>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))
-        )}
-      </section>
-
-      <section className="card">
-        <h2>{t('devices.title')}</h2>
-        {summary.length === 0 ? (
-          <p className="muted">{t('devices.none')}</p>
-        ) : (
-          summary.map((location) => (
-            <div key={location.locationId} className="stack">
-              <h3>{location.locationName}</h3>
-              {location.cameras.length === 0 ? (
-                <p className="muted">{t('devices.no_cameras')}</p>
-              ) : (
-                <div className="grid">
-                  {location.cameras.map((camera) => (
-                    <div key={camera.id} className="tile">
-                      <div>
-                        <strong>{camera.name}</strong>
-                        <div className="muted">ID: {camera.id}</div>
-                      </div>
-                      <details className="details">
-                        <summary>{t('intercoms.raw_data')}</summary>
-                        <pre>{JSON.stringify(camera.data, null, 2)}</pre>
-                      </details>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))
+                  );
+                })
+            )}
+          </div>
         )}
       </section>
 
       <section className="card">
         <h2>{t('admin.unlock_history')}</h2>
-        {auditEvents.length === 0 ? (
+        {auditLoading ? (
+          <p className="muted">{t('app.loading')}</p>
+        ) : auditEvents.length === 0 ? (
           <p className="muted">{t('common.no_data')}</p>
         ) : (
           <div className="stack">
             {auditEvents.slice(0, 10).map((event) => (
               <div key={event.id} className="tile">
                 <div>
-                  <strong>Intercom {event.intercom_id}</strong>
+                  <strong>
+                    {intercomNameById.get(event.intercom_id) ??
+                      `${t('intercoms.title')} ${event.intercom_id}`}
+                  </strong>
                   <div className="muted">
+                    ID: {event.intercom_id} -{' '}
                     {event.source === 'guest'
                       ? t('profile.guest_link')
                       : t('profile.user')}{' '}
-                    - {new Date(event.created_at).toLocaleString()}
+                    - {formatDateTime(event.created_at)}
                   </div>
                   {event.error_message ? (
                     <div className="muted">

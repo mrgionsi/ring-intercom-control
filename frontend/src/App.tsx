@@ -9,6 +9,7 @@ import AdminUsers from './pages/AdminUsers';
 import Settings from './pages/Settings';
 import { useTranslation } from 'react-i18next';
 import { setLanguage } from './i18n';
+import { Icon } from './components/Icon';
 
 type User = { username: string; role: 'admin' | 'user' } | null;
 
@@ -104,8 +105,12 @@ function Shell({
   children: React.ReactNode;
 }) {
   const { t, i18n } = useTranslation();
+  const currentLanguage = (i18n.resolvedLanguage ?? i18n.language ?? 'en')
+    .toLowerCase()
+    .split('-')[0];
   const handleLogout = async () => {
     await apiFetch('/api/auth/logout', { method: 'POST' });
+    await initCsrf();
     onLogout();
   };
 
@@ -116,48 +121,60 @@ function Shell({
   return (
     <div className="page">
       <header className="header">
-        <div>
-          <div className="brand-title">
-            <img
-              src="/ring_intercom_logo.png"
-              alt="Ring Intercom Control logo"
-              className="brand-logo"
-            />
-            <h1>{t('app.title')}</h1>
+        <div className="header-top">
+          <div>
+            <div className="brand-title">
+              <img
+                src="/ring_intercom_logo.png"
+                alt="Ring Intercom Control logo"
+                className="brand-logo"
+              />
+              <h1>{t('app.title')}</h1>
+            </div>
+            <p>{t('app.signed_in_as', { username: user.username })}</p>
           </div>
-          <p>{t('app.signed_in_as', { username: user.username })}</p>
+          <div className="header-controls">
+            <div className="lang-select">
+              <span className="lang-label">
+                <Icon name="language" />
+                {t('app.language')}
+              </span>
+              <select
+                className="btn ghost lang-native-select"
+                onChange={(e) => setLang(e.target.value)}
+                value={currentLanguage}
+              >
+                <option value="en">EN</option>
+                <option value="it">IT</option>
+                <option value="es">ES</option>
+                <option value="de">DE</option>
+              </select>
+            </div>
+            <button className="btn nav-link" onClick={handleLogout}>
+              <Icon name="logout" />
+              {t('app.logout')}
+            </button>
+          </div>
         </div>
-        <div className="actions">
-          <Link to="/" className="btn ghost">
+        <div className="actions menu-links">
+          <Link to="/" className="btn ghost nav-link">
+            <Icon name="dashboard" />
             {t('app.dashboard')}
           </Link>
-          <Link to="/links" className="btn ghost">
+          <Link to="/links" className="btn ghost nav-link">
+            <Icon name="links" />
             {t('app.guest_links')}
           </Link>
-          <Link to="/settings" className="btn ghost">
+          <Link to="/settings" className="btn ghost nav-link">
+            <Icon name="settings" />
             {t('app.settings')}
           </Link>
           {user.role === 'admin' ? (
-            <Link to="/admin/users" className="btn ghost">
+            <Link to="/admin/users" className="btn ghost nav-link">
+              <Icon name="users" />
               {t('app.users')}
             </Link>
           ) : null}
-          <div className="lang-select">
-            <span className="lang-label">{t('app.language')}</span>
-            <select
-              className="btn ghost"
-              onChange={(e) => setLang(e.target.value)}
-              value={i18n.language}
-            >
-              <option value="en">EN</option>
-              <option value="it">IT</option>
-              <option value="es">ES</option>
-              <option value="de">DE</option>
-            </select>
-          </div>
-          <button className="btn" onClick={handleLogout}>
-            {t('app.logout')}
-          </button>
         </div>
       </header>
       <main>{children}</main>

@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type NextFunction, type Request, type Response } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import {
   clearRingAccountCache,
@@ -10,7 +10,7 @@ import { startRingAuth, verifyRingAuth } from '../ringAuth.js';
 import { RingApi } from 'ring-client-api';
 import {
   createRingAccount,
-  deleteRingAccountPermanently,
+  disableRingAccount,
   getDefaultRingAccountForUser,
   getRingAccountByIdForUser,
   getUserTokenStatus,
@@ -22,6 +22,14 @@ import {
 } from '../db.js';
 
 const router = Router();
+
+function asyncHandler(
+  fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>
+) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    fn(req, res, next).catch(next);
+  };
+}
 
 function sanitizeAccount(account: any) {
   return {
@@ -35,13 +43,13 @@ function sanitizeAccount(account: any) {
   };
 }
 
-router.get('/status', requireAuth, async (req, res) => {
+router.get('/status', requireAuth, asyncHandler(async (req, res) => {
   const status = await getUserTokenStatus(req.session.auth!.id);
   const accounts = await listRingAccountsForUser(req.session.auth!.id);
   res.json({ ...status, accounts: accounts.map(sanitizeAccount) });
-});
+}));
 
-router.post('/refresh-token', requireAuth, async (req, res) => {
+router.post('/refresh-token', requireAuth, asyncHandler(async (req, res) => {
   const { refreshToken, ringAccountId, accountLabel } = req.body ?? {};
   if (!refreshToken || typeof refreshToken !== 'string') {
     return res.status(400).json({ error: 'refreshToken is required' });
@@ -67,7 +75,7 @@ router.post('/refresh-token', requireAuth, async (req, res) => {
     refreshToken.trim()
   );
   res.json({ ok: true, ringAccountId: targetAccountId });
-});
+}));
 
 router.post('/refresh-token/test', requireAuth, async (req, res) => {
   const { refreshToken } = req.body ?? {};
@@ -150,21 +158,21 @@ router.post('/auth/verify', requireAuth, async (req, res) => {
   }
 });
 
-router.get('/accounts', requireAuth, async (req, res) => {
+router.get('/accounts', requireAuth, asyncHandler(async (req, res) => {
   const accounts = await listRingAccountsForUser(req.session.auth!.id);
   res.json({ accounts: accounts.map(sanitizeAccount) });
-});
+}));
 
-router.post('/accounts', requireAuth, async (req, res) => {
+router.post('/accounts', requireAuth, asyncHandler(async (req, res) => {
   const { label } = req.body ?? {};
   if (typeof label !== 'string' || !label.trim()) {
     return res.status(400).json({ error: 'label is required' });
   }
   const account = await createRingAccount(req.session.auth!.id, label.trim());
   res.json({ account: sanitizeAccount(account) });
-});
+}));
 
-router.patch('/accounts/:id', requireAuth, async (req, res) => {
+router.patch('/accounts/:id', requireAuth, asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   if (!id) {
     return res.status(400).json({ error: 'Invalid account id' });
@@ -182,17 +190,21 @@ router.patch('/accounts/:id', requireAuth, async (req, res) => {
   }
   const updated = await getRingAccountByIdForUser(req.session.auth!.id, id);
   res.json({ account: updated ? sanitizeAccount(updated) : null });
-});
+}));
 
-router.delete('/accounts/:id', requireAuth, async (req, res) => {
+router.delete('/accounts/:id', requireAuth, asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   if (!id) {
     return res.status(400).json({ error: 'Invalid account id' });
   }
+  const account = await getRingAccountByIdForUser(req.session.auth!.id, id);
+  if (!account) {
+    return res.status(404).json({ error: 'Account not found' });
+  }
+  await disableRingAccount(req.session.auth!.id, id);
   clearRingAccountCache(req.session.auth!.id, id);
-  await deleteRingAccountPermanently(req.session.auth!.id, id);
   res.json({ ok: true });
-});
+}));
 
 router.get('/summary', requireAuth, async (req, res) => {
   try {
@@ -235,7 +247,7 @@ router.post('/unlock', requireAuth, async (req, res) => {
   }
 });
 
-router.get('/health/history', requireAuth, async (req, res) => {
+router.get('/health/history', requireAuth, asyncHandler(async (req, res) => {
   const intercomId = req.query.intercomId ? String(req.query.intercomId) : '';
   if (!intercomId) {
     return res.status(400).json({ error: 'intercomId is required' });
@@ -246,6 +258,6 @@ router.get('/health/history', requireAuth, async (req, res) => {
     20
   );
   res.json({ history });
-});
+}));
 
 export default router;

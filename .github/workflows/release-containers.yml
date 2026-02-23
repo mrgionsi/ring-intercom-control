@@ -141,7 +141,12 @@ jobs:
     name: Draft Release
     runs-on: ubuntu-latest
     needs: build-and-push
-    if: needs.build-and-push.result == 'success'
+    if: >
+      needs.build-and-push.result == 'success' &&
+      (
+        github.event_name == 'workflow_dispatch' ||
+        !contains(join(github.event.pull_request.labels.*.name, ','), 'skip-changelog')
+      )
     environment: production
     steps:
       - name: Prepare release metadata

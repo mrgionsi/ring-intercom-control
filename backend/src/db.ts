@@ -137,7 +137,7 @@ export async function initDb(): Promise<void> {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       token TEXT UNIQUE NOT NULL,
       user_id INTEGER NOT NULL,
-      ring_account_id INTEGER NOT NULL DEFAULT 0,
+      ring_account_id INTEGER,
       label TEXT,
       intercom_id TEXT NOT NULL,
       starts_at TEXT NOT NULL,
@@ -1275,7 +1275,7 @@ async function ensureGuestLinksRingAccountIdColumn(): Promise<void> {
   );
   const hasRingAccountId = columns.some((col) => col.name === 'ring_account_id');
   if (!hasRingAccountId) {
-    await getDb().exec('ALTER TABLE guest_links ADD COLUMN ring_account_id INTEGER NOT NULL DEFAULT 0');
+    await getDb().exec('ALTER TABLE guest_links ADD COLUMN ring_account_id INTEGER');
   }
   const rows = await getDb().all<Array<{ id: number; user_id: number; ring_account_id: number }>>(
     'SELECT id, user_id, ring_account_id FROM guest_links'

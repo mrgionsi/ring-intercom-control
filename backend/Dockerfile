@@ -2,13 +2,13 @@
 FROM node:20-alpine AS builder
 
 WORKDIR /app
-COPY backend/package.json backend/package-lock.json* ./
+COPY package.json package-lock.json* ./
 
 # Install dependencies
 RUN npm ci
 
 # Copy source
-COPY backend/ .
+COPY . .
 
 RUN npm run build
 

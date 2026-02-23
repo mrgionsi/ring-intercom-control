@@ -127,85 +127,138 @@ async function main() {
   }
   console.log('PASS /api/ring/status authenticated');
 
-  const createAccountLabel = `Smoke Account ${Date.now()}`;
-  const createAccountRes = await assertStatus('/api/ring/accounts', 200, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRF-Token': csrf.csrfToken
-    },
-    body: JSON.stringify({ label: createAccountLabel })
-  });
-  const createAccount = await readJson(createAccountRes);
-  const createdId = createAccount?.account?.id;
-  if (!createdId) {
-    throw new Error('/api/ring/accounts create did not return account id');
-  }
-  console.log('PASS /api/ring/accounts create');
-
-  const listAccountsRes = await assertStatus('/api/ring/accounts', 200);
-  const listAccounts = await readJson(listAccountsRes);
-  if (!listAccounts?.accounts?.some((a) => a.id === createdId)) {
-    throw new Error('/api/ring/accounts list missing created account');
-  }
-  console.log('PASS /api/ring/accounts list');
-
-  await assertStatus(`/api/ring/accounts/${createdId}`, 200, {
-    method: 'DELETE',
-    headers: {
-      'X-CSRF-Token': csrf.csrfToken
-    }
-  });
-  console.log('PASS /api/ring/accounts delete');
-
   const basicUser = `smoke-user-${Date.now()}`;
   const basicPassword = 'smoke-user-password';
-  await assertStatus('/api/admin/users', 200, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRF-Token': csrf.csrfToken
-    },
-    body: JSON.stringify({
-      username: basicUser,
-      password: basicPassword,
-      role: 'user',
-      firstName: 'Smoke',
-      lastName: 'User',
-      structure: 'Test'
-    })
-  });
-  console.log('PASS /api/admin/users create standard user');
+  let createdAccountId = null;
+  let createdUserId = null;
+  let adminCsrfToken = csrf.csrfToken;
 
-  await assertStatus('/api/auth/logout', 200, {
-    method: 'POST',
-    headers: {
-      'X-CSRF-Token': csrf.csrfToken
+  try {
+    const createAccountLabel = `Smoke Account ${Date.now()}`;
+    const createAccountRes = await assertStatus('/api/ring/accounts', 200, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': adminCsrfToken
+      },
+      body: JSON.stringify({ label: createAccountLabel })
+    });
+    const createAccount = await readJson(createAccountRes);
+    createdAccountId = createAccount?.account?.id ?? null;
+    if (!createdAccountId) {
+      throw new Error('/api/ring/accounts create did not return account id');
     }
-  });
-  console.log('PASS /api/auth/logout');
+    console.log('PASS /api/ring/accounts create');
 
-  const csrfUserRes = await assertStatus('/api/auth/csrf', 200);
-  const csrfUser = await readJson(csrfUserRes);
-  if (!csrfUser?.csrfToken || typeof csrfUser.csrfToken !== 'string') {
-    throw new Error('/api/auth/csrf did not return csrfToken for user login');
+    const listAccountsRes = await assertStatus('/api/ring/accounts', 200);
+    const listAccounts = await readJson(listAccountsRes);
+    if (!listAccounts?.accounts?.some((a) => a.id === createdAccountId)) {
+      throw new Error('/api/ring/accounts list missing created account');
+    }
+    console.log('PASS /api/ring/accounts list');
+
+    await assertStatus(`/api/ring/accounts/${createdAccountId}`, 200, {
+      method: 'DELETE',
+      headers: {
+        'X-CSRF-Token': adminCsrfToken
+      }
+    });
+    createdAccountId = null;
+    console.log('PASS /api/ring/accounts delete');
+
+    const createUserRes = await assertStatus('/api/admin/users', 200, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': adminCsrfToken
+      },
+      body: JSON.stringify({
+        username: basicUser,
+        password: basicPassword,
+        role: 'user',
+        firstName: 'Smoke',
+        lastName: 'User',
+        structure: 'Test'
+      })
+    });
+    const createUser = await readJson(createUserRes);
+    createdUserId = createUser?.user?.id ?? null;
+    console.log('PASS /api/admin/users create standard user');
+
+    await assertStatus('/api/auth/logout', 200, {
+      method: 'POST',
+      headers: {
+        'X-CSRF-Token': adminCsrfToken
+      }
+    });
+    console.log('PASS /api/auth/logout');
+
+    const csrfUserRes = await assertStatus('/api/auth/csrf', 200);
+    const csrfUser = await readJson(csrfUserRes);
+    if (!csrfUser?.csrfToken || typeof csrfUser.csrfToken !== 'string') {
+      throw new Error('/api/auth/csrf did not return csrfToken for user login');
+    }
+
+    await assertStatus('/api/auth/login', 200, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfUser.csrfToken
+      },
+      body: JSON.stringify({ username: basicUser, password: basicPassword })
+    });
+    console.log('PASS /api/auth/login standard user');
+
+    await assertStatus('/api/admin/users', 403);
+    console.log('PASS /api/admin/users forbidden for standard user');
+
+    await assertStatus('/api/ring/status', 200);
+    console.log('PASS /api/ring/status allowed for standard user');
+  } finally {
+    if (createdUserId || createdAccountId) {
+      try {
+        const logoutCsrfRes = await assertStatus('/api/auth/csrf', 200);
+        const logoutCsrf = await readJson(logoutCsrfRes);
+        if (logoutCsrf?.csrfToken) {
+          await assertStatus('/api/auth/logout', 200, {
+            method: 'POST',
+            headers: { 'X-CSRF-Token': logoutCsrf.csrfToken }
+          });
+        }
+      } catch {
+        // best-effort logout before admin cleanup
+      }
+      try {
+        const cleanupCsrfRes = await assertStatus('/api/auth/csrf', 200);
+        const cleanupCsrf = await readJson(cleanupCsrfRes);
+        if (cleanupCsrf?.csrfToken && username && password) {
+          adminCsrfToken = cleanupCsrf.csrfToken;
+          await assertStatus('/api/auth/login', 200, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-Token': adminCsrfToken
+            },
+            body: JSON.stringify({ username, password })
+          });
+        }
+        if (createdAccountId && adminCsrfToken) {
+          await assertStatus(`/api/ring/accounts/${createdAccountId}`, 200, {
+            method: 'DELETE',
+            headers: { 'X-CSRF-Token': adminCsrfToken }
+          });
+        }
+        if (createdUserId && adminCsrfToken) {
+          await assertStatus(`/api/admin/users/${createdUserId}/permanent`, 200, {
+            method: 'DELETE',
+            headers: { 'X-CSRF-Token': adminCsrfToken }
+          });
+        }
+      } catch (err) {
+        console.warn(`WARN cleanup failed: ${err?.message ?? String(err)}`);
+      }
+    }
   }
-
-  await assertStatus('/api/auth/login', 200, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRF-Token': csrfUser.csrfToken
-    },
-    body: JSON.stringify({ username: basicUser, password: basicPassword })
-  });
-  console.log('PASS /api/auth/login standard user');
-
-  await assertStatus('/api/admin/users', 403);
-  console.log('PASS /api/admin/users forbidden for standard user');
-
-  await assertStatus('/api/ring/status', 200);
-  console.log('PASS /api/ring/status allowed for standard user');
 }
 
 main().catch((err) => {

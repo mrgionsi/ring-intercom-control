@@ -72,6 +72,7 @@ export default function AdminUsers() {
   const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [loginRowsPerPage, setLoginRowsPerPage] = useState(20);
   const [loginPage, setLoginPage] = useState(1);
   const [usersSearch, setUsersSearch] = useState('');
@@ -102,6 +103,7 @@ export default function AdminUsers() {
     if (!silent) {
       setInitializing(true);
     }
+    setLoadError(null);
     try {
       const [usersRes, limitsRes, loginAuditRes] = await Promise.all([
         apiFetch<{ users: UserRow[] }>('/api/admin/users'),
@@ -112,6 +114,10 @@ export default function AdminUsers() {
       setGuestLimit(limitsRes.guestPerMinute);
       setAuthLimit(limitsRes.authPerMinute);
       setLoginAudit(loginAuditRes.events);
+    } catch (err: any) {
+      const message = err?.message ?? t('common.error');
+      setLoadError(message);
+      throw err;
     } finally {
       if (!silent) {
         setInitializing(false);
@@ -131,7 +137,7 @@ export default function AdminUsers() {
   };
 
   useEffect(() => {
-    loadAll().catch(() => null);
+    loadAll().catch(() => undefined);
   }, []);
 
   useEffect(() => {
@@ -153,12 +159,22 @@ export default function AdminUsers() {
     return () => window.clearTimeout(timer);
   }, [toast]);
 
-  const selectedUser = users.find((u) => u.id === selectedUserId) ?? null;
-  const selectedDevices = devices.find((u) => u.userId === selectedUserId) ?? null;
-  const intercomNameById = new Map(
-    (selectedDevices?.summary ?? []).flatMap((location) =>
-      location.intercoms.map((intercom) => [intercom.id, intercom.name] as const)
-    )
+  const selectedUser = useMemo(
+    () => users.find((u) => u.id === selectedUserId) ?? null,
+    [users, selectedUserId]
+  );
+  const selectedDevices = useMemo(
+    () => devices.find((u) => u.userId === selectedUserId) ?? null,
+    [devices, selectedUserId]
+  );
+  const intercomNameById = useMemo(
+    () =>
+      new Map(
+        (selectedDevices?.summary ?? []).flatMap((location) =>
+          location.intercoms.map((intercom) => [intercom.id, intercom.name] as const)
+        )
+      ),
+    [selectedDevices]
   );
 
   const openCreateModal = () => {
@@ -391,7 +407,9 @@ export default function AdminUsers() {
             />
           </label>
         </div>
-        {users.length === 0 ? (
+        {loadError ? (
+          <p className="muted">{loadError}</p>
+        ) : users.length === 0 ? (
           <p className="muted">{t('admin.no_users')}</p>
         ) : (
           <div className="links-table-wrap">
@@ -487,7 +505,7 @@ export default function AdminUsers() {
           <h2>{t('admin.login_attempts')}</h2>
           <div className="actions">
             <label className="field">
-              <span>Rows</span>
+              <span>{t('adminUsers.rows')}</span>
               <select
                 value={loginRowsPerPage}
                 onChange={(e) => {
@@ -567,7 +585,7 @@ export default function AdminUsers() {
       {createOpen ? (
         <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && setCreateOpen(false)}>
           <section className="card modal-card" role="dialog" aria-modal="true">
-            <button type="button" className="modal-close" onClick={() => setCreateOpen(false)} aria-label="Close">
+            <button type="button" className="modal-close" onClick={() => setCreateOpen(false)} aria-label={t('guest_links.close_templates')}>
               ×
             </button>
             <h2>{t('admin.create_user')}</h2>
@@ -620,7 +638,7 @@ export default function AdminUsers() {
       {detailsOpen && selectedUser ? (
         <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && setDetailsOpen(false)}>
           <section className="card modal-card modal-card-fullscreen" role="dialog" aria-modal="true">
-            <button type="button" className="modal-close" onClick={() => setDetailsOpen(false)} aria-label="Close">
+            <button type="button" className="modal-close" onClick={() => setDetailsOpen(false)} aria-label={t('guest_links.close_templates')}>
               ×
             </button>
             <h2>{t('admin.details')} - {selectedUser.username}</h2>
@@ -715,7 +733,7 @@ export default function AdminUsers() {
                   <p className="muted">{t('common.no_data')}</p>
                 ) : (
                   <div className="stack admin-audit-list">
-                    {auditEvents.slice(0, 10).map((event) => (
+                    {auditEvents.map((event) => (
                       <div key={event.id} className="tile admin-audit-tile">
                         <div>
                           <div className="admin-device-title">

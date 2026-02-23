@@ -232,5 +232,8 @@
     "guest_link": "Guest link",
     "user": "User",
     "error": "Error"
+  },
+  "adminUsers": {
+    "rows": "Rows"
   }
 }

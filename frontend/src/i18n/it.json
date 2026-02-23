@@ -72,7 +72,7 @@
   "guest_links": {
     "create_title": "Crea Link Ospite",
     "template_optional": "Template (opzionale)",
-    "template_hint": "Usa un template per creare link piÃ¹ velocemente o gestisci i template nella finestra.",
+    "template_hint": "Usa un template per creare link più velocemente o gestisci i template nella finestra.",
     "manage_templates": "Gestisci template",
     "close_templates": "Chiudi",
     "label": "Etichetta",
@@ -108,18 +108,18 @@
     "scheduled": "Programmato",
     "scheduled_desc": "Non ancora attivo (inizio nel futuro).",
     "expired": "Scaduto",
-    "expired_desc": "Data di fine giÃ  superata.",
+    "expired_desc": "Data di fine già superata.",
     "used_up": "Esaurito",
     "used_up_desc": "Numero massimo di utilizzi raggiunto.",
     "disabled": "Disabilitato",
-    "disabled_desc": "Disabilitato manualmente e non piÃ¹ utilizzabile.",
+    "disabled_desc": "Disabilitato manualmente e non più utilizzabile.",
     "error_range": "La scadenza deve essere successiva alla data di inizio.",
-    "error_duplicate_active_label": "Esiste giÃ  un link ospite attivo con la stessa etichetta.",
+    "error_duplicate_active_label": "Esiste già un link ospite attivo con la stessa etichetta.",
     "error_intercom_required": "Seleziona un citofono.",
-    "error_start_required": "La data di inizio Ã¨ obbligatoria.",
-    "error_end_required": "La data di fine Ã¨ obbligatoria.",
-    "error_start_invalid": "La data di inizio non Ã¨ valida.",
-    "error_end_invalid": "La data di fine non Ã¨ valida.",
+    "error_start_required": "La data di inizio è obbligatoria.",
+    "error_end_required": "La data di fine è obbligatoria.",
+    "error_start_invalid": "La data di inizio non è valida.",
+    "error_end_invalid": "La data di fine non è valida.",
     "error_max_uses_invalid": "Gli usi massimi devono essere un numero intero positivo.",
     "date_format_hint": "Formato data: dd/mm/yyyy hh:mm",
     "disable": "Disattiva",
@@ -145,10 +145,10 @@
     "checking": "Verifica accesso…",
     "requested": "Richiesta di sblocco inviata.",
     "error": "Sblocco non riuscito",
-    "not_active_yet": "Questo link non Ã¨ ancora attivo.",
-    "expired": "Questo link Ã¨ scaduto.",
+    "not_active_yet": "Questo link non è ancora attivo.",
+    "expired": "Questo link è scaduto.",
     "used_up": "Questo link ha raggiunto il numero massimo di utilizzi.",
-    "disabled": "Questo link Ã¨ disabilitato.",
+    "disabled": "Questo link è disabilitato.",
     "invalid_date": "Questo link contiene date non valide."
   },
   "admin": {
@@ -179,7 +179,7 @@
     "admin_role": "Admin",
     "delete_user": "Elimina utente",
     "delete_user_success": "Utente eliminato con successo.",
-    "delete_user_confirm": "Eliminare definitivamente questo utente? Questa azione non puÃ² essere annullata.",
+    "delete_user_confirm": "Eliminare definitivamente questo utente? Questa azione non può essere annullata.",
     "action_enable": "Attiva",
     "action_disable": "Disattiva",
     "user_enabled_success": "Utente attivato con successo.",
@@ -232,5 +232,8 @@
     "guest_link": "Link ospite",
     "user": "Utente",
     "error": "Errore"
+  },
+  "adminUsers": {
+    "rows": "Righe"
   }
 }

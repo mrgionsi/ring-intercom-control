@@ -15,7 +15,6 @@ on:
     paths:
       - 'backend/Dockerfile'
       - 'frontend/Dockerfile'
-    
 
 jobs:
   build:
@@ -38,11 +37,12 @@ jobs:
         uses: docker/build-push-action@v6.9.0
         with:
           call: check
+          context: ${{ matrix.component }}
       
       - name: Build image
         uses: docker/build-push-action@v6.9.0
         with:
           push: false
           context: ${{ matrix.component }}
-          tags: $GITHUB_REPOSITORY-${{ matrix.component }}:latest
+          tags: ${{ github.repository }}-${{ matrix.component }}:latest
           platforms: linux/amd64,linux/arm64

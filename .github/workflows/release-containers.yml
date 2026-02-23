@@ -1,7 +1,8 @@
 name: Publish Container Images
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
       - main
   workflow_dispatch:
@@ -24,6 +25,12 @@ permissions:
 jobs:
   build-and-push:
     name: Build and Push (${{ matrix.component }})
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event_name == 'pull_request' &&
+        github.event.pull_request.merged == true
+      )
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -38,14 +45,49 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check hotfix gate
+        id: hotfix_gate
+        shell: bash
+        run: |
+          SHOULD_DEPLOY="false"
+          HOTFIX_SOURCE=""
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            SHOULD_DEPLOY="true"
+            HOTFIX_SOURCE="manual"
+          else
+            MSG=""
+            MERGE_SHA="${{ github.event.pull_request.merge_commit_sha }}"
+            if [[ -n "$MERGE_SHA" ]]; then
+              MSG="$(git show -s --format=%B "$MERGE_SHA" || true)"
+            fi
+            TITLE="${{ github.event.pull_request.title }}"
+            if echo "$MSG $TITLE" | grep -Eiq '(^|[^a-z])hotfix([^a-z]|$)'; then
+              SHOULD_DEPLOY="true"
+              HOTFIX_SOURCE="merge_or_title"
+            fi
+          fi
+          echo "should_deploy=$SHOULD_DEPLOY" >> "$GITHUB_OUTPUT"
+          echo "hotfix_source=$HOTFIX_SOURCE" >> "$GITHUB_OUTPUT"
+
+      - name: Stop when hotfix gate is not met
+        if: steps.hotfix_gate.outputs.should_deploy != 'true'
+        run: |
+          echo "Skipping publish: merged PR does not include 'hotfix' in merge commit message or PR title."
+          exit 0
 
       - name: Setup QEMU
+        if: steps.hotfix_gate.outputs.should_deploy == 'true'
         uses: docker/setup-qemu-action@v3
 
       - name: Setup Docker Buildx
+        if: steps.hotfix_gate.outputs.should_deploy == 'true'
         uses: docker/setup-buildx-action@v3
 
       - name: Login to GHCR
+        if: steps.hotfix_gate.outputs.should_deploy == 'true'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -54,27 +96,32 @@ jobs:
 
       - name: Prepare dynamic tags
         id: vars
+        if: steps.hotfix_gate.outputs.should_deploy == 'true'
         shell: bash
         run: |
+          COMPONENT_VERSION="$(node -p "require('./${{ matrix.context }}/package.json').version")"
           EXTRA_TAGS=""
           RELEASE_LABEL="main-${GITHUB_RUN_NUMBER}"
           if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" && -n "${{ inputs.release_tag }}" ]]; then
             EXTRA_TAGS=$'type=raw,value=${{ inputs.release_tag }}\n'
             RELEASE_LABEL="${{ inputs.release_tag }}"
           fi
-          if [[ "${GITHUB_EVENT_NAME}" == "push" || "${{ inputs.publish_latest }}" == "true" ]]; then
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" || "${{ inputs.publish_latest }}" == "true" ]]; then
             EXTRA_TAGS+=$'type=raw,value=latest\n'
           fi
+          EXTRA_TAGS+=$'type=raw,value='"$COMPONENT_VERSION"$'\n'
           {
             echo "extra_tags<<EOF"
             printf "%s" "$EXTRA_TAGS"
             echo
             echo "EOF"
             echo "release_label=$RELEASE_LABEL"
+            echo "component_version=$COMPONENT_VERSION"
           } >> "$GITHUB_OUTPUT"
 
       - name: Extract image metadata
         id: meta
+        if: steps.hotfix_gate.outputs.should_deploy == 'true'
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
@@ -85,6 +132,7 @@ jobs:
 
       - name: Build and push image
         id: build
+        if: steps.hotfix_gate.outputs.should_deploy == 'true'
         uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.context }}
@@ -97,6 +145,7 @@ jobs:
           sbom: true
 
       - name: Attest image provenance
+        if: steps.hotfix_gate.outputs.should_deploy == 'true'
         uses: actions/attest-build-provenance@v2
         with:
           subject-name: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
@@ -104,11 +153,13 @@ jobs:
           push-to-registry: true
 
       - name: Write release manifest
+        if: steps.hotfix_gate.outputs.should_deploy == 'true'
         run: |
           mkdir -p release-manifests
           {
             echo "## ${{ matrix.component }}"
             echo "- Image: \`ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}\`"
+            echo "- Version: \`${{ steps.vars.outputs.component_version }}\`"
             echo "- Digest: \`${{ steps.build.outputs.digest }}\`"
             echo "- Tags:"
             while IFS= read -r tag; do
@@ -118,6 +169,7 @@ jobs:
           } > release-manifests/${{ matrix.component }}.md
 
       - name: Upload release manifest
+        if: steps.hotfix_gate.outputs.should_deploy == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: release-manifest-${{ matrix.component }}
@@ -127,6 +179,7 @@ jobs:
     name: Draft Release
     runs-on: ubuntu-latest
     needs: build-and-push
+    if: needs.build-and-push.result == 'success'
     environment: production
     steps:
       - name: Prepare release metadata
@@ -143,13 +196,16 @@ jobs:
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
 
       - name: Download manifests
+        id: download_manifests
         uses: actions/download-artifact@v4
         with:
           pattern: release-manifest-*
           merge-multiple: true
           path: release-manifests
+          if-no-artifact-found: error
 
       - name: Build release notes
+        if: steps.download_manifests.outcome == 'success'
         run: |
           {
             echo "# Container image publish"
@@ -163,6 +219,7 @@ jobs:
           } > RELEASE_NOTES.md
 
       - name: Create draft release
+        if: steps.download_manifests.outcome == 'success'
         uses: softprops/action-gh-release@v2
         with:
           draft: true

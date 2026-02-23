@@ -1,0 +1,34 @@
+name-template: 'v$NEXT_PATCH_VERSION'
+tag-template: 'v$NEXT_PATCH_VERSION'
+change-template: '- $TITLE (#$NUMBER) @$AUTHOR'
+no-changes-template: '- No changes'
+
+categories:
+  - title: 'Features'
+    labels:
+      - feat
+      - feature
+  - title: 'Fixes'
+    labels:
+      - fix
+      - bug
+      - hotfix
+  - title: 'Operations'
+    labels:
+      - ops
+      - ci
+      - chore
+  - title: 'Documentation'
+    labels:
+      - docs
+
+change-title-escapes: '\<*_&'
+
+template: |
+  ## What Changed
+
+  $CHANGES
+
+  ## Container Images
+
+  Container images are published by the `Publish Container Images` workflow.

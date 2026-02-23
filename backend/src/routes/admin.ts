@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import {
+  countUnlockEventsAll,
+  countUnlockEventsForUser,
   createUser,
   deleteUser,
   hardDeleteUser,
@@ -142,63 +144,58 @@ router.post('/users/:id/reset-password', requireAdmin, async (req, res) => {
 
 router.get('/devices', requireAdmin, async (_req, res) => {
   const users = await listUsersWithTokens();
-  const results: Array<{
-    userId: number;
-    username: string;
-    firstName: string | null;
-    lastName: string | null;
-    structure: string | null;
-    summary: any[] | null;
-    error?: string;
-  }> = [];
-
-  for (const user of users) {
-    if (!user.refresh_token) {
-      results.push({
+  const results = await Promise.all(
+    users.map(async (user) => {
+      const base = {
         userId: user.id,
         username: user.username,
         firstName: user.first_name ?? null,
         lastName: user.last_name ?? null,
-        structure: user.structure ?? null,
-        summary: null,
-        error: 'No refresh token'
-      });
-      continue;
-    }
-    try {
-      const summary = await getRingSummaryForUser(user.id);
-      results.push({
-        userId: user.id,
-        username: user.username,
-        firstName: user.first_name ?? null,
-        lastName: user.last_name ?? null,
-        structure: user.structure ?? null,
-        summary
-      });
-    } catch (err: any) {
-      results.push({
-        userId: user.id,
-        username: user.username,
-        firstName: user.first_name ?? null,
-        lastName: user.last_name ?? null,
-        structure: user.structure ?? null,
-        summary: null,
-        error: err.message ?? 'Failed to load devices'
-      });
-    }
-  }
+        structure: user.structure ?? null
+      };
+      if (!user.refresh_token) {
+        return {
+          ...base,
+          summary: null,
+          error: 'No refresh token'
+        };
+      }
+      try {
+        const summary = await getRingSummaryForUser(user.id);
+        return {
+          ...base,
+          summary
+        };
+      } catch (err: any) {
+        return {
+          ...base,
+          summary: null,
+          error: err.message ?? 'Failed to load devices'
+        };
+      }
+    })
+  );
 
   res.json({ users: results });
 });
 
 router.get('/audit', requireAdmin, async (req, res) => {
   const userId = req.query.userId ? Number(req.query.userId) : null;
+  const page = Math.max(1, Number(req.query.page ?? 1) || 1);
+  const pageSize = Math.min(100, Math.max(1, Number(req.query.pageSize ?? 10) || 10));
+  const offset = (page - 1) * pageSize;
   if (userId) {
-    const events = await listUnlockEventsForUser(userId, 100);
-    return res.json({ events });
+    const [events, total] = await Promise.all([
+      listUnlockEventsForUser(userId, pageSize, offset),
+      countUnlockEventsForUser(userId)
+    ]);
+    return res.json({ events, total, page, pageSize });
   }
-  const events = await listUnlockEventsAll(200);
-  return res.json({ events });
+  const [events, total] = await Promise.all([
+    listUnlockEventsAll(pageSize, offset),
+    countUnlockEventsAll()
+  ]);
+  return res.json({ events, total, page, pageSize });
 });
 
 router.get('/login-audit', requireAdmin, async (_req, res) => {

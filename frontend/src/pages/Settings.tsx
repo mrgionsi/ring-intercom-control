@@ -45,6 +45,7 @@ export default function Settings() {
   const [loading, setLoading] = useState(false);
   const [unlockingKey, setUnlockingKey] = useState<string | null>(null);
   const [initializing, setInitializing] = useState(true);
+  const [summaryLoading, setSummaryLoading] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,13 +66,24 @@ export default function Settings() {
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  const loadData = async () => {
-    const [status, ringSummary] = await Promise.all([
-      apiFetch<{ accounts: RingAccount[] }>('/api/ring/status'),
-      apiFetch<{ summary: RingSummary[] }>('/api/ring/summary')
-    ]);
+  const loadStatus = async () => {
+    const status = await apiFetch<{ accounts: RingAccount[] }>('/api/ring/status');
     setAccounts(status.accounts);
-    setSummary(ringSummary.summary);
+  };
+
+  const loadSummary = async () => {
+    setSummaryLoading(true);
+    try {
+      const ringSummary = await apiFetch<{ summary: RingSummary[] }>('/api/ring/summary');
+      setSummary(ringSummary.summary);
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
+  const loadData = async () => {
+    await loadStatus();
+    loadSummary().catch(() => null);
   };
 
   useEffect(() => {
@@ -403,7 +415,9 @@ export default function Settings() {
 
                   <div className="settings-device-list">
                     <strong>{t('settings.connected_intercoms')}</strong>
-                    {intercoms.length === 0 ? (
+                    {summaryLoading ? (
+                      <p className="muted">{t('app.loading')}</p>
+                    ) : intercoms.length === 0 ? (
                       <p className="muted">{t('intercoms.no_intercoms')}</p>
                     ) : (
                       <div className="stack">

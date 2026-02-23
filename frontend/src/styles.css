@@ -469,14 +469,18 @@ textarea {
 .toast {
   position: fixed;
   right: 24px;
-  bottom: 24px;
-  background: var(--accent);
+  top: 24px;
+  background: var(--success);
   color: white;
   padding: 12px 18px;
   border-radius: 999px;
   box-shadow: var(--shadow);
   font-weight: 600;
   z-index: 20;
+}
+
+.toast.error {
+  background: var(--danger);
 }
 
 .modal-backdrop {
@@ -495,6 +499,15 @@ textarea {
   max-height: calc(100vh - 40px);
   overflow: auto;
   position: relative;
+}
+
+.modal-card-fullscreen {
+  width: min(1320px, calc(100vw - 40px));
+  height: calc(100vh - 40px);
+  max-height: calc(100vh - 40px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-close {
@@ -688,12 +701,84 @@ textarea {
   border-bottom: none;
 }
 
+.table-sort-btn {
+  font: inherit;
+  font-weight: 700;
+  color: inherit;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.table-sort-mark {
+  display: inline-block;
+  min-width: 10px;
+  margin-left: 4px;
+}
+
 .admin-user-row {
   cursor: pointer;
 }
 
 .admin-user-row:hover {
   background: #f7fcfc;
+}
+
+.admin-user-modal-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+  min-height: 0;
+  flex: 1;
+}
+
+.admin-user-panel {
+  min-height: 0;
+  overflow: auto;
+  padding-right: 6px;
+}
+
+.admin-device-list {
+  gap: 12px;
+}
+
+.admin-device-group {
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e3eeee;
+  border-radius: 12px;
+  background: #fbfefe;
+}
+
+.admin-device-location {
+  color: #234447;
+}
+
+.admin-device-tile {
+  align-items: flex-start;
+}
+
+.admin-device-main {
+  min-width: 0;
+}
+
+.admin-device-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-device-id {
+  font-size: 12px;
+}
+
+.admin-audit-list {
+  gap: 10px;
+}
+
+.admin-audit-tile {
+  align-items: flex-start;
 }
 
 .links-table-actions {
@@ -704,6 +789,16 @@ textarea {
 .links-table-actions .btn {
   padding: 6px 12px;
   font-size: 12px;
+}
+
+.login-attempts-table td {
+  white-space: nowrap;
+}
+
+.login-attempt-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .links-pagination {
@@ -741,5 +836,15 @@ pre {
   .tile {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .modal-card-fullscreen {
+    width: calc(100vw - 20px);
+    height: calc(100vh - 20px);
+    max-height: calc(100vh - 20px);
+  }
+
+  .admin-user-modal-grid {
+    grid-template-columns: 1fr;
   }
 }

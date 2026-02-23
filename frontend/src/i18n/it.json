@@ -153,15 +153,18 @@
   },
   "admin": {
     "create_user": "Crea Utente",
+    "create_user_success": "Utente creato con successo.",
     "rate_limits": "Limiti di Richiesta",
     "guest_rpm": "Richieste Ospiti / Minuto",
     "auth_rpm": "Richieste Autenticati / Minuto",
     "save_limits": "Salva Limiti",
+    "save_limits_success": "Limiti salvati con successo.",
     "users": "Utenti",
     "no_users": "Nessun utente.",
     "details": "Dettagli Utente",
     "select_user": "Seleziona un utente per vedere i dettagli.",
     "save_changes": "Salva Modifiche",
+    "save_changes_success": "Modifiche salvate con successo.",
     "disable_user": "Disabilita Utente",
     "reset_password": "Reimposta Password",
     "temp_password": "Password Temporanea",
@@ -175,9 +178,12 @@
     "default_user_role": "Utente (predefinito)",
     "admin_role": "Admin",
     "delete_user": "Elimina utente",
+    "delete_user_success": "Utente eliminato con successo.",
     "delete_user_confirm": "Eliminare definitivamente questo utente? Questa azione non pu? essere annullata.",
     "action_enable": "Attiva",
-    "action_disable": "Disattiva"
+    "action_disable": "Disattiva",
+    "user_enabled_success": "Utente attivato con successo.",
+    "user_disabled_success": "Utente disattivato con successo."
   },
   "settings": {
     "title": "Impostazioni",

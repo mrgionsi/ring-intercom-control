@@ -105,14 +105,14 @@ export async function getRingSummaryForUser(
   userId: number
 ): Promise<RingSummary[]> {
   const accounts = await listRingAccountsForUser(userId);
-  const summaries: RingSummary[] = [];
-  for (const account of accounts) {
-    if (!account.refresh_token) {
-      continue;
-    }
-    const api = await getRingApiForAccount(userId, account.id);
-    const locations = await api.getLocations();
-    for (const location of locations as any[]) {
+  const perAccountSummaries = await Promise.all(
+    accounts.map(async (account) => {
+      if (!account.refresh_token) {
+        return [] as RingSummary[];
+      }
+      const api = await getRingApiForAccount(userId, account.id);
+      const locations = await api.getLocations();
+      return (locations as any[]).map((location) => {
       const intercoms = (location.intercoms ?? []).map((intercom: any) => {
       const raw = intercom.data ?? intercom;
       const batteryLifeRaw =
@@ -185,17 +185,18 @@ export async function getRingSummaryForUser(
       data: camera.data ?? camera
     }));
 
-      summaries.push({
+      return {
         ringAccountId: account.id,
         ringAccountLabel: account.label,
         locationId: String(location.id),
         locationName: location.name ?? `Location ${location.id}`,
         intercoms,
         cameras
+      };
       });
-    }
-  }
-  return summaries;
+    })
+  );
+  return perAccountSummaries.flat();
 }
 
 async function maybeRecordHealthSample(

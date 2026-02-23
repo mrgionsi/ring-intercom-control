@@ -23,5 +23,6 @@ export const config = {
   ADMIN_PASSWORD_HASH: process.env.ADMIN_PASSWORD_HASH as string,
   SESSION_SECRET: process.env.SESSION_SECRET as string,
   MASTER_KEY: process.env.MASTER_KEY as string,
-  DB_PATH: process.env.DB_PATH ?? './data.db'
+  DB_PATH: process.env.DB_PATH ?? './data.db',
+  UNLOCK_EVENTS_MAX: Number(process.env.UNLOCK_EVENTS_MAX ?? 10000)
 };

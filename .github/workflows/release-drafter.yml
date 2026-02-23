@@ -1,9 +1,11 @@
 name: Release Drafter
 
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows:
+      - Publish Container Images
+    types:
+      - completed
 
 permissions:
   contents: write
@@ -11,6 +13,7 @@ permissions:
 
 jobs:
   update-draft:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: release-drafter/release-drafter@b4dbf08f349e421f15f15994d1f6f8c319e8f6b5

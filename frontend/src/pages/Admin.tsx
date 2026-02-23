@@ -66,6 +66,7 @@ export default function Admin() {
   const [initializing, setInitializing] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
   const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
   const [healthHistory, setHealthHistory] = useState<Record<string, HealthSample[]>>(
     {}
   );
@@ -99,19 +100,26 @@ export default function Admin() {
   };
 
   const loadAudit = async () => {
-    const data = await apiFetch<{ events: AuditEvent[] }>('/api/audit');
-    setAuditEvents(data.events);
+    setAuditLoading(true);
+    try {
+      const data = await apiFetch<{ events: AuditEvent[] }>('/api/audit');
+      setAuditEvents(data.events);
+    } finally {
+      setAuditLoading(false);
+    }
   };
 
   useEffect(() => {
     setInitializing(true);
-    Promise.all([loadSummary(), loadAudit()]).catch(() => null)
+    loadSummary().catch(() => null)
       .finally(() => setInitializing(false));
+    loadAudit().catch(() => null);
   }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      Promise.all([loadSummary(), loadAudit()]).catch(() => null);
+      loadSummary().catch(() => null);
+      loadAudit().catch(() => null);
     }, 60_000);
     return () => clearInterval(timer);
   }, []);
@@ -314,7 +322,9 @@ export default function Admin() {
 
       <section className="card">
         <h2>{t('admin.unlock_history')}</h2>
-        {auditEvents.length === 0 ? (
+        {auditLoading ? (
+          <p className="muted">{t('app.loading')}</p>
+        ) : auditEvents.length === 0 ? (
           <p className="muted">{t('common.no_data')}</p>
         ) : (
           <div className="stack">

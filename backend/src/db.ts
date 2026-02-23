@@ -485,18 +485,21 @@ export async function hasActiveGuestLinkWithLabel(
 export async function createUser(input: {
   username: string;
   passwordHash: string;
+  role?: 'user' | 'admin';
   firstName?: string | null;
   lastName?: string | null;
   structure?: string | null;
 }): Promise<User> {
   const now = new Date().toISOString();
+  const role = input.role === 'admin' ? 'admin' : 'user';
   await getDb().run(
     `
       INSERT INTO users (username, password_hash, role, first_name, last_name, structure, disabled, created_at)
-      VALUES (?, ?, 'user', ?, ?, ?, 0, ?)
+      VALUES (?, ?, ?, ?, ?, ?, 0, ?)
     `,
     input.username,
     input.passwordHash,
+    role,
     input.firstName ?? null,
     input.lastName ?? null,
     input.structure ?? null,
@@ -615,6 +618,10 @@ export async function updateUser(
 
 export async function deleteUser(id: number): Promise<void> {
   await updateUser(id, { disabled: 1 });
+}
+
+export async function hardDeleteUser(id: number): Promise<void> {
+  await getDb().run('DELETE FROM users WHERE id = ?', id);
 }
 
 export async function createRingAccount(
@@ -923,11 +930,27 @@ export async function recordUnlockEvent(input: {
     input.errorMessage ?? null,
     now
   );
+  const maxEvents = Number.isFinite(config.UNLOCK_EVENTS_MAX)
+    ? Math.max(1000, Math.floor(config.UNLOCK_EVENTS_MAX))
+    : 10000;
+  await getDb().run(
+    `
+      DELETE FROM unlock_events
+      WHERE id NOT IN (
+        SELECT id
+        FROM unlock_events
+        ORDER BY created_at DESC
+        LIMIT ?
+      )
+    `,
+    maxEvents
+  );
 }
 
 export async function listUnlockEventsForUser(
   userId: number,
-  limit = 50
+  limit = 50,
+  offset = 0
 ): Promise<UnlockEvent[]> {
   const rows = await getDb().all<UnlockEvent[]>(
     `
@@ -935,25 +958,52 @@ export async function listUnlockEventsForUser(
       WHERE user_id = ?
       ORDER BY created_at DESC
       LIMIT ?
+      OFFSET ?
     `,
     userId,
-    limit
+    limit,
+    offset
   );
   return rows;
 }
 
 export async function listUnlockEventsAll(
-  limit = 200
+  limit = 200,
+  offset = 0
 ): Promise<UnlockEvent[]> {
   const rows = await getDb().all<UnlockEvent[]>(
     `
       SELECT * FROM unlock_events
       ORDER BY created_at DESC
       LIMIT ?
+      OFFSET ?
     `,
-    limit
+    limit,
+    offset
   );
   return rows;
+}
+
+export async function countUnlockEventsForUser(userId: number): Promise<number> {
+  const row = await getDb().get<{ count: number }>(
+    `
+      SELECT COUNT(1) as count
+      FROM unlock_events
+      WHERE user_id = ?
+    `,
+    userId
+  );
+  return row?.count ?? 0;
+}
+
+export async function countUnlockEventsAll(): Promise<number> {
+  const row = await getDb().get<{ count: number }>(
+    `
+      SELECT COUNT(1) as count
+      FROM unlock_events
+    `
+  );
+  return row?.count ?? 0;
 }
 
 export async function getLoginAttempt(

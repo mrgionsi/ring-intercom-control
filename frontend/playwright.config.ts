@@ -1,7 +1,16 @@
 import { defineConfig } from '@playwright/test';
 
+function requiredEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing required env var: ${name}`);
+  }
+  return value;
+}
+
+const masterKey = requiredEnv('MASTER_KEY');
 const adminPasswordHash =
-  '$2a$12$bNfjPs4CBRV5I8nH6LsudObkKIJ0G7fkDAZUZS8m0dibABvxx42fa';
+  process.env.E2E_ADMIN_PASSWORD_HASH ?? requiredEnv('ADMIN_PASSWORD_HASH');
 
 export default defineConfig({
   testDir: './e2e',
@@ -25,11 +34,9 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       env: {
         SESSION_SECRET: process.env.SESSION_SECRET ?? 'e2e-session-secret',
-        MASTER_KEY:
-          process.env.MASTER_KEY ?? '7sQb2MQ4mL/QBjxJgRLZ2TLGnciP9f4pBf3MQXybP5Q=',
+        MASTER_KEY: masterKey,
         ADMIN_USERNAME: process.env.E2E_USERNAME ?? 'admin',
-        ADMIN_PASSWORD_HASH:
-          process.env.E2E_ADMIN_PASSWORD_HASH ?? adminPasswordHash,
+        ADMIN_PASSWORD_HASH: adminPasswordHash,
         CLIENT_ORIGIN: 'http://127.0.0.1:5173',
         PORT: '3001',
         DB_PATH: process.env.E2E_DB_PATH ?? '../backend/e2e.db'

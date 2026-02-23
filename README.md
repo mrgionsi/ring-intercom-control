@@ -210,6 +210,27 @@ Notes:
   - `index.html`: `no-cache`
   - `/assets/*`: `public, max-age=31536000, immutable`
 
+### Docker Compose (Backend + Frontend)
+
+Files:
+
+- `docker-compose/docker-compose.yml`
+- `docker-compose/.env`
+
+Run:
+
+```bash
+cd docker-compose
+docker compose up -d
+```
+
+Stop:
+
+```bash
+cd docker-compose
+docker compose down
+```
+
 ## Validation and QA
 
 ### Build Checks

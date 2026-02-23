@@ -183,6 +183,9 @@ async function main() {
     });
     const createUser = await readJson(createUserRes);
     createdUserId = createUser?.user?.id ?? null;
+    if (!createdUserId) {
+      throw new Error('/api/admin/users create did not return user id');
+    }
     console.log('PASS /api/admin/users create standard user');
 
     await assertStatus('/api/auth/logout', 200, {
@@ -229,18 +232,26 @@ async function main() {
         // best-effort logout before admin cleanup
       }
       try {
-        const cleanupCsrfRes = await assertStatus('/api/auth/csrf', 200);
-        const cleanupCsrf = await readJson(cleanupCsrfRes);
-        if (cleanupCsrf?.csrfToken && username && password) {
-          adminCsrfToken = cleanupCsrf.csrfToken;
+        if (username && password) {
+          const loginCsrfRes = await assertStatus('/api/auth/csrf', 200);
+          const loginCsrf = await readJson(loginCsrfRes);
+          if (!loginCsrf?.csrfToken) {
+            throw new Error('Missing CSRF token for admin login during cleanup');
+          }
           await assertStatus('/api/auth/login', 200, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'X-CSRF-Token': adminCsrfToken
+              'X-CSRF-Token': loginCsrf.csrfToken
             },
             body: JSON.stringify({ username, password })
           });
+          const cleanupCsrfRes = await assertStatus('/api/auth/csrf', 200);
+          const cleanupCsrf = await readJson(cleanupCsrfRes);
+          if (!cleanupCsrf?.csrfToken) {
+            throw new Error('Missing CSRF token for admin cleanup operations');
+          }
+          adminCsrfToken = cleanupCsrf.csrfToken;
         }
         if (createdAccountId && adminCsrfToken) {
           await assertStatus(`/api/ring/accounts/${createdAccountId}`, 200, {

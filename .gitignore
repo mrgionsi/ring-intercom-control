@@ -7,3 +7,5 @@ backend/data.db
 backend/session.db
 *.db
 security-audit-report-*.txt
+frontend/playwright-report
+frontend/test-results

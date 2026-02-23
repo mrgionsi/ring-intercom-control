@@ -175,7 +175,9 @@
     "default_user_role": "Benutzer (Standard)",
     "admin_role": "Admin",
     "delete_user": "Benutzer l?schen",
-    "delete_user_confirm": "Diesen Benutzer dauerhaft l?schen? Dies kann nicht r?ckg?ngig gemacht werden."
+    "delete_user_confirm": "Diesen Benutzer dauerhaft l?schen? Dies kann nicht r?ckg?ngig gemacht werden.",
+    "action_enable": "Aktivieren",
+    "action_disable": "Deaktivieren"
   },
   "settings": {
     "title": "Einstellungen",

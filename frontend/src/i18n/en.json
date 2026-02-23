@@ -175,7 +175,9 @@
     "default_user_role": "User (default)",
     "admin_role": "Admin",
     "delete_user": "Delete User",
-    "delete_user_confirm": "Delete this user permanently? This cannot be undone."
+    "delete_user_confirm": "Delete this user permanently? This cannot be undone.",
+    "action_enable": "Enable",
+    "action_disable": "Disable"
   },
   "settings": {
     "title": "Settings",

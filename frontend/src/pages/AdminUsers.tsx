@@ -346,14 +346,16 @@ export default function AdminUsers() {
                       <div className="links-table-actions">
                         <button
                           type="button"
-                          className={`btn btn-sm ${user.disabled ? 'success' : 'danger'}`}
+                          className={`btn btn-sm ${user.disabled ? 'success' : 'warn'}`}
                           onClick={(e) => {
                             e.stopPropagation();
                             handleQuickToggle(user);
                           }}
                           disabled={loading}
                         >
-                          {capitalize(user.disabled ? t('common.active') : t('common.disabled'))}
+                          {user.disabled
+                            ? t('admin.action_enable')
+                            : t('admin.action_disable')}
                         </button>
                         <button
                           type="button"

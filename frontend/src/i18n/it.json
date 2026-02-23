@@ -175,7 +175,9 @@
     "default_user_role": "Utente (predefinito)",
     "admin_role": "Admin",
     "delete_user": "Elimina utente",
-    "delete_user_confirm": "Eliminare definitivamente questo utente? Questa azione non pu? essere annullata."
+    "delete_user_confirm": "Eliminare definitivamente questo utente? Questa azione non pu? essere annullata.",
+    "action_enable": "Attiva",
+    "action_disable": "Disattiva"
   },
   "settings": {
     "title": "Impostazioni",

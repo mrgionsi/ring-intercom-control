@@ -367,6 +367,15 @@ textarea {
   background: #086531;
 }
 
+.btn.warn {
+  background: #c77700;
+  color: #fff;
+}
+
+.btn.warn:hover {
+  background: #9a5f00;
+}
+
 .btn.ghost {
   background: transparent;
   color: var(--accent-dark);

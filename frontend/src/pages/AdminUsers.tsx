@@ -98,8 +98,10 @@ export default function AdminUsers() {
   const [editStructure, setEditStructure] = useState('');
   const [editDisabled, setEditDisabled] = useState(false);
 
-  const loadAll = async () => {
-    setInitializing(true);
+  const loadAll = async (silent = false) => {
+    if (!silent) {
+      setInitializing(true);
+    }
     try {
       const [usersRes, limitsRes, loginAuditRes] = await Promise.all([
         apiFetch<{ users: UserRow[] }>('/api/admin/users'),
@@ -111,7 +113,9 @@ export default function AdminUsers() {
       setAuthLimit(limitsRes.authPerMinute);
       setLoginAudit(loginAuditRes.events);
     } finally {
-      setInitializing(false);
+      if (!silent) {
+        setInitializing(false);
+      }
     }
     loadDevices().catch(() => null);
   };
@@ -217,7 +221,7 @@ export default function AdminUsers() {
       });
       setCreateOpen(false);
       setToast({ type: 'success', text: t('admin.create_user_success') });
-      await loadAll();
+      await loadAll(true);
     } catch (err: any) {
       setToast({ type: 'error', text: err.message ?? t('common.error') });
     } finally {
@@ -243,7 +247,7 @@ export default function AdminUsers() {
       setEditPassword('');
       setToast({ type: 'success', text: t('admin.save_changes_success') });
       setDetailsOpen(false);
-      await loadAll();
+      await loadAll(true);
     } catch (err: any) {
       setToast({ type: 'error', text: err.message ?? t('common.error') });
     } finally {
@@ -269,7 +273,7 @@ export default function AdminUsers() {
         setDetailsOpen(false);
       }
       setToast({ type: 'success', text: t('admin.delete_user_success') });
-      await loadAll();
+      await loadAll(true);
     } catch (err: any) {
       setToast({ type: 'error', text: err.message ?? t('common.error') });
     } finally {
@@ -289,7 +293,7 @@ export default function AdminUsers() {
         type: 'success',
         text: nextDisabled ? t('admin.user_disabled_success') : t('admin.user_enabled_success')
       });
-      await loadAll();
+      await loadAll(true);
     } catch (err: any) {
       setToast({ type: 'error', text: err.message ?? t('common.error') });
     } finally {

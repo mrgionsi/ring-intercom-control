@@ -86,6 +86,20 @@ export type User = {
 };
 
 let db: Database<sqlite3.Database, sqlite3.Statement> | null = null;
+const GUEST_LINK_COLUMNS = `
+  id,
+  token,
+  label,
+  ring_account_id AS ringAccountId,
+  intercom_id AS intercomId,
+  user_id AS userId,
+  starts_at AS startsAt,
+  expires_at AS expiresAt,
+  max_uses AS maxUses,
+  uses,
+  disabled,
+  created_at AS createdAt
+`;
 
 export async function initDb(): Promise<void> {
   db = await open({
@@ -276,19 +290,7 @@ export async function createGuestLink(input: {
 
   const row = await getDb().get<GuestLink>(
     `
-      SELECT
-        id,
-        token,
-        label,
-        ring_account_id AS ringAccountId,
-        intercom_id AS intercomId,
-        user_id AS userId,
-        starts_at AS startsAt,
-        expires_at AS expiresAt,
-        max_uses AS maxUses,
-        uses,
-        disabled,
-        created_at AS createdAt
+      SELECT ${GUEST_LINK_COLUMNS}
       FROM guest_links
       WHERE token = ?
     `,
@@ -300,19 +302,7 @@ export async function createGuestLink(input: {
 export async function listGuestLinks(): Promise<GuestLink[]> {
   const rows = await getDb().all<GuestLink[]>(
     `
-      SELECT
-        id,
-        token,
-        label,
-        ring_account_id AS ringAccountId,
-        intercom_id AS intercomId,
-        user_id AS userId,
-        starts_at AS startsAt,
-        expires_at AS expiresAt,
-        max_uses AS maxUses,
-        uses,
-        disabled,
-        created_at AS createdAt
+      SELECT ${GUEST_LINK_COLUMNS}
       FROM guest_links
       ORDER BY created_at DESC
     `
@@ -325,19 +315,7 @@ export async function listGuestLinksForUser(
 ): Promise<GuestLink[]> {
   const rows = await getDb().all<GuestLink[]>(
     `
-      SELECT
-        id,
-        token,
-        label,
-        ring_account_id AS ringAccountId,
-        intercom_id AS intercomId,
-        user_id AS userId,
-        starts_at AS startsAt,
-        expires_at AS expiresAt,
-        max_uses AS maxUses,
-        uses,
-        disabled,
-        created_at AS createdAt
+      SELECT ${GUEST_LINK_COLUMNS}
       FROM guest_links
       WHERE user_id = ?
       ORDER BY created_at DESC
@@ -352,19 +330,7 @@ export async function getGuestLinkByToken(
 ): Promise<GuestLink | null> {
   const row = await getDb().get<GuestLink>(
     `
-      SELECT
-        id,
-        token,
-        label,
-        ring_account_id AS ringAccountId,
-        intercom_id AS intercomId,
-        user_id AS userId,
-        starts_at AS startsAt,
-        expires_at AS expiresAt,
-        max_uses AS maxUses,
-        uses,
-        disabled,
-        created_at AS createdAt
+      SELECT ${GUEST_LINK_COLUMNS}
       FROM guest_links
       WHERE token = ?
     `,
@@ -397,19 +363,7 @@ export async function getGuestLinkByIdForUser(
 ): Promise<GuestLink | null> {
   const row = await getDb().get<GuestLink>(
     `
-      SELECT
-        id,
-        token,
-        label,
-        ring_account_id AS ringAccountId,
-        intercom_id AS intercomId,
-        user_id AS userId,
-        starts_at AS startsAt,
-        expires_at AS expiresAt,
-        max_uses AS maxUses,
-        uses,
-        disabled,
-        created_at AS createdAt
+      SELECT ${GUEST_LINK_COLUMNS}
       FROM guest_links
       WHERE id = ? AND user_id = ?
     `,
@@ -432,19 +386,7 @@ export async function updateGuestLinkExpiresAt(
   );
   const updated = await getDb().get<GuestLink>(
     `
-      SELECT
-        id,
-        token,
-        label,
-        ring_account_id AS ringAccountId,
-        intercom_id AS intercomId,
-        user_id AS userId,
-        starts_at AS startsAt,
-        expires_at AS expiresAt,
-        max_uses AS maxUses,
-        uses,
-        disabled,
-        created_at AS createdAt
+      SELECT ${GUEST_LINK_COLUMNS}
       FROM guest_links
       WHERE id = ? AND user_id = ?
     `,
@@ -691,17 +633,25 @@ export async function setRingAccountDefault(
   userId: number,
   ringAccountId: number
 ): Promise<void> {
-  await getDb().run(
-    'UPDATE ring_accounts SET is_default = 0, updated_at = ? WHERE user_id = ?',
-    new Date().toISOString(),
-    userId
-  );
-  await getDb().run(
-    'UPDATE ring_accounts SET is_default = 1, updated_at = ? WHERE id = ? AND user_id = ?',
-    new Date().toISOString(),
-    ringAccountId,
-    userId
-  );
+  const now = new Date().toISOString();
+  await getDb().exec('BEGIN');
+  try {
+    await getDb().run(
+      'UPDATE ring_accounts SET is_default = 0, updated_at = ? WHERE user_id = ?',
+      now,
+      userId
+    );
+    await getDb().run(
+      'UPDATE ring_accounts SET is_default = 1, updated_at = ? WHERE id = ? AND user_id = ?',
+      now,
+      ringAccountId,
+      userId
+    );
+    await getDb().exec('COMMIT');
+  } catch (error) {
+    await getDb().exec('ROLLBACK');
+    throw error;
+  }
 }
 
 export async function updateRingAccountLabel(
@@ -1196,11 +1146,14 @@ export async function listDeviceHealthHistory(
   return rows;
 }
 
+// SQL aliases already match GuestLink; this is an intentional no-op extension point.
 function mapGuestLink(row: GuestLink): GuestLink {
   return row;
 }
 
 async function ensureRingAccountsTable(): Promise<void> {
+  // Legacy migration helper for DBs created before ring_accounts existed in initDb.
+  // TODO(2026-12): remove once support for pre-v0.4 databases is dropped.
   const tables = await getDb().all<Array<{ name: string }>>(
     "SELECT name FROM sqlite_master WHERE type='table' AND name='ring_accounts'"
   );
@@ -1278,7 +1231,9 @@ async function ensureGuestLinksRingAccountIdColumn(): Promise<void> {
     await getDb().exec('ALTER TABLE guest_links ADD COLUMN ring_account_id INTEGER');
   }
   const rows = await getDb().all<Array<{ id: number; user_id: number; ring_account_id: number }>>(
-    'SELECT id, user_id, ring_account_id FROM guest_links'
+    `SELECT id, user_id, ring_account_id
+     FROM guest_links
+     WHERE ring_account_id IS NULL OR ring_account_id <= 0`
   );
   for (const row of rows) {
     if (row.ring_account_id && row.ring_account_id > 0) {

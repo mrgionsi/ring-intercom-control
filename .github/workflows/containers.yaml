@@ -44,5 +44,5 @@ jobs:
         with:
           push: false
           context: ${{ matrix.component }}
-          tags: $GITHUB_REPOSITORY-${{ matrix.component }}:latest
+          tags: ${{ GITHUB_REPOSITORY }}-${{ matrix.component }}:latest
           platforms: linux/amd64,linux/arm64

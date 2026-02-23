@@ -18,6 +18,8 @@ import guestRoutes from './routes/guest.js';
 import authRoutes from './routes/auth.js';
 import auditRoutes from './routes/audit.js';
 
+import morgan from 'morgan';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SQLiteStore = SQLiteStoreFactory(session);
@@ -33,6 +35,7 @@ export async function createApp() {
 
   const app = express();
 
+  app.use(morgan('combined'));
   app.use(helmet());
   app.use(
     helmet.contentSecurityPolicy({

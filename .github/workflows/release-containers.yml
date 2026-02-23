@@ -5,10 +5,21 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Optional docker/release tag (example: beta, alpha, 1.0.0)'
+        required: false
+        type: string
+      publish_latest:
+        description: 'Also publish latest tag'
+        required: true
+        default: true
+        type: boolean
 
 permissions:
   contents: write
   packages: write
+  id-token: write
 
 jobs:
   build-and-push:
@@ -41,13 +52,34 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Prepare dynamic tags
+        id: vars
+        shell: bash
+        run: |
+          EXTRA_TAGS=""
+          RELEASE_LABEL="main-${GITHUB_RUN_NUMBER}"
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" && -n "${{ inputs.release_tag }}" ]]; then
+            EXTRA_TAGS=$'type=raw,value=${{ inputs.release_tag }}\n'
+            RELEASE_LABEL="${{ inputs.release_tag }}"
+          fi
+          if [[ "${GITHUB_EVENT_NAME}" == "push" || "${{ inputs.publish_latest }}" == "true" ]]; then
+            EXTRA_TAGS+=$'type=raw,value=latest\n'
+          fi
+          {
+            echo "extra_tags<<EOF"
+            printf "%s" "$EXTRA_TAGS"
+            echo
+            echo "EOF"
+            echo "release_label=$RELEASE_LABEL"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Extract image metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
           tags: |
-            type=raw,value=latest
+            ${{ steps.vars.outputs.extra_tags }}
             type=sha,format=short
             type=raw,value=main-${{ github.run_number }}
 
@@ -61,6 +93,15 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          provenance: true
+          sbom: true
+
+      - name: Attest image provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
 
       - name: Write release manifest
         run: |
@@ -86,7 +127,21 @@ jobs:
     name: Draft Release
     runs-on: ubuntu-latest
     needs: build-and-push
+    environment: production
     steps:
+      - name: Prepare release metadata
+        id: release_vars
+        shell: bash
+        run: |
+          TAG="containers-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          NAME="Container publish ${GITHUB_RUN_NUMBER}"
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" && -n "${{ inputs.release_tag }}" ]]; then
+            TAG="containers-${{ inputs.release_tag }}"
+            NAME="Container publish ${{ inputs.release_tag }}"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+
       - name: Download manifests
         uses: actions/download-artifact@v4
         with:
@@ -111,7 +166,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           draft: true
-          tag_name: containers-${{ github.run_id }}-${{ github.run_attempt }}
+          tag_name: ${{ steps.release_vars.outputs.tag }}
           target_commitish: ${{ github.sha }}
-          name: Container publish ${{ github.run_number }}
+          name: ${{ steps.release_vars.outputs.name }}
           body_path: RELEASE_NOTES.md

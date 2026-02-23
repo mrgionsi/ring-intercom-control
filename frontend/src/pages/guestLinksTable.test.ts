@@ -10,7 +10,8 @@ function allEnabled(): Record<GuestLinkStatus, boolean> {
     scheduled: true,
     expired: true,
     used_up: true,
-    disabled: true
+    disabled: true,
+    invalid_date: true
   };
 }
 

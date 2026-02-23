@@ -4,6 +4,7 @@ services:
     container_name: ring-intercom-backend
     restart: unless-stopped
     environment:
+      NODE_ENV: production
       DB_PATH: /data/data.db
       SESSION_SECRET: ${SESSION_SECRET}
       MASTER_KEY: ${MASTER_KEY}
@@ -15,6 +16,18 @@ services:
       - "${BACKEND_PORT}:3001"
     volumes:
       - ring-intercom-data:/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3001/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   frontend:
     image: ${FRONTEND_IMAGE}
@@ -27,7 +40,8 @@ services:
     ports:
       - "${FRONTEND_PORT}:5173"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
 volumes:
   ring-intercom-data:

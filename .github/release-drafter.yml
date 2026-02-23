@@ -1,5 +1,5 @@
-name-template: 'v$NEXT_PATCH_VERSION'
-tag-template: 'v$NEXT_PATCH_VERSION'
+name-template: 'v$NEXT_VERSION'
+tag-template: 'v$NEXT_VERSION'
 change-template: '- $TITLE (#$NUMBER) @$AUTHOR'
 no-changes-template: '- No changes'
 
@@ -32,3 +32,23 @@ template: |
   ## Container Images
 
   Container images are published by the `Publish Container Images` workflow.
+
+version-resolver:
+  major:
+    labels:
+      - breaking
+      - breaking-change
+  minor:
+    labels:
+      - feat
+      - feature
+  patch:
+    labels:
+      - fix
+      - bug
+      - hotfix
+      - ops
+      - ci
+      - chore
+      - docs
+  default: patch

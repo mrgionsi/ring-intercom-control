@@ -62,15 +62,18 @@ jobs:
       - name: Prepare dynamic tags
         id: vars
         shell: bash
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          PUBLISH_LATEST: ${{ inputs.publish_latest }}
         run: |
           COMPONENT_VERSION="$(node -p "require('./${{ matrix.context }}/package.json').version")"
           EXTRA_TAGS=""
           RELEASE_LABEL="main-${GITHUB_RUN_NUMBER}"
-          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" && -n "${{ inputs.release_tag }}" ]]; then
-            EXTRA_TAGS=$'type=raw,value=${{ inputs.release_tag }}\n'
-            RELEASE_LABEL="${{ inputs.release_tag }}"
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" && -n "$RELEASE_TAG" ]]; then
+            EXTRA_TAGS+=$'type=raw,value='"$RELEASE_TAG"$'\n'
+            RELEASE_LABEL="$RELEASE_TAG"
           fi
-          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" || "${{ inputs.publish_latest }}" == "true" ]]; then
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" || "$PUBLISH_LATEST" == "true" ]]; then
             EXTRA_TAGS+=$'type=raw,value=latest\n'
           fi
           EXTRA_TAGS+=$'type=raw,value='"$COMPONENT_VERSION"$'\n'
@@ -144,12 +147,14 @@ jobs:
       - name: Prepare release metadata
         id: release_vars
         shell: bash
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           TAG="containers-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           NAME="Container publish ${GITHUB_RUN_NUMBER}"
-          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" && -n "${{ inputs.release_tag }}" ]]; then
-            TAG="containers-${{ inputs.release_tag }}"
-            NAME="Container publish ${{ inputs.release_tag }}"
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" && -n "$RELEASE_TAG" ]]; then
+            TAG="containers-${RELEASE_TAG}"
+            NAME="Container publish ${RELEASE_TAG}"
           fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
@@ -161,10 +166,17 @@ jobs:
           pattern: release-manifest-*
           merge-multiple: true
           path: release-manifests
-          if-no-artifact-found: error
+
+      - name: Verify manifests exist
+        run: |
+          shopt -s nullglob
+          files=(release-manifests/*.md)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No release manifests found"
+            exit 1
+          fi
 
       - name: Build release notes
-        if: steps.download_manifests.outcome == 'success'
         run: |
           {
             echo "# Container image publish"
@@ -172,13 +184,14 @@ jobs:
             echo "- Commit: \`${{ github.sha }}\`"
             echo "- Workflow run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
             echo
-            cat release-manifests/backend.md
-            echo
-            cat release-manifests/frontend.md
+            for file in $(ls -1 release-manifests/*.md | sort); do
+              echo "### $(basename "$file" .md)"
+              cat "$file"
+              echo
+            done
           } > RELEASE_NOTES.md
 
       - name: Create draft release
-        if: steps.download_manifests.outcome == 'success'
         uses: softprops/action-gh-release@v2
         with:
           draft: true

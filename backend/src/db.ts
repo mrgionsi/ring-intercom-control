@@ -485,18 +485,21 @@ export async function hasActiveGuestLinkWithLabel(
 export async function createUser(input: {
   username: string;
   passwordHash: string;
+  role?: 'user' | 'admin';
   firstName?: string | null;
   lastName?: string | null;
   structure?: string | null;
 }): Promise<User> {
   const now = new Date().toISOString();
+  const role = input.role === 'admin' ? 'admin' : 'user';
   await getDb().run(
     `
       INSERT INTO users (username, password_hash, role, first_name, last_name, structure, disabled, created_at)
-      VALUES (?, ?, 'user', ?, ?, ?, 0, ?)
+      VALUES (?, ?, ?, ?, ?, ?, 0, ?)
     `,
     input.username,
     input.passwordHash,
+    role,
     input.firstName ?? null,
     input.lastName ?? null,
     input.structure ?? null,

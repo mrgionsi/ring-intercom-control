@@ -39,15 +39,19 @@ router.get('/users', requireAdmin, async (_req, res) => {
 });
 
 router.post('/users', requireAdmin, async (req, res) => {
-  const { username, password, firstName, lastName, structure } = req.body ?? {};
+  const { username, password, role, firstName, lastName, structure } = req.body ?? {};
   if (!username || !password) {
     return res.status(400).json({ error: 'username and password are required' });
+  }
+  if (role !== undefined && role !== 'user') {
+    return res.status(400).json({ error: 'Only user role is allowed here' });
   }
   const hash = await bcrypt.hash(password, 12);
   try {
     const user = await createUser({
       username,
       passwordHash: hash,
+      role: 'user',
       firstName,
       lastName,
       structure
@@ -57,6 +61,7 @@ router.post('/users', requireAdmin, async (req, res) => {
       user: {
         id: user.id,
         username: user.username,
+        role: user.role,
         firstName: user.first_name ?? null,
         lastName: user.last_name ?? null,
         structure: user.structure ?? null

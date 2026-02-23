@@ -170,7 +170,10 @@
     "unlock_history": "Entriegelungsverlauf",
     "export_csv": "CSV exportieren",
     "login_attempts": "Anmeldeversuche",
-    "locked_until": "Gesperrt bis"
+    "locked_until": "Gesperrt bis",
+    "role": "Rolle",
+    "default_user_role": "Benutzer (Standard)",
+    "admin_role": "Admin"
   },
   "settings": {
     "title": "Einstellungen",

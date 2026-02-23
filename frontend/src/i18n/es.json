@@ -170,7 +170,10 @@
     "unlock_history": "Historial de desbloqueos",
     "export_csv": "Exportar CSV",
     "login_attempts": "Intentos de inicio de sesión",
-    "locked_until": "Bloqueado hasta"
+    "locked_until": "Bloqueado hasta",
+    "role": "Rol",
+    "default_user_role": "Usuario (predeterminado)",
+    "admin_role": "Admin"
   },
   "settings": {
     "title": "Configuración",

@@ -157,6 +157,55 @@ async function main() {
     }
   });
   console.log('PASS /api/ring/accounts delete');
+
+  const basicUser = `smoke-user-${Date.now()}`;
+  const basicPassword = 'smoke-user-password';
+  await assertStatus('/api/admin/users', 200, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': csrf.csrfToken
+    },
+    body: JSON.stringify({
+      username: basicUser,
+      password: basicPassword,
+      role: 'user',
+      firstName: 'Smoke',
+      lastName: 'User',
+      structure: 'Test'
+    })
+  });
+  console.log('PASS /api/admin/users create standard user');
+
+  await assertStatus('/api/auth/logout', 200, {
+    method: 'POST',
+    headers: {
+      'X-CSRF-Token': csrf.csrfToken
+    }
+  });
+  console.log('PASS /api/auth/logout');
+
+  const csrfUserRes = await assertStatus('/api/auth/csrf', 200);
+  const csrfUser = await readJson(csrfUserRes);
+  if (!csrfUser?.csrfToken || typeof csrfUser.csrfToken !== 'string') {
+    throw new Error('/api/auth/csrf did not return csrfToken for user login');
+  }
+
+  await assertStatus('/api/auth/login', 200, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': csrfUser.csrfToken
+    },
+    body: JSON.stringify({ username: basicUser, password: basicPassword })
+  });
+  console.log('PASS /api/auth/login standard user');
+
+  await assertStatus('/api/admin/users', 403);
+  console.log('PASS /api/admin/users forbidden for standard user');
+
+  await assertStatus('/api/ring/status', 200);
+  console.log('PASS /api/ring/status allowed for standard user');
 }
 
 main().catch((err) => {

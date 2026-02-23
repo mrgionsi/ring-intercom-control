@@ -330,6 +330,10 @@ export default function AdminUsers() {
               onChange={(e) => setPassword(e.target.value)}
             />
           </label>
+          <div className="field">
+            <span>{t('admin.role')}</span>
+            <div className="muted">{t('admin.default_user_role')}</div>
+          </div>
           <label className="field">
             <span>{t('profile.first_name')}</span>
             <input

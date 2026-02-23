@@ -166,10 +166,21 @@ router.get('/guest/:token', async (req, res) => {
   const now = Date.now();
   const starts = Date.parse(link.startsAt);
   const expires = Date.parse(link.expiresAt);
+  const invalidDates =
+    !Number.isFinite(starts) && !Number.isFinite(expires);
   const notActiveYet = Number.isFinite(starts) && starts > now;
   const expired = Number.isFinite(expires) && expires <= now;
   const maxedOut =
     link.maxUses !== null && link.uses >= (link.maxUses ?? 0);
+  const state = invalidDates
+    ? 'invalid_date'
+    : notActiveYet
+      ? 'scheduled'
+      : expired
+        ? 'expired'
+        : maxedOut
+          ? 'used_up'
+          : 'valid';
 
   res.json({
     token: link.token,
@@ -179,8 +190,8 @@ router.get('/guest/:token', async (req, res) => {
     maxUses: link.maxUses,
     uses: link.uses,
     disabled: link.disabled,
-    valid: !notActiveYet && !expired && !maxedOut,
-    state: notActiveYet ? 'scheduled' : expired ? 'expired' : maxedOut ? 'used_up' : 'valid'
+    valid: !invalidDates && !notActiveYet && !expired && !maxedOut,
+    state
   });
 });
 

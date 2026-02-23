@@ -209,14 +209,23 @@ export default function AdminUsers() {
 
   const handlePermanentDelete = async () => {
     if (!selectedUserId) return;
+    await handlePermanentDeleteById(selectedUserId, true);
+  };
+
+  const handlePermanentDeleteById = async (
+    userId: number,
+    closeDetailsModal: boolean
+  ) => {
     const confirmDelete = window.confirm(t('admin.delete_user_confirm'));
     if (!confirmDelete) return;
     setLoading(true);
     setError(null);
     setMessage(null);
     try {
-      await apiFetch(`/api/admin/users/${selectedUserId}/permanent`, { method: 'DELETE' });
-      setDetailsOpen(false);
+      await apiFetch(`/api/admin/users/${userId}/permanent`, { method: 'DELETE' });
+      if (closeDetailsModal) {
+        setDetailsOpen(false);
+      }
       setMessage(t('admin.delete_user'));
       await loadAll();
     } catch (err: any) {
@@ -318,29 +327,44 @@ export default function AdminUsers() {
               </thead>
               <tbody>
                 {users.map((user) => (
-                  <tr key={user.id}>
+                  <tr
+                    key={user.id}
+                    className="admin-user-row"
+                    onClick={() => openDetailsModal(user)}
+                  >
                     <td>{user.id}</td>
                     <td>{user.username}</td>
                     <td>{user.role}</td>
                     <td>{user.structure || '-'}</td>
                     <td>
                       <span className={`badge ${user.disabled ? 'danger' : 'ok'}`}>
-                        {user.disabled ? t('common.disabled') : t('common.active')}
+                        {capitalize(user.disabled ? t('common.disabled') : t('common.active'))}
                       </span>
                     </td>
                     <td>{formatDateTime(user.createdAt)}</td>
                     <td>
                       <div className="links-table-actions">
-                        <button type="button" className="btn ghost btn-sm" onClick={() => openDetailsModal(user)}>
-                          {t('admin.details')}
+                        <button
+                          type="button"
+                          className={`btn btn-sm ${user.disabled ? 'success' : 'danger'}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleQuickToggle(user);
+                          }}
+                          disabled={loading}
+                        >
+                          {capitalize(user.disabled ? t('common.active') : t('common.disabled'))}
                         </button>
                         <button
                           type="button"
-                          className="btn ghost btn-sm"
-                          onClick={() => handleQuickToggle(user)}
+                          className="btn danger btn-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePermanentDeleteById(user.id, false);
+                          }}
                           disabled={loading}
                         >
-                          {user.disabled ? t('common.active') : t('common.disabled')}
+                          {t('admin.delete_user')}
                         </button>
                       </div>
                     </td>
@@ -558,4 +582,9 @@ export default function AdminUsers() {
       ) : null}
     </div>
   );
+}
+
+function capitalize(value: string): string {
+  if (!value) return value;
+  return value[0].toUpperCase() + value.slice(1);
 }

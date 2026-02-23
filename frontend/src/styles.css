@@ -358,6 +358,15 @@ textarea {
   background: #8f1d17;
 }
 
+.btn.success {
+  background: var(--success);
+  color: #fff;
+}
+
+.btn.success:hover {
+  background: #086531;
+}
+
 .btn.ghost {
   background: transparent;
   color: var(--accent-dark);
@@ -668,6 +677,14 @@ textarea {
 
 .links-table tbody tr:last-child td {
   border-bottom: none;
+}
+
+.admin-user-row {
+  cursor: pointer;
+}
+
+.admin-user-row:hover {
+  background: #f7fcfc;
 }
 
 .links-table-actions {

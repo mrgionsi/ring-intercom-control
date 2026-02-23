@@ -70,6 +70,7 @@ export default function AdminUsers() {
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [createRole, setCreateRole] = useState<'user' | 'admin'>('user');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [structure, setStructure] = useState('');
@@ -121,6 +122,7 @@ export default function AdminUsers() {
   const openCreateModal = () => {
     setUsername('');
     setPassword('');
+    setCreateRole('user');
     setFirstName('');
     setLastName('');
     setStructure('');
@@ -149,7 +151,14 @@ export default function AdminUsers() {
     try {
       await apiFetch('/api/admin/users', {
         method: 'POST',
-        body: JSON.stringify({ username, password, firstName, lastName, structure })
+        body: JSON.stringify({
+          username,
+          password,
+          role: createRole,
+          firstName,
+          lastName,
+          structure
+        })
       });
       setCreateOpen(false);
       setMessage(t('admin.create_user'));
@@ -438,7 +447,15 @@ export default function AdminUsers() {
               </label>
               <div className="field">
                 <span>{t('admin.role')}</span>
-                <div className="muted">{t('admin.default_user_role')}</div>
+                <select
+                  value={createRole}
+                  onChange={(e) =>
+                    setCreateRole((e.target.value as 'user' | 'admin') ?? 'user')
+                  }
+                >
+                  <option value="user">{t('admin.default_user_role')}</option>
+                  <option value="admin">{t('admin.admin_role')}</option>
+                </select>
               </div>
               <label className="field">
                 <span>{t('profile.first_name')}</span>

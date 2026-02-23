@@ -44,15 +44,15 @@ router.post('/users', requireAdmin, async (req, res) => {
   if (!username || !password) {
     return res.status(400).json({ error: 'username and password are required' });
   }
-  if (role !== undefined && role !== 'user') {
-    return res.status(400).json({ error: 'Only user role is allowed here' });
+  if (role !== undefined && role !== 'user' && role !== 'admin') {
+    return res.status(400).json({ error: 'Invalid role' });
   }
   const hash = await bcrypt.hash(password, 12);
   try {
     const user = await createUser({
       username,
       passwordHash: hash,
-      role: 'user',
+      role: role === 'admin' ? 'admin' : 'user',
       firstName,
       lastName,
       structure

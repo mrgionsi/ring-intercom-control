@@ -93,7 +93,7 @@ jobs:
       PORT: 3001
       DB_PATH: ./data.db
       SMOKE_USERNAME: admin
-      SMOKE_PASSWORD: ci-admin-password
+      SMOKE_PASSWORD: ${{ secrets.E2E_PASSWORD }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

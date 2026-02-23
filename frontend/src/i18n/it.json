@@ -173,7 +173,9 @@
     "locked_until": "Bloccato fino a",
     "role": "Ruolo",
     "default_user_role": "Utente (predefinito)",
-    "admin_role": "Admin"
+    "admin_role": "Admin",
+    "delete_user": "Elimina utente",
+    "delete_user_confirm": "Eliminare definitivamente questo utente? Questa azione non pu? essere annullata."
   },
   "settings": {
     "title": "Impostazioni",

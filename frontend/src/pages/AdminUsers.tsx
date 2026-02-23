@@ -202,6 +202,28 @@ export default function AdminUsers() {
     }
   };
 
+  const handlePermanentDelete = async () => {
+    if (!selectedUserId) return;
+    const confirmDelete = window.confirm(t('admin.delete_user_confirm'));
+    if (!confirmDelete) return;
+    setLoading(true);
+    setError(null);
+    setMessage(null);
+    try {
+      await apiFetch(`/api/admin/users/${selectedUserId}/permanent`, {
+        method: 'DELETE'
+      });
+      setMessage(t('admin.delete_user'));
+      setSelectedUserId(null);
+      setAuditEvents([]);
+      await loadAll();
+    } catch (err: any) {
+      setError(err.message ?? t('common.error'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleQuickToggle = async (user: UserRow) => {
     const nextDisabled = user.disabled ? 0 : 1;
     setLoading(true);
@@ -518,6 +540,9 @@ export default function AdminUsers() {
               </button>
               <button className="btn ghost" onClick={handleDelete} disabled={loading}>
                 {t('admin.disable_user')}
+              </button>
+              <button className="btn danger" onClick={handlePermanentDelete} disabled={loading}>
+                {t('admin.delete_user')}
               </button>
               <button className="btn ghost" onClick={handleResetPassword} disabled={loading}>
                 {t('admin.reset_password')}

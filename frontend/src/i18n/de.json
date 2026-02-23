@@ -173,7 +173,9 @@
     "locked_until": "Gesperrt bis",
     "role": "Rolle",
     "default_user_role": "Benutzer (Standard)",
-    "admin_role": "Admin"
+    "admin_role": "Admin",
+    "delete_user": "Benutzer l?schen",
+    "delete_user_confirm": "Diesen Benutzer dauerhaft l?schen? Dies kann nicht r?ckg?ngig gemacht werden."
   },
   "settings": {
     "title": "Einstellungen",

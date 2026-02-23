@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import {
   createUser,
   deleteUser,
+  hardDeleteUser,
   getUserById,
   listUsers,
   listUsersWithTokens,
@@ -99,6 +100,25 @@ router.delete('/users/:id', requireAdmin, async (req, res) => {
     return res.status(400).json({ error: 'Invalid id' });
   }
   await deleteUser(id);
+  res.json({ ok: true });
+});
+
+router.delete('/users/:id/permanent', requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!id) {
+    return res.status(400).json({ error: 'Invalid id' });
+  }
+  if (req.session.auth?.id === id) {
+    return res.status(400).json({ error: 'Cannot delete your own admin account' });
+  }
+  const user = await getUserById(id);
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+  if (user.role === 'admin') {
+    return res.status(400).json({ error: 'Cannot delete admin account here' });
+  }
+  await hardDeleteUser(id);
   res.json({ ok: true });
 });
 

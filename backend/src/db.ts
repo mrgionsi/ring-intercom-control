@@ -620,6 +620,10 @@ export async function deleteUser(id: number): Promise<void> {
   await updateUser(id, { disabled: 1 });
 }
 
+export async function hardDeleteUser(id: number): Promise<void> {
+  await getDb().run('DELETE FROM users WHERE id = ?', id);
+}
+
 export async function createRingAccount(
   userId: number,
   label: string

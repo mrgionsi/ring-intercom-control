@@ -173,7 +173,9 @@
     "locked_until": "Locked until",
     "role": "Role",
     "default_user_role": "User (default)",
-    "admin_role": "Admin"
+    "admin_role": "Admin",
+    "delete_user": "Delete User",
+    "delete_user_confirm": "Delete this user permanently? This cannot be undone."
   },
   "settings": {
     "title": "Settings",

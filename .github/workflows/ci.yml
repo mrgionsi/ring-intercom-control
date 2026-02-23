@@ -16,8 +16,75 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  verify:
+  backend-tests:
     runs-on: ubuntu-latest
+    env:
+      SESSION_SECRET: ci-session-secret
+      MASTER_KEY: 7sQb2MQ4mL/QBjxJgRLZ2TLGnciP9f4pBf3MQXybP5Q=
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD_HASH: $2a$12$tGQSEUZiEq0SSh0Rt9rSlucHJqSrXVh5mbLK4AqYWiIISapwRZCUy
+      CLIENT_ORIGIN: http://localhost:5173
+      PORT: 3001
+      DB_PATH: ./data.db
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend deps
+        run: npm ci
+        working-directory: backend
+
+      - name: Build backend
+        run: npm run build
+        working-directory: backend
+
+      - name: Test backend
+        run: npm run test --if-present
+        working-directory: backend
+
+  frontend-tests:
+    runs-on: ubuntu-latest
+    env:
+      SESSION_SECRET: ci-session-secret
+      MASTER_KEY: 7sQb2MQ4mL/QBjxJgRLZ2TLGnciP9f4pBf3MQXybP5Q=
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD_HASH: $2a$12$tGQSEUZiEq0SSh0Rt9rSlucHJqSrXVh5mbLK4AqYWiIISapwRZCUy
+      CLIENT_ORIGIN: http://localhost:5173
+      PORT: 3001
+      DB_PATH: ./data.db
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend deps
+        run: npm ci
+        working-directory: frontend
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: frontend
+
+      - name: Test frontend
+        run: npm run test --if-present
+        working-directory: frontend
+
+  smoke-tests:
+    runs-on: ubuntu-latest
+    needs: [backend-tests]
     env:
       SESSION_SECRET: ci-session-secret
       MASTER_KEY: 7sQb2MQ4mL/QBjxJgRLZ2TLGnciP9f4pBf3MQXybP5Q=
@@ -28,7 +95,6 @@ jobs:
       DB_PATH: ./data.db
       SMOKE_USERNAME: admin
       SMOKE_PASSWORD: ci-admin-password
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,33 +104,15 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: |
-            backend/package-lock.json
-            frontend/package-lock.json
+          cache-dependency-path: backend/package-lock.json
 
       - name: Install backend deps
         run: npm ci
         working-directory: backend
 
-      - name: Install frontend deps
-        run: npm ci
-        working-directory: frontend
-
       - name: Build backend
         run: npm run build
         working-directory: backend
-
-      - name: Test backend
-        run: npm run test --if-present
-        working-directory: backend
-
-      - name: Build frontend
-        run: npm run build
-        working-directory: frontend
-
-      - name: Test frontend
-        run: npm run test --if-present
-        working-directory: frontend
 
       - name: Start backend
         run: |
@@ -89,3 +137,55 @@ jobs:
           name: backend-log
           path: backend.log
           if-no-files-found: ignore
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests]
+    env:
+      SESSION_SECRET: ci-session-secret
+      MASTER_KEY: 7sQb2MQ4mL/QBjxJgRLZ2TLGnciP9f4pBf3MQXybP5Q=
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD_HASH: $2a$12$tGQSEUZiEq0SSh0Rt9rSlucHJqSrXVh5mbLK4AqYWiIISapwRZCUy
+      CLIENT_ORIGIN: http://127.0.0.1:5173
+      PORT: 3001
+      DB_PATH: ./data.db
+      E2E_USERNAME: admin
+      E2E_PASSWORD: e2e-admin-pass
+      E2E_ADMIN_PASSWORD_HASH: $2a$12$bNfjPs4CBRV5I8nH6LsudObkKIJ0G7fkDAZUZS8m0dibABvxx42fa
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Install backend deps
+        run: npm ci
+        working-directory: backend
+
+      - name: Install frontend deps
+        run: npm ci
+        working-directory: frontend
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+        working-directory: frontend
+
+      - name: Run frontend e2e tests
+        run: npm run test:e2e
+        working-directory: frontend
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report
+          if-no-files-found: ignore
+

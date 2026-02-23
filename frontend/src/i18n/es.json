@@ -37,7 +37,10 @@
     "saving": "Guardando…",
     "not_configured": "No hay token guardado.",
     "token_stored": "El refresh token ya está guardado.",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "error_invalid_credentials": "Correo o contrase?a de Ring no v?lidos.",
+    "error_invalid_2fa": "C?digo 2FA no v?lido o vencido. Int?ntalo de nuevo.",
+    "error_auth_session_expired": "La sesi?n de autenticaci?n expir?. Inicia de nuevo."
   },
   "intercoms": {
     "title": "Intercomunicadores",

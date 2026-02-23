@@ -37,7 +37,10 @@
     "saving": "Salvataggio…",
     "not_configured": "Nessun token salvato.",
     "token_stored": "Il refresh token è già salvato.",
-    "cancel": "Annulla"
+    "cancel": "Annulla",
+    "error_invalid_credentials": "Email o password Ring non validi.",
+    "error_invalid_2fa": "Codice 2FA non valido o scaduto. Riprova.",
+    "error_auth_session_expired": "Sessione di autenticazione scaduta. Avvia di nuovo."
   },
   "intercoms": {
     "title": "Citofoni",

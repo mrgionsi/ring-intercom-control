@@ -43,6 +43,7 @@ export default function Settings() {
   const [accounts, setAccounts] = useState<RingAccount[]>([]);
   const [summary, setSummary] = useState<RingSummary[]>([]);
   const [loading, setLoading] = useState(false);
+  const [unlockingKey, setUnlockingKey] = useState<string | null>(null);
   const [initializing, setInitializing] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -245,7 +246,7 @@ export default function Settings() {
       }
       setAuthError(t('common.error'));
     } catch (err: any) {
-      setAuthError(err.message ?? t('common.error'));
+      setAuthError(mapRingAuthError(err?.message, t));
     } finally {
       setAuthLoading(false);
     }
@@ -266,7 +267,7 @@ export default function Settings() {
       }
       setAuthError(t('common.error'));
     } catch (err: any) {
-      setAuthError(err.message ?? t('common.error'));
+      setAuthError(mapRingAuthError(err?.message, t));
     } finally {
       setAuthLoading(false);
     }
@@ -285,6 +286,24 @@ export default function Settings() {
       setError(err.message ?? t('common.error'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUnlock = async (intercomId: string, ringAccountId: number) => {
+    const key = `${ringAccountId}:${intercomId}`;
+    setUnlockingKey(key);
+    setError(null);
+    try {
+      await apiFetch('/api/ring/unlock', {
+        method: 'POST',
+        body: JSON.stringify({ intercomId, ringAccountId })
+      });
+      setToast(t('messages.unlock_sent'));
+      setTimeout(() => setToast(null), 3000);
+    } catch (err: any) {
+      setError(err.message ?? t('common.error'));
+    } finally {
+      setUnlockingKey(null);
     }
   };
 
@@ -416,6 +435,22 @@ export default function Settings() {
                                   {intercom.connection}
                                 </span>
                               ) : null}
+                              <button
+                                type="button"
+                                className="btn btn-sm nav-link"
+                                onClick={() => handleUnlock(intercom.id, account.id)}
+                                disabled={
+                                  loading ||
+                                  initializing ||
+                                  !account.configured ||
+                                  unlockingKey === `${account.id}:${intercom.id}`
+                                }
+                              >
+                                <Icon name="unlock" />
+                                {unlockingKey === `${account.id}:${intercom.id}`
+                                  ? t('guest.unlocking')
+                                  : t('intercoms.unlock')}
+                              </button>
                             </div>
                           </div>
                         ))}
@@ -653,4 +688,21 @@ function formatBattery(
     }
   }
   return 'n/a';
+}
+
+export function mapRingAuthError(
+  message: string | undefined,
+  t: (key: string) => string
+): string {
+  const raw = (message ?? '').toLowerCase();
+  if (raw.includes('access_denied') || raw.includes('verify that your email and password are correct')) {
+    return t('ring.error_invalid_credentials');
+  }
+  if (raw.includes('2fa') || raw.includes('authenticator') || raw.includes('code')) {
+    return t('ring.error_invalid_2fa');
+  }
+  if (raw.includes('expired')) {
+    return t('ring.error_auth_session_expired');
+  }
+  return message ?? t('common.error');
 }

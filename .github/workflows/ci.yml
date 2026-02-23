@@ -14,14 +14,20 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  MASTER_KEY: ${{ secrets.MASTER_KEY || '7sQb2MQ4mL/QBjxJgRLZ2TLGnciP9f4pBf3MQXybP5Q=' }}
+  ADMIN_PASSWORD_HASH: ${{ secrets.ADMIN_PASSWORD_HASH || '$2a$12$M1dUTf0hO/WS9Vyuk3F7XefYq6vTjRt2Op6fA6x4gNwGsBjnodviO' }}
+  E2E_PASSWORD: ${{ secrets.E2E_PASSWORD || 'ci-admin-password' }}
+  E2E_ADMIN_PASSWORD_HASH: ${{ secrets.E2E_ADMIN_PASSWORD_HASH || '$2a$12$M1dUTf0hO/WS9Vyuk3F7XefYq6vTjRt2Op6fA6x4gNwGsBjnodviO' }}
+
 jobs:
   backend-tests:
     runs-on: ubuntu-latest
     env:
       SESSION_SECRET: ci-session-secret
-      MASTER_KEY: ${{ secrets.MASTER_KEY }}
+      MASTER_KEY: ${{ env.MASTER_KEY }}
       ADMIN_USERNAME: admin
-      ADMIN_PASSWORD_HASH: ${{ secrets.ADMIN_PASSWORD_HASH }}
+      ADMIN_PASSWORD_HASH: ${{ env.ADMIN_PASSWORD_HASH }}
       CLIENT_ORIGIN: http://localhost:5173
       PORT: 3001
       DB_PATH: ./data.db
@@ -52,9 +58,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SESSION_SECRET: ci-session-secret
-      MASTER_KEY: ${{ secrets.MASTER_KEY }}
+      MASTER_KEY: ${{ env.MASTER_KEY }}
       ADMIN_USERNAME: admin
-      ADMIN_PASSWORD_HASH: ${{ secrets.ADMIN_PASSWORD_HASH }}
+      ADMIN_PASSWORD_HASH: ${{ env.ADMIN_PASSWORD_HASH }}
       CLIENT_ORIGIN: http://localhost:5173
       PORT: 3001
       DB_PATH: ./data.db
@@ -86,9 +92,9 @@ jobs:
     needs: [backend-tests]
     env:
       SESSION_SECRET: ci-session-secret
-      MASTER_KEY: ${{ secrets.MASTER_KEY }}
+      MASTER_KEY: ${{ env.MASTER_KEY }}
       ADMIN_USERNAME: admin
-      ADMIN_PASSWORD_HASH: ${{ secrets.ADMIN_PASSWORD_HASH }}
+      ADMIN_PASSWORD_HASH: ${{ env.ADMIN_PASSWORD_HASH }}
       CLIENT_ORIGIN: http://localhost:5173
       PORT: 3001
       DB_PATH: ./data.db
@@ -142,15 +148,15 @@ jobs:
     needs: [backend-tests, frontend-tests]
     env:
       SESSION_SECRET: ci-session-secret
-      MASTER_KEY: ${{ secrets.MASTER_KEY }}
+      MASTER_KEY: ${{ env.MASTER_KEY }}
       ADMIN_USERNAME: admin
-      ADMIN_PASSWORD_HASH: ${{ secrets.ADMIN_PASSWORD_HASH }}
+      ADMIN_PASSWORD_HASH: ${{ env.ADMIN_PASSWORD_HASH }}
       CLIENT_ORIGIN: http://127.0.0.1:5173
       PORT: 3001
       DB_PATH: ./data.db
       E2E_USERNAME: admin
-      E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
-      E2E_ADMIN_PASSWORD_HASH: ${{ secrets.E2E_ADMIN_PASSWORD_HASH }}
+      E2E_PASSWORD: ${{ env.E2E_PASSWORD }}
+      E2E_ADMIN_PASSWORD_HASH: ${{ env.E2E_ADMIN_PASSWORD_HASH }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

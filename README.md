@@ -181,6 +181,35 @@ npx -p ring-client-api ring-auth-cli
 
 Paste generated refresh token in `Settings -> Ring Connection`.
 
+## Docker
+
+### Frontend Image
+
+Build:
+
+```bash
+docker build ./frontend -t mrgionsi/ring-intercom-control-frontend:beta-0.0.1
+```
+
+Run:
+
+```bash
+docker run --rm -p 5173:5173 \
+  -e PORT=5173 \
+  -e BACKEND_URL=http://host.docker.internal:3001 \
+  mrgionsi/ring-intercom-control-frontend:beta-0.0.1
+```
+
+Notes:
+
+- `BACKEND_URL` is optional. If set, `/api/*` requests are proxied to backend.
+- `host.docker.internal` works by default on Docker Desktop (Windows/macOS). On Linux, add:
+  - `--add-host=host.docker.internal:host-gateway`
+- Health endpoint inside container: `GET /health` returns `{ "ok": true }`.
+- Static cache policy:
+  - `index.html`: `no-cache`
+  - `/assets/*`: `public, max-age=31536000, immutable`
+
 ## Validation and QA
 
 ### Build Checks

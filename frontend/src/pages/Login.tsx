@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiFetch } from '../api';
+import { apiFetch, initCsrf } from '../api';
 import { useTranslation } from 'react-i18next';
 
 export default function Login({
@@ -20,13 +20,30 @@ export default function Login({
     setLoading(true);
     setError(null);
     try {
-      const result = await apiFetch<{ username: string; role: 'admin' | 'user' }>(
-        '/api/auth/login',
-        {
-          method: 'POST',
-          body: JSON.stringify({ username, password })
+      let result: { username: string; role: 'admin' | 'user' };
+      try {
+        result = await apiFetch<{ username: string; role: 'admin' | 'user' }>(
+          '/api/auth/login',
+          {
+            method: 'POST',
+            body: JSON.stringify({ username, password })
+          }
+        );
+      } catch (err: any) {
+        const message = String(err?.message ?? '');
+        if (message.toLowerCase().includes('invalid csrf token')) {
+          await initCsrf();
+          result = await apiFetch<{ username: string; role: 'admin' | 'user' }>(
+            '/api/auth/login',
+            {
+              method: 'POST',
+              body: JSON.stringify({ username, password })
+            }
+          );
+        } else {
+          throw err;
         }
-      );
+      }
       onLogin(result);
       navigate('/', { replace: true });
     } catch (err: any) {

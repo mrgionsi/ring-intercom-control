@@ -110,6 +110,7 @@ function Shell({
     .split('-')[0];
   const handleLogout = async () => {
     await apiFetch('/api/auth/logout', { method: 'POST' });
+    await initCsrf();
     onLogout();
   };
 

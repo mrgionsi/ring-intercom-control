@@ -13,7 +13,7 @@ COPY backend/ .
 RUN npm run build
 
 # Stage: prod
-FROM gcr.io/distroless/nodejs:20
+FROM gcr.io/distroless/nodejs20-debian13
 
 WORKDIR /app
 

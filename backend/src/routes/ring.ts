@@ -1,4 +1,4 @@
-import { Router, type NextFunction, type Request, type Response } from 'express';
+import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import {
   clearRingAccountCache,
@@ -20,16 +20,9 @@ import {
   setRingAccountDefault,
   updateRingAccountLabel
 } from '../db.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 const router = Router();
-
-function asyncHandler(
-  fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>
-) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    fn(req, res, next).catch(next);
-  };
-}
 
 function sanitizeAccount(account: any) {
   return {
@@ -54,7 +47,18 @@ router.post('/refresh-token', requireAuth, asyncHandler(async (req, res) => {
   if (!refreshToken || typeof refreshToken !== 'string') {
     return res.status(400).json({ error: 'refreshToken is required' });
   }
-  let targetAccountId = Number(ringAccountId);
+  const parsedRingAccountId = Number(ringAccountId);
+  let targetAccountId: number | null = null;
+  if (Number.isFinite(parsedRingAccountId) && parsedRingAccountId > 0) {
+    const account = await getRingAccountByIdForUser(
+      req.session.auth!.id,
+      parsedRingAccountId
+    );
+    if (!account) {
+      return res.status(404).json({ error: 'Account not found' });
+    }
+    targetAccountId = account.id;
+  }
   if (!targetAccountId) {
     const fallback = await getDefaultRingAccountForUser(req.session.auth!.id);
     if (fallback) {
@@ -77,7 +81,7 @@ router.post('/refresh-token', requireAuth, asyncHandler(async (req, res) => {
   res.json({ ok: true, ringAccountId: targetAccountId });
 }));
 
-router.post('/refresh-token/test', requireAuth, async (req, res) => {
+router.post('/refresh-token/test', requireAuth, asyncHandler(async (req, res) => {
   const { refreshToken } = req.body ?? {};
   if (!refreshToken || typeof refreshToken !== 'string') {
     return res.status(400).json({ error: 'refreshToken is required' });
@@ -91,9 +95,9 @@ router.post('/refresh-token/test', requireAuth, async (req, res) => {
       .status(400)
       .json({ error: err.message ?? 'Refresh token is invalid' });
   }
-});
+}));
 
-router.post('/auth/start', requireAuth, async (req, res) => {
+router.post('/auth/start', requireAuth, asyncHandler(async (req, res) => {
   const { email, password, ringAccountId, accountLabel } = req.body ?? {};
   if (
     typeof email !== 'string' ||
@@ -129,9 +133,9 @@ router.post('/auth/start', requireAuth, async (req, res) => {
       .status(err.status ?? 500)
       .json({ error: err.message ?? 'Failed to start Ring auth' });
   }
-});
+}));
 
-router.post('/auth/verify', requireAuth, async (req, res) => {
+router.post('/auth/verify', requireAuth, asyncHandler(async (req, res) => {
   const { authSessionId, code } = req.body ?? {};
   if (
     typeof authSessionId !== 'string' ||
@@ -156,7 +160,7 @@ router.post('/auth/verify', requireAuth, async (req, res) => {
       .status(err.status ?? 500)
       .json({ error: err.message ?? 'Failed to verify 2fa code' });
   }
-});
+}));
 
 router.get('/accounts', requireAuth, asyncHandler(async (req, res) => {
   const accounts = await listRingAccountsForUser(req.session.auth!.id);
@@ -206,16 +210,16 @@ router.delete('/accounts/:id', requireAuth, asyncHandler(async (req, res) => {
   res.json({ ok: true });
 }));
 
-router.get('/summary', requireAuth, async (req, res) => {
+router.get('/summary', requireAuth, asyncHandler(async (req, res) => {
   try {
     const summary = await getRingSummaryForUser(req.session.auth!.id);
     res.json({ summary });
   } catch (err: any) {
     res.status(500).json({ error: err.message ?? 'Failed to load Ring data' });
   }
-});
+}));
 
-router.post('/unlock', requireAuth, async (req, res) => {
+router.post('/unlock', requireAuth, asyncHandler(async (req, res) => {
   const { intercomId, ringAccountId } = req.body ?? {};
   if (!intercomId) {
     return res.status(400).json({ error: 'intercomId is required' });
@@ -236,16 +240,20 @@ router.post('/unlock', requireAuth, async (req, res) => {
     });
     res.json({ ok: true });
   } catch (err: any) {
-    await recordUnlockEvent({
-      userId: req.session.auth!.id,
-      intercomId: String(intercomId),
-      source: 'user',
-      success: false,
-      errorMessage: err.message ?? 'Unlock failed'
-    });
+    try {
+      await recordUnlockEvent({
+        userId: req.session.auth!.id,
+        intercomId: String(intercomId),
+        source: 'user',
+        success: false,
+        errorMessage: err.message ?? 'Unlock failed'
+      });
+    } catch (recordErr) {
+      console.error('Failed to record unlock event', recordErr);
+    }
     res.status(500).json({ error: err.message ?? 'Unlock failed' });
   }
-});
+}));
 
 router.get('/health/history', requireAuth, asyncHandler(async (req, res) => {
   const intercomId = req.query.intercomId ? String(req.query.intercomId) : '';

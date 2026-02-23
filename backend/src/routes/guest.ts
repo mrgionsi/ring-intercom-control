@@ -19,10 +19,11 @@ import { requireAuth } from '../middleware/auth.js';
 import { unlockIntercomForUser } from '../ring.js';
 import { validateGuestLinkCreateInput } from '../guestLinkValidation.js';
 import { validateGuestLinkExpiresAtUpdate } from '../guestLinkEditValidation.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 const router = Router();
 
-router.post('/guest-links', requireAuth, async (req, res) => {
+router.post('/guest-links', requireAuth, asyncHandler(async (req, res) => {
   const { label, intercomId, startsAt, expiresAt, maxUses, ringAccountId } = req.body ?? {};
   const validated = validateGuestLinkCreateInput({
     intercomId,
@@ -75,19 +76,19 @@ router.post('/guest-links', requireAuth, async (req, res) => {
   });
 
   res.json({ link });
-});
+}));
 
-router.get('/guest-links', requireAuth, async (req, res) => {
+router.get('/guest-links', requireAuth, asyncHandler(async (req, res) => {
   const links = await listGuestLinksForUser(req.session.auth!.id);
   res.json({ links });
-});
+}));
 
-router.get('/guest-link-templates', requireAuth, async (req, res) => {
+router.get('/guest-link-templates', requireAuth, asyncHandler(async (req, res) => {
   const templates = await listGuestLinkTemplatesForUser(req.session.auth!.id);
   res.json({ templates });
-});
+}));
 
-router.post('/guest-link-templates', requireAuth, async (req, res) => {
+router.post('/guest-link-templates', requireAuth, asyncHandler(async (req, res) => {
   const { name, durationHours, maxUses } = req.body ?? {};
   if (!name || !durationHours) {
     return res.status(400).json({ error: 'name and durationHours are required' });
@@ -99,27 +100,27 @@ router.post('/guest-link-templates', requireAuth, async (req, res) => {
     maxUses: typeof maxUses === 'number' ? maxUses : null
   });
   res.json({ template });
-});
+}));
 
-router.delete('/guest-link-templates/:id', requireAuth, async (req, res) => {
+router.delete('/guest-link-templates/:id', requireAuth, asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   if (!id) {
     return res.status(400).json({ error: 'Invalid id' });
   }
   await deleteGuestLinkTemplate(id, req.session.auth!.id);
   res.json({ ok: true });
-});
+}));
 
-router.delete('/guest-links/:id', requireAuth, async (req, res) => {
+router.delete('/guest-links/:id', requireAuth, asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   if (!id) {
     return res.status(400).json({ error: 'Invalid id' });
   }
   await disableGuestLink(id, req.session.auth!.id);
   res.json({ ok: true });
-});
+}));
 
-const updateExpiresAtHandler = async (
+const updateExpiresAtHandler = asyncHandler(async (
   req: Request,
   res: Response
 ) => {
@@ -152,13 +153,13 @@ const updateExpiresAtHandler = async (
     return res.status(404).json({ error: 'Link not found' });
   }
   res.json({ ok: true, expiresAt: updated.expiresAt });
-};
+});
 
 // Keep compatibility across clients/proxies that may not forward PATCH consistently
 router.patch('/guest-links/:id/expires-at', requireAuth, updateExpiresAtHandler);
 router.put('/guest-links/:id/expires-at', requireAuth, updateExpiresAtHandler);
 
-router.get('/guest/:token', async (req, res) => {
+router.get('/guest/:token', asyncHandler(async (req, res) => {
   const link = await getGuestLinkByToken(req.params.token);
   if (!link || link.disabled) {
     return res.status(404).json({ error: 'Link not found' });
@@ -167,7 +168,7 @@ router.get('/guest/:token', async (req, res) => {
   const starts = Date.parse(link.startsAt);
   const expires = Date.parse(link.expiresAt);
   const invalidDates =
-    !Number.isFinite(starts) && !Number.isFinite(expires);
+    !Number.isFinite(starts) || !Number.isFinite(expires);
   const notActiveYet = Number.isFinite(starts) && starts > now;
   const expired = Number.isFinite(expires) && expires <= now;
   const maxedOut =
@@ -193,9 +194,9 @@ router.get('/guest/:token', async (req, res) => {
     valid: !invalidDates && !notActiveYet && !expired && !maxedOut,
     state
   });
-});
+}));
 
-router.post('/guest/:token/unlock', async (req, res) => {
+router.post('/guest/:token/unlock', asyncHandler(async (req, res) => {
   const link = await getGuestLinkByToken(req.params.token);
   if (!link || link.disabled) {
     return res.status(404).json({ error: 'Link not found' });
@@ -226,16 +227,20 @@ router.post('/guest/:token/unlock', async (req, res) => {
     });
     res.json({ ok: true });
   } catch (err: any) {
-    await recordUnlockEvent({
-      userId: link.userId,
-      intercomId: link.intercomId,
-      source: 'guest',
-      guestLinkId: link.id,
-      success: false,
-      errorMessage: err.message ?? 'Unlock failed'
-    });
+    try {
+      await recordUnlockEvent({
+        userId: link.userId,
+        intercomId: link.intercomId,
+        source: 'guest',
+        guestLinkId: link.id,
+        success: false,
+        errorMessage: err.message ?? 'Unlock failed'
+      });
+    } catch (recordErr) {
+      console.error('Failed to record guest unlock event', recordErr);
+    }
     res.status(500).json({ error: err.message ?? 'Unlock failed' });
   }
-});
+}));
 
 export default router;

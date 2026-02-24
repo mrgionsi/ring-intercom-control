@@ -1,5 +1,11 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Support / usage questions
+    url: https://github.com/mrgionsi/ring-intercom-control/blob/dev/SUPPORT.md
+    about: Use SUPPORT.md guidance for setup, usage, and troubleshooting questions.
+  - name: Contributing guide
+    url: https://github.com/mrgionsi/ring-intercom-control/blob/dev/CONTRIBUTING.md
+    about: Read contribution workflow and PR expectations before submitting changes.
   - name: Security report
     url: https://github.com/mrgionsi/ring-intercom-control/security/advisories/new
     about: Please report vulnerabilities privately using GitHub Security Advisories.

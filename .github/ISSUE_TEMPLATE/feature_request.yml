@@ -67,3 +67,5 @@ body:
       options:
         - label: I searched existing issues and did not find a duplicate.
           required: true
+        - label: I read CONTRIBUTING.md and this request aligns with project scope.
+          required: true

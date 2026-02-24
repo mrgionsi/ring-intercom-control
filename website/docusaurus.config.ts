@@ -27,18 +27,7 @@ const config: Config = {
           editUrl:
             'https://github.com/mrgionsi/ring-intercom-control/tree/dev/website/',
         },
-        blog: {
-          showReadingTime: true,
-          feedOptions: {
-            type: ['rss', 'atom'],
-            xslt: true,
-          },
-          editUrl:
-            'https://github.com/mrgionsi/ring-intercom-control/tree/dev/website/',
-          onInlineTags: 'warn',
-          onInlineAuthors: 'warn',
-          onUntruncatedBlogPosts: 'warn',
-        },
+        blog: false,
         theme: {
           customCss: './src/css/custom.css',
         },

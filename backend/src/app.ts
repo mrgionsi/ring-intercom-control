@@ -26,7 +26,7 @@ const __dirname = path.dirname(__filename);
 const SQLiteStore = SQLiteStoreFactory(session);
 const resolvedDbPath = path.resolve(config.DB_PATH);
 const sessionDir = path.dirname(resolvedDbPath);
-const sessionDbFile = process.env.SESSION_DB_FILE ?? 'session.db';
+const sessionDbFile = config.SESSION_DB_FILE;
 
 let initialized = false;
 
@@ -40,7 +40,11 @@ export async function createApp() {
 
   const app = express();
 
-  app.use(morgan('combined'));
+  app.use(
+    morgan('combined', {
+      skip: (req) => (req.originalUrl ?? req.url).startsWith('/api/guest/')
+    })
+  );
   app.use(helmet());
   app.use(
     helmet.contentSecurityPolicy({

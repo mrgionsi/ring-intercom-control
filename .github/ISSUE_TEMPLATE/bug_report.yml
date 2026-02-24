@@ -73,5 +73,7 @@ body:
       options:
         - label: I searched existing issues and did not find a duplicate.
           required: true
+        - label: I checked SUPPORT.md and this is a bug report, not a usage/support request.
+          required: true
         - label: I can reproduce this consistently.
           required: false

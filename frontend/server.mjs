@@ -9,6 +9,17 @@ const indexFilePath = normalize(join(distDir, 'index.html'));
 const assetsDir = normalize(join(distDir, 'assets'));
 const backendUrl = (process.env.BACKEND_URL || '').replace(/\/+$/, '');
 const proxyTimeoutMs = Number(process.env.PROXY_TIMEOUT_MS || 15000);
+const MAX_BODY_BYTES = Number(process.env.MAX_BODY_BYTES || 1_048_576);
+const hopByHopHeaders = new Set([
+  'connection',
+  'keep-alive',
+  'proxy-authenticate',
+  'proxy-authorization',
+  'te',
+  'trailers',
+  'transfer-encoding',
+  'upgrade'
+]);
 
 const contentTypes = {
   '.html': 'text/html; charset=utf-8',
@@ -39,18 +50,31 @@ async function proxyApi(req, res) {
     return;
   }
 
-  const url = new URL(req.url || '/', backendUrl);
+  const reqUrl = new URL(req.url || '/', 'http://localhost');
+  const url = new URL(`${reqUrl.pathname}${reqUrl.search}`, backendUrl);
   const headers = new Headers();
   for (const [key, value] of Object.entries(req.headers)) {
     if (!value) continue;
-    if (key.toLowerCase() === 'host') continue;
+    const lower = key.toLowerCase();
+    if (lower === 'host') continue;
+    if (hopByHopHeaders.has(lower)) continue;
     headers.set(key, Array.isArray(value) ? value.join(',') : value);
   }
 
   let body;
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     const chunks = [];
-    for await (const chunk of req) chunks.push(chunk);
+    let total = 0;
+    for await (const chunk of req) {
+      total += chunk.length;
+      if (total > MAX_BODY_BYTES) {
+        res.writeHead(413, { 'content-type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: 'Request body too large' }));
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    }
     body = Buffer.concat(chunks);
   }
 
@@ -147,8 +171,11 @@ async function handleStatic(req, res) {
     } else if (normalize(targetPath).startsWith(assetsDir)) {
       headers['cache-control'] = 'public, max-age=31536000, immutable';
     }
-    res.writeHead(200, headers);
     const stream = createReadStream(targetPath);
+    stream.once('open', () => {
+      res.writeHead(200, headers);
+      stream.pipe(res);
+    });
     stream.on('error', (error) => {
       console.error('Failed to read static asset', error);
       stream.destroy();
@@ -159,7 +186,6 @@ async function handleStatic(req, res) {
         res.end();
       }
     });
-    stream.pipe(res);
   };
 
   try {

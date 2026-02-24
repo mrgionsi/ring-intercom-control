@@ -85,6 +85,12 @@ It supports secure Ring token management, one-click unlock from web, expiring gu
 - `.github/workflows/` CI pipelines
 - `docs/screenshots/` README image assets
 
+## Community
+
+- Contribution guide: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Security policy: [SECURITY.md](SECURITY.md)
+- Support guide: [SUPPORT.md](SUPPORT.md)
+
 ## Local Development
 
 ### Prerequisites

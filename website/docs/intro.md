@@ -29,3 +29,9 @@ This documentation covers:
 Project source code and issues:
 
 - https://github.com/mrgionsi/ring-intercom-control
+
+Community and project policies:
+
+- [Contributing Guide](https://github.com/mrgionsi/ring-intercom-control/blob/dev/CONTRIBUTING.md)
+- [Security Policy](https://github.com/mrgionsi/ring-intercom-control/blob/dev/SECURITY.md)
+- [Support](https://github.com/mrgionsi/ring-intercom-control/blob/dev/SUPPORT.md)

@@ -558,10 +558,11 @@ export default function GuestLinks() {
         </div>
         <button
           type="button"
-          className="btn guest-link-create-btn"
+          className="btn guest-link-create-btn nav-link"
           onClick={handleCreate}
           disabled={!isCreateReady || initializing}
         >
+          <UiIcon name="create" />
           {t('guest_links.create')}
         </button>
         {error ? <div className="error">{error}</div> : null}
@@ -588,7 +589,10 @@ export default function GuestLinks() {
         </div>
         <div className="links-filters">
           <label className="field links-search">
-            <span>{t('guest_links.search_label')}</span>
+            <span className="field-label">
+              <UiIcon name="search" />
+              {t('guest_links.search_label')}
+            </span>
             <input
               type="text"
               value={searchLabel}
@@ -669,47 +673,52 @@ export default function GuestLinks() {
                       <td>
                         <div className="links-table-actions">
                           <a
-                            className="btn ghost"
+                            className="btn ghost nav-link"
                             href={`/guest/${link.token}`}
                             target="_blank"
                             rel="noreferrer"
                           >
+                            <UiIcon name="open" />
                             {t('guest_links.open')}
                           </a>
                           {editingLinkId === link.id ? (
                             <>
                               <button
                                 type="button"
-                                className="btn ghost"
+                                className="btn ghost nav-link"
                                 onClick={() => handleCancelEdit()}
                               >
+                                <UiIcon name="cancel" />
                                 {t('guest_links.cancel')}
                               </button>
                               <button
                                 type="button"
-                                className="btn"
+                                className="btn nav-link"
                                 onClick={() => handleSaveEdit(link)}
                                 disabled={!editExpiresAt}
                               >
+                                <UiIcon name="save" />
                                 {t('guest_links.save')}
                               </button>
                             </>
                           ) : (
                             <button
                               type="button"
-                              className="btn ghost"
+                              className="btn ghost nav-link"
                               onClick={() => handleStartEdit(link)}
                               disabled={link.disabled === 1}
                             >
+                              <UiIcon name="edit" />
                               {t('guest_links.edit')}
                             </button>
                           )}
                           <button
                             type="button"
-                            className="btn"
+                            className="btn nav-link"
                             onClick={() => handleDisable(link.id)}
                             disabled={link.disabled === 1 || editingLinkId === link.id}
                           >
+                            <UiIcon name="disable" />
                             {t('guest_links.disable')}
                           </button>
                         </div>
@@ -866,7 +875,20 @@ function statusLabelFor(status: GuestLinkStatus, t: (key: string) => string): st
 function UiIcon({
   name
 }: {
-  name: 'create' | 'template' | 'intercom' | 'calendar' | 'uses' | 'label' | 'links';
+  name:
+    | 'create'
+    | 'template'
+    | 'intercom'
+    | 'calendar'
+    | 'uses'
+    | 'label'
+    | 'links'
+    | 'open'
+    | 'edit'
+    | 'disable'
+    | 'save'
+    | 'cancel'
+    | 'search';
 }) {
   const common = {
     className: 'nav-icon',
@@ -928,6 +950,54 @@ function UiIcon({
       <svg {...common}>
         <path d="M20 10l-8 8-8-8V4h10z" />
         <circle cx="11" cy="9" r="1.5" />
+      </svg>
+    );
+  }
+  if (name === 'open') {
+    return (
+      <svg {...common}>
+        <path d="M14 4h6v6" />
+        <path d="M10 14L20 4" />
+        <path d="M20 14v6h-16V4h6" />
+      </svg>
+    );
+  }
+  if (name === 'edit') {
+    return (
+      <svg {...common}>
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+      </svg>
+    );
+  }
+  if (name === 'disable') {
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="12" r="9" />
+        <line x1="8" y1="8" x2="16" y2="16" />
+      </svg>
+    );
+  }
+  if (name === 'save') {
+    return (
+      <svg {...common}>
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+    );
+  }
+  if (name === 'cancel') {
+    return (
+      <svg {...common}>
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+      </svg>
+    );
+  }
+  if (name === 'search') {
+    return (
+      <svg {...common}>
+        <circle cx="11" cy="11" r="7" />
+        <line x1="20" y1="20" x2="16.5" y2="16.5" />
       </svg>
     );
   }

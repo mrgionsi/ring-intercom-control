@@ -49,7 +49,8 @@ async function proxyApi(req, res) {
     return;
   }
 
-  const url = new URL(req.url || '/', backendUrl);
+  const reqUrl = new URL(req.url || '/', 'http://localhost');
+  const url = new URL(`${reqUrl.pathname}${reqUrl.search}`, backendUrl);
   const headers = new Headers();
   for (const [key, value] of Object.entries(req.headers)) {
     if (!value) continue;

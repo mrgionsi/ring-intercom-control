@@ -7,7 +7,7 @@ Please do **not** open public GitHub issues for security vulnerabilities.
 Report privately by:
 
 - GitHub Security Advisory (preferred): `Security` tab in the repository
-- or direct maintainer contact if advisory is unavailable
+- fallback direct maintainer contact (if advisory is unavailable): `https://github.com/mrgionsi`
 
 Include:
 

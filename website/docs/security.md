@@ -22,4 +22,6 @@ sidebar_position: 6
 
 ## Reporting
 
-For vulnerability reporting, use private channels described in repository security policy.
+For vulnerability reporting, please use private channels described in the repository security policy:
+
+- https://github.com/mrgionsi/ring-intercom-control/blob/main/SECURITY.md

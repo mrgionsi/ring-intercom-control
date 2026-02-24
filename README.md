@@ -24,8 +24,7 @@ Most project details are maintained in Docusaurus:
 - Contributing: `website/docs/contributing.md`
 
 If published with GitHub Pages, docs URL is typically:
-- `https://mrgionsi.github.io/`
-- Public docs link (placeholder): `TODO: add docs URL`
+- `https://mrgionsi.github.io/ring-intercom-control/`
 
 ## Key Capabilities
 

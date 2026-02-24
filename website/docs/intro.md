@@ -17,12 +17,12 @@ This documentation covers:
 
 ## Navigation
 
-- [Architecture](./architecture.md)
-- [Deployment](./deployment.md)
-- [API](./api.md)
-- [Development](./development.md)
-- [Security](./security.md)
-- [Contributing](./contributing.md)
+- [Architecture](./architecture)
+- [Deployment](./deployment)
+- [API](./api)
+- [Development](./development)
+- [Security](./security)
+- [Contributing](./contributing)
 
 ## Source of truth
 
@@ -32,6 +32,6 @@ Project source code and issues:
 
 Community and project policies:
 
-- [Contributing Guide](https://github.com/mrgionsi/ring-intercom-control/blob/dev/CONTRIBUTING.md)
-- [Security Policy](https://github.com/mrgionsi/ring-intercom-control/blob/dev/SECURITY.md)
-- [Support](https://github.com/mrgionsi/ring-intercom-control/blob/dev/SUPPORT.md)
+- [Contributing Guide](https://github.com/mrgionsi/ring-intercom-control/blob/main/CONTRIBUTING.md)
+- [Security Policy](https://github.com/mrgionsi/ring-intercom-control/blob/main/SECURITY.md)
+- [Support](https://github.com/mrgionsi/ring-intercom-control/blob/main/SUPPORT.md)

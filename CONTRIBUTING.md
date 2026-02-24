@@ -11,6 +11,7 @@ Thanks for contributing to `ring-intercom-control`.
   - `fix/<scope>`
   - `ops/<scope>`
   - `docs/<scope>`
+  - `test/<scope>`
 
 ## Commit Style
 

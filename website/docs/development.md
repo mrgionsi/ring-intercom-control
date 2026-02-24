@@ -6,8 +6,8 @@ sidebar_position: 5
 
 ## Prerequisites
 
-- Node.js `24.13.0` recommended
-- npm `10+`
+- Node.js `24.x` recommended
+- npm `11+`
 
 ## Local run
 

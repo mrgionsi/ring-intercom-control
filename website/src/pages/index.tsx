@@ -107,7 +107,11 @@ export default function Home(): ReactNode {
           <div className="container">
             <Heading as="h2">Quick Start</Heading>
             <ol>
-              <li>Configure backend environment variables (`SESSION_SECRET`, `MASTER_KEY`, `ADMIN_*`).</li>
+              <li>
+                Configure backend environment variables (
+                <code>SESSION_SECRET</code>, <code>MASTER_KEY</code>, <code>ADMIN_*</code>
+                ).
+              </li>
               <li>Run backend and frontend development servers.</li>
               <li>Open the app and configure Ring integration from Settings.</li>
             </ol>
@@ -120,7 +124,7 @@ export default function Home(): ReactNode {
             <div className={styles.linkRow}>
               <Link to="/docs/contributing">Contributing</Link>
               <Link to="/docs/security">Security</Link>
-              <Link href="https://github.com/mrgionsi/ring-intercom-control/blob/dev/SUPPORT.md">Support</Link>
+              <Link href="https://github.com/mrgionsi/ring-intercom-control/blob/main/SUPPORT.md">Support</Link>
               <Link href="https://github.com/mrgionsi/ring-intercom-control">GitHub Repository</Link>
             </div>
           </div>

@@ -10,7 +10,7 @@ const config: Config = {
     v4: true,
   },
   url: 'https://mrgionsi.github.io',
-  baseUrl: '/',
+  baseUrl: '/ring-intercom-control/',
   organizationName: 'mrgionsi',
   projectName: 'ring-intercom-control',
   onBrokenLinks: 'throw',

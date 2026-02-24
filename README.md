@@ -8,6 +8,8 @@ Self-hosted web app to manage Ring Intercom access for B&B and small hospitality
 
 Main use case: create temporary guest links (check-in/check-out window) so guests can unlock the door only during their stay.
 
+Supported languages: English, Italian, Spanish, German.
+
 ## Documentation
 
 Most project details are maintained in Docusaurus:
@@ -32,24 +34,23 @@ If published with GitHub Pages, docs URL is typically:
 - Guest links with start/end window and max-use limit
 - Admin/user role model
 - Audit trails for unlocks and login attempts
-- Supported languages: English, Italian, Spanish, German
 
 ## UI Preview
 
 ### Login
-![Login page](screenshots/login.png)
+![Login page](docs/screenshots/login.png)
 
 ### Dashboard
-![Dashboard page](screenshots/dashboard.png)
+![Dashboard page](docs/screenshots/dashboard.png)
 
 ### Guest Links
-![Guest links page](screenshots/guest_link.png)
+![Guest links page](docs/screenshots/guest_link.png)
 
 ### Settings
-![Settings page](screenshots/settings.png)
+![Settings page](docs/screenshots/settings.png)
 
 ### Users (Admin)
-![Users page](screenshots/users.png)
+![Users page](docs/screenshots/users.png)
 
 ## Quick Start
 

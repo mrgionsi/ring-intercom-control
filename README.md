@@ -23,6 +23,7 @@ Most project details are maintained in Docusaurus:
 
 If published with GitHub Pages, docs URL is typically:
 - `https://mrgionsi.github.io/`
+- Public docs link (placeholder): `TODO: add docs URL`
 
 ## Key Capabilities
 
@@ -74,6 +75,23 @@ App URLs:
 - Backend: `http://localhost:3001`
 
 For complete setup, security, Docker, and CI/CD instructions, use the Docusaurus docs above.
+
+## Docker Deployment
+
+The project supports containerized deployment for both backend and frontend.
+
+- Backend image: `backend/Dockerfile`
+- Frontend image: `frontend/Dockerfile`
+- Compose stack: `docker-compose/docker-compose.yml`
+- Env template: `docker-compose/.env.example`
+
+Quick run with Compose:
+
+```bash
+cd docker-compose
+cp .env.example .env
+docker compose up -d
+```
 
 ## Community
 

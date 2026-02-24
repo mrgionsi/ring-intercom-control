@@ -24,5 +24,6 @@ export const config = {
   SESSION_SECRET: process.env.SESSION_SECRET as string,
   MASTER_KEY: process.env.MASTER_KEY as string,
   DB_PATH: process.env.DB_PATH ?? './data.db',
+  SESSION_DB_FILE: process.env.SESSION_DB_FILE ?? 'session.db',
   UNLOCK_EVENTS_MAX: Number(process.env.UNLOCK_EVENTS_MAX ?? 10000)
 };

@@ -8,6 +8,7 @@ import rateLimit from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
+import { mkdirSync } from 'fs';
 
 import { config } from './config.js';
 import { initDb } from './db.js';
@@ -18,14 +19,20 @@ import guestRoutes from './routes/guest.js';
 import authRoutes from './routes/auth.js';
 import auditRoutes from './routes/audit.js';
 
+import morgan from 'morgan';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SQLiteStore = SQLiteStoreFactory(session);
+const resolvedDbPath = path.resolve(config.DB_PATH);
+const sessionDir = path.dirname(resolvedDbPath);
+const sessionDbFile = config.SESSION_DB_FILE;
 
 let initialized = false;
 
 export async function createApp() {
   if (!initialized) {
+    mkdirSync(sessionDir, { recursive: true });
     await initDb();
     await loadRateLimits();
     initialized = true;
@@ -33,6 +40,11 @@ export async function createApp() {
 
   const app = express();
 
+  app.use(
+    morgan('combined', {
+      skip: (req) => (req.originalUrl ?? req.url).startsWith('/api/guest/')
+    })
+  );
   app.use(helmet());
   app.use(
     helmet.contentSecurityPolicy({
@@ -59,8 +71,8 @@ export async function createApp() {
   app.use(
     session({
       store: new SQLiteStore({
-        db: 'session.db',
-        dir: path.resolve(__dirname, '..')
+        db: sessionDbFile,
+        dir: sessionDir
       }),
       secret: config.SESSION_SECRET,
       resave: false,

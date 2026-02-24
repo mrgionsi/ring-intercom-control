@@ -1,6 +1,11 @@
 ## Summary
 - Briefly describe what this PR changes.
 
+## Reference docs
+- Contribution guide: `CONTRIBUTING.md`
+- Security policy: `SECURITY.md`
+- Support policy: `SUPPORT.md`
+
 ## Type of change
 - [ ] bug fix
 - [ ] feature
@@ -27,6 +32,8 @@
 - [ ] README/docs updated (if needed)
 - [ ] i18n keys updated in all locales (if UI text changed)
 - [ ] Branch target is correct (`dev` for feature work, `main` for release/hotfix)
+- [ ] I reviewed `CONTRIBUTING.md` for branch/commit/PR rules
+- [ ] I reviewed `SECURITY.md` and handled sensitive changes safely
 
 ## Related issues
 - Closes #

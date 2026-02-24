@@ -8,8 +8,8 @@ sidebar_position: 3
 
 The project publishes two images:
 
-- backend: `ghcr.io/<owner>/ring-intercom-control-backend`
-- frontend: `ghcr.io/<owner>/ring-intercom-control-frontend`
+- backend: `ghcr.io/mrgionsi/ring-intercom-control-backend`
+- frontend: `ghcr.io/mrgionsi/ring-intercom-control-frontend`
 
 Tags include package version, sha-based tags, and optional manual release tags.
 
@@ -28,6 +28,31 @@ docker compose up -d
 - `MASTER_KEY` (base64, 32-byte decoded key)
 - `ADMIN_USERNAME`
 - `ADMIN_PASSWORD_HASH`
+
+### Variable details and generation
+
+- `SESSION_SECRET`
+  - Purpose: signs and verifies session cookies.
+  - Generate:
+    - `node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"`
+
+- `MASTER_KEY`
+  - Purpose: encrypts stored Ring refresh tokens (AES-256-GCM).
+  - Must decode to exactly 32 bytes.
+  - Generate:
+    - `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`
+  - Validate length:
+    - `node -e "const k=process.env.MASTER_KEY||''; console.log(Buffer.from(k,'base64').length)"`
+    - expected output: `32`
+
+- `ADMIN_USERNAME`
+  - Purpose: bootstrap administrator login username.
+  - Example: `admin`
+
+- `ADMIN_PASSWORD_HASH`
+  - Purpose: bcrypt hash used to verify admin password.
+  - Generate hash (from backend directory):
+    - `npm run hash-password -- yourStrongPassword`
 
 ## Production checklist
 

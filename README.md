@@ -188,7 +188,7 @@ Paste generated refresh token in `Settings -> Ring Connection`.
 Build:
 
 ```bash
-docker build ./frontend -t mrgionsi/ring-intercom-control-frontend:beta-0.0.1
+docker build ./frontend -t mrgionsi/ring-intercom-control-frontend:0.1.0-beta
 ```
 
 Run:
@@ -197,7 +197,7 @@ Run:
 docker run --rm -p 5173:5173 \
   -e PORT=5173 \
   -e BACKEND_URL=http://host.docker.internal:3001 \
-  mrgionsi/ring-intercom-control-frontend:beta-0.0.1
+  mrgionsi/ring-intercom-control-frontend:0.1.0-beta
 ```
 
 Notes:
@@ -209,6 +209,27 @@ Notes:
 - Static cache policy:
   - `index.html`: `no-cache`
   - `/assets/*`: `public, max-age=31536000, immutable`
+
+### Docker Compose (Backend + Frontend)
+
+Files:
+
+- `docker-compose/docker-compose.yml`
+- `docker-compose/.env`
+
+Run:
+
+```bash
+cd docker-compose
+docker compose up -d
+```
+
+Stop:
+
+```bash
+cd docker-compose
+docker compose down
+```
 
 ## Validation and QA
 
@@ -271,7 +292,6 @@ These are currently tracked and deferred until upstream fix availability and the
 
 ## Roadmap
 
-- Dockerized deployment (`backend` and `frontend` images)
 - Optional managed DB migration path (Supabase/Postgres)
 - Extended automated test coverage (API + UI)
 

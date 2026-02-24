@@ -27,6 +27,7 @@ const contentTypes = {
 };
 
 function sanitizePath(pathname) {
+  // inDist is the canonical security boundary; this only strips leading traversal.
   const safe = normalize(pathname).replace(/^(\.\.(\/|\\|$))+/, '');
   return join(distDir, safe);
 }
@@ -78,6 +79,9 @@ async function proxyApi(req, res) {
 
   const responseHeaders = {};
   upstream.headers.forEach((value, key) => {
+    if (key.toLowerCase() === 'set-cookie') {
+      return;
+    }
     responseHeaders[key] = value;
   });
   if (typeof upstream.headers.getSetCookie === 'function') {
@@ -99,7 +103,17 @@ async function proxyApi(req, res) {
 
 async function handleStatic(req, res) {
   const reqUrl = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
-  let pathname = decodeURIComponent(reqUrl.pathname);
+  let pathname;
+  try {
+    pathname = decodeURIComponent(reqUrl.pathname);
+  } catch (error) {
+    if (error instanceof URIError) {
+      res.writeHead(400, { 'content-type': 'text/plain; charset=utf-8' });
+      res.end('Bad Request');
+      return;
+    }
+    throw error;
+  }
 
   if (pathname.startsWith('/api/')) {
     await proxyApi(req, res);
@@ -174,7 +188,7 @@ async function handleStatic(req, res) {
   }
 }
 
-createServer((req, res) => {
+const server = createServer((req, res) => {
   handleStatic(req, res).catch((error) => {
     console.error('Frontend server error', error);
     if (!res.headersSent) {
@@ -188,6 +202,16 @@ createServer((req, res) => {
     }
     console.error('Headers were already sent for failed request');
   });
-}).listen(port, () => {
+});
+
+server.listen(port, () => {
   console.log(`Frontend listening on http://localhost:${port}`);
+});
+
+process.on('SIGTERM', () => {
+  const forceExit = setTimeout(() => process.exit(1), 5000);
+  server.close(() => {
+    clearTimeout(forceExit);
+    process.exit(0);
+  });
 });

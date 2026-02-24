@@ -80,6 +80,7 @@ It supports secure Ring token management, one-click unlock from web, expiring gu
 
 - `backend/` API server and data layer
 - `frontend/` React web application
+- `website/` Docusaurus documentation site scaffold
 - `scripts/` security and smoke test utilities
 - `.github/workflows/` CI pipelines
 - `docs/screenshots/` README image assets

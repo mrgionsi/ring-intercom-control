@@ -179,7 +179,7 @@ scripts/security-check.sh
 
 ## Known Dependency Advisories
 
-Current `npm audit` reports high severity vulnerabilities in transitive dependencies:
+Current `npm audit` reports high-severity vulnerabilities in transitive dependencies:
 
 - `ip` via `ring-client-api` (fix path requires breaking downgrade)
 - `tar` via `sqlite3` / `node-gyp` (fix path requires breaking downgrade)

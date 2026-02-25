@@ -19,6 +19,13 @@ type GuestStatus = {
   state: GuestLinkStatus;
 };
 
+function clearTimeoutRef(ref: { current: ReturnType<typeof setTimeout> | null }) {
+  if (ref.current !== null) {
+    clearTimeout(ref.current);
+    ref.current = null;
+  }
+}
+
 export default function Guest() {
   const { t, i18n } = useTranslation();
   const { token } = useParams();
@@ -33,13 +40,6 @@ export default function Guest() {
   const messageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const slideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const clearTimeoutRef = (ref: { current: ReturnType<typeof setTimeout> | null }) => {
-    if (ref.current !== null) {
-      clearTimeout(ref.current);
-      ref.current = null;
-    }
-  };
-
   const getStateMessage = (state: GuestLinkStatus): string | null => {
     if (state === 'scheduled') return t('guest.not_active_yet');
     if (state === 'expired') return t('guest.expired');
@@ -51,10 +51,11 @@ export default function Guest() {
 
   useEffect(() => {
     if (!token) return;
+    const fallback = t('guest.link_not_found');
     apiFetch<GuestStatus>(`/api/guest/${token}`)
       .then(setStatus)
-      .catch((err) => setError(err.message ?? t('guest.link_not_found')));
-  }, [token, t]);
+      .catch((err) => setError(err.message ?? fallback));
+  }, [token]);
 
   useEffect(() => {
     setSlideValue(0);
@@ -133,11 +134,16 @@ export default function Guest() {
             {t('guest.title')}
           </h1>
           <div className="guest-lang-switch">
-            <span className="guest-lang-label nav-link">
+            <label
+              id="guest-lang-label"
+              className="guest-lang-label nav-link"
+              htmlFor="guest-language-select"
+            >
               <Icon name="language" />
               {t('app.language')}
-            </span>
+            </label>
             <select
+              id="guest-language-select"
               className="guest-lang-select"
               value={currentLanguage}
               onChange={(e) => setLanguage(e.target.value)}
@@ -246,7 +252,7 @@ function statusBadgeClass(state: GuestLinkStatus): string {
 }
 
 function statusStateLabel(
-  state: GuestLinkStatus | string,
+  state: GuestLinkStatus,
   t: (key: string) => string
 ): string {
   if (state === 'valid') return t('guest.state_valid');

@@ -117,19 +117,26 @@ jobs:
           push-to-registry: true
 
       - name: Write release manifest
+        env:
+          MANIFEST_COMPONENT: ${{ matrix.component }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          IMAGE_NAME: ${{ matrix.image }}
+          COMPONENT_VERSION: ${{ steps.vars.outputs.component_version }}
+          BUILD_DIGEST: ${{ steps.build.outputs.digest }}
+          TAGS: ${{ steps.meta.outputs.tags }}
         run: |
           mkdir -p release-manifests
           {
-            echo "## ${{ matrix.component }}"
-            echo "- Image: \`ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}\`"
-            echo "- Version: \`${{ steps.vars.outputs.component_version }}\`"
-            echo "- Digest: \`${{ steps.build.outputs.digest }}\`"
+            echo "## $MANIFEST_COMPONENT"
+            echo "- Image: \`ghcr.io/$REPO_OWNER/$IMAGE_NAME\`"
+            echo "- Version: \`$COMPONENT_VERSION\`"
+            echo "- Digest: \`$BUILD_DIGEST\`"
             echo "- Tags:"
             while IFS= read -r tag; do
               [ -z "$tag" ] && continue
               echo "  - \`$tag\`"
-            done <<< "${{ steps.meta.outputs.tags }}"
-          } > release-manifests/${{ matrix.component }}.md
+            done <<< "$TAGS"
+          } > "release-manifests/$MANIFEST_COMPONENT.md"
 
       - name: Upload release manifest
         uses: actions/upload-artifact@v4

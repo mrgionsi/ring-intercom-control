@@ -3,8 +3,11 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
+    "docs:api": "node ../scripts/generate-api-docs.mjs",
     "docusaurus": "docusaurus",
+    "prestart": "npm run docs:api",
     "start": "docusaurus start",
+    "prebuild": "npm run docs:api",
     "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",

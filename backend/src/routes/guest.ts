@@ -23,6 +23,13 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 
 const router = Router();
 
+/**
+ * Create a guest unlock link.
+ * @api POST /api/guest-links
+ * @access Authenticated
+ * @body label?,intercomId,startsAt,expiresAt,maxUses?,ringAccountId
+ * @success 200 { link }
+ */
 router.post('/guest-links', requireAuth, asyncHandler(async (req, res) => {
   const { label, intercomId, startsAt, expiresAt, maxUses, ringAccountId } = req.body ?? {};
   const validated = validateGuestLinkCreateInput({
@@ -78,16 +85,35 @@ router.post('/guest-links', requireAuth, asyncHandler(async (req, res) => {
   res.json({ link });
 }));
 
+/**
+ * List guest links for current user.
+ * @api GET /api/guest-links
+ * @access Authenticated
+ * @success 200 { links[] }
+ */
 router.get('/guest-links', requireAuth, asyncHandler(async (req, res) => {
   const links = await listGuestLinksForUser(req.session.auth!.id);
   res.json({ links });
 }));
 
+/**
+ * List guest link templates for current user.
+ * @api GET /api/guest-link-templates
+ * @access Authenticated
+ * @success 200 { templates[] }
+ */
 router.get('/guest-link-templates', requireAuth, asyncHandler(async (req, res) => {
   const templates = await listGuestLinkTemplatesForUser(req.session.auth!.id);
   res.json({ templates });
 }));
 
+/**
+ * Create a guest link template.
+ * @api POST /api/guest-link-templates
+ * @access Authenticated
+ * @body name,durationHours,maxUses?
+ * @success 200 { template }
+ */
 router.post('/guest-link-templates', requireAuth, asyncHandler(async (req, res) => {
   const { name, durationHours, maxUses } = req.body ?? {};
   if (!name || !durationHours) {
@@ -102,6 +128,12 @@ router.post('/guest-link-templates', requireAuth, asyncHandler(async (req, res) 
   res.json({ template });
 }));
 
+/**
+ * Delete a guest link template.
+ * @api DELETE /api/guest-link-templates/:id
+ * @access Authenticated
+ * @success 200 { ok: true }
+ */
 router.delete('/guest-link-templates/:id', requireAuth, asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   if (!id) {
@@ -111,6 +143,12 @@ router.delete('/guest-link-templates/:id', requireAuth, asyncHandler(async (req,
   res.json({ ok: true });
 }));
 
+/**
+ * Disable a guest link.
+ * @api DELETE /api/guest-links/:id
+ * @access Authenticated
+ * @success 200 { ok: true }
+ */
 router.delete('/guest-links/:id', requireAuth, asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   if (!id) {
@@ -156,9 +194,30 @@ const updateExpiresAtHandler = asyncHandler(async (
 });
 
 // Keep compatibility across clients/proxies that may not forward PATCH consistently
+/**
+ * Update guest link expiration time.
+ * @api PATCH /api/guest-links/:id/expires-at
+ * @access Authenticated
+ * @body expiresAt
+ * @success 200 { ok: true, expiresAt }
+ */
 router.patch('/guest-links/:id/expires-at', requireAuth, updateExpiresAtHandler);
+/**
+ * Update guest link expiration time (PUT compatibility route).
+ * @api PUT /api/guest-links/:id/expires-at
+ * @access Authenticated
+ * @body expiresAt
+ * @success 200 { ok: true, expiresAt }
+ */
 router.put('/guest-links/:id/expires-at', requireAuth, updateExpiresAtHandler);
 
+/**
+ * Resolve a public guest link and return current validity state.
+ * @api GET /api/guest/:token
+ * @access Public
+ * @success 200 { token, label, startsAt, expiresAt, valid, state }
+ * @error 404 Link not found
+ */
 router.get('/guest/:token', asyncHandler(async (req, res) => {
   const link = await getGuestLinkByToken(req.params.token);
   if (!link || link.disabled) {
@@ -196,6 +255,15 @@ router.get('/guest/:token', asyncHandler(async (req, res) => {
   });
 }));
 
+/**
+ * Unlock via public guest token if link is currently valid.
+ * @api POST /api/guest/:token/unlock
+ * @access Public
+ * @success 200 { ok: true }
+ * @error 403 Link not active yet
+ * @error 404 Link not found
+ * @error 410 Link expired/used up
+ */
 router.post('/guest/:token/unlock', asyncHandler(async (req, res) => {
   const link = await getGuestLinkByToken(req.params.token);
   if (!link || link.disabled) {

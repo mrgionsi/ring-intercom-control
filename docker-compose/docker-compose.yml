@@ -1,5 +1,9 @@
 services:
   backend:
+    # Healthcheck uses "/nodejs/bin/node" because the default published BACKEND_IMAGE
+    # is distroless and does not provide a shell/PATH-resolved `node` binary.
+    # If you override BACKEND_IMAGE with a non-distroless image, update the
+    # healthcheck command path accordingly (for example to `node`).
     image: ${BACKEND_IMAGE}
     container_name: ring-intercom-backend
     restart: unless-stopped
@@ -30,6 +34,10 @@ services:
       start_period: 20s
 
   frontend:
+    # Healthcheck uses "/nodejs/bin/node" because the default published FRONTEND_IMAGE
+    # is distroless and does not provide a shell/PATH-resolved `node` binary.
+    # If you override FRONTEND_IMAGE with a non-distroless image, update the
+    # healthcheck command path accordingly (for example to `node`).
     image: ${FRONTEND_IMAGE}
     container_name: ring-intercom-frontend
     restart: unless-stopped

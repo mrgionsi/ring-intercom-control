@@ -1,5 +1,7 @@
 # Security Policy
 
+Published docs: `https://mrgionsi.github.io/ring-intercom-control/`
+
 ## Reporting a Vulnerability
 
 Please do **not** open public GitHub issues for security vulnerabilities.

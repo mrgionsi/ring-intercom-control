@@ -4,6 +4,8 @@ sidebar_position: 2
 
 # Architecture
 
+Live docs URL: `https://mrgionsi.github.io/ring-intercom-control/`
+
 ## Components
 
 - `backend/`: Express API, auth/session, Ring integration, SQLite persistence

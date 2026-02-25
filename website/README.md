@@ -4,6 +4,7 @@ Docusaurus documentation site for `ring-intercom-control`.
 
 Live docs:
 - `https://mrgionsi.github.io/ring-intercom-control/`
+- API docs: `https://mrgionsi.github.io/ring-intercom-control/docs/api`
 
 ## Installation
 

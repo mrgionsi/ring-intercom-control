@@ -4,6 +4,8 @@ sidebar_position: 3
 
 # Deployment
 
+Live docs URL: `https://mrgionsi.github.io/ring-intercom-control/`
+
 ## Docker images
 
 The project publishes two images:

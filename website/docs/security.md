@@ -4,6 +4,8 @@ sidebar_position: 6
 
 # Security
 
+Live docs URL: `https://mrgionsi.github.io/ring-intercom-control/`
+
 ## Secrets
 
 - Never commit `.env` with real values.

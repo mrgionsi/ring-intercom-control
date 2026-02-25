@@ -4,6 +4,8 @@ sidebar_position: 5
 
 # Development
 
+Live docs URL: `https://mrgionsi.github.io/ring-intercom-control/`
+
 ## Prerequisites
 
 - Node.js `24.x` recommended

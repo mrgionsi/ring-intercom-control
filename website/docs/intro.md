@@ -36,6 +36,7 @@ This documentation covers:
 
 - [Architecture](./architecture)
 - [Deployment](./deployment)
+- [Environment Variables](./environment)
 - [API](./api)
 - [Development](./development)
 - [Security](./security)

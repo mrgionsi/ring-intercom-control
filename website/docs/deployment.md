@@ -19,6 +19,8 @@ Tags include package version, sha-based tags, and optional manual release tags.
 
 Use `docker-compose/docker-compose.yml` with `docker-compose/.env`.
 
+For a complete variable reference, see [Environment Variables](./environment).
+
 ```bash
 cd docker-compose
 docker compose up -d

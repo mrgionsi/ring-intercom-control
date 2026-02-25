@@ -8,8 +8,8 @@ services:
     container_name: ring-intercom-backend
     restart: unless-stopped
     environment:
-      NODE_ENV: production
-      DB_PATH: /data/data.db
+      NODE_ENV: ${NODE_ENV}
+      DB_PATH: ${DB_PATH}
       SESSION_SECRET: ${SESSION_SECRET}
       MASTER_KEY: ${MASTER_KEY}
       ADMIN_USERNAME: ${ADMIN_USERNAME}

@@ -5,6 +5,7 @@ const sidebars: SidebarsConfig = {
     'intro',
     'architecture',
     'deployment',
+    'environment',
     {
       type: 'category',
       label: 'API',

@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "hash-password": "^0.1.1"
+  }
+}

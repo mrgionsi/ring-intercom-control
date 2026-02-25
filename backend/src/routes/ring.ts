@@ -36,12 +36,25 @@ function sanitizeAccount(account: any) {
   };
 }
 
+/**
+ * Return Ring integration status and configured accounts.
+ * @api GET /api/ring/status
+ * @access Authenticated
+ * @success 200 { configured, accounts[] }
+ */
 router.get('/status', requireAuth, asyncHandler(async (req, res) => {
   const status = await getUserTokenStatus(req.session.auth!.id);
   const accounts = await listRingAccountsForUser(req.session.auth!.id);
   res.json({ ...status, accounts: accounts.map(sanitizeAccount) });
 }));
 
+/**
+ * Save/update a refresh token for a Ring account.
+ * @api POST /api/ring/refresh-token
+ * @access Authenticated
+ * @body refreshToken,ringAccountId?,accountLabel?
+ * @success 200 { ok: true, ringAccountId }
+ */
 router.post('/refresh-token', requireAuth, asyncHandler(async (req, res) => {
   const { refreshToken, ringAccountId, accountLabel } = req.body ?? {};
   if (!refreshToken || typeof refreshToken !== 'string') {
@@ -81,6 +94,14 @@ router.post('/refresh-token', requireAuth, asyncHandler(async (req, res) => {
   res.json({ ok: true, ringAccountId: targetAccountId });
 }));
 
+/**
+ * Validate a Ring refresh token by attempting a lightweight API call.
+ * @api POST /api/ring/refresh-token/test
+ * @access Authenticated
+ * @body refreshToken
+ * @success 200 { ok: true, locations }
+ * @error 400 Refresh token is invalid
+ */
 router.post('/refresh-token/test', requireAuth, asyncHandler(async (req, res) => {
   const { refreshToken } = req.body ?? {};
   if (!refreshToken || typeof refreshToken !== 'string') {
@@ -97,6 +118,13 @@ router.post('/refresh-token/test', requireAuth, asyncHandler(async (req, res) =>
   }
 }));
 
+/**
+ * Start Ring credential login flow (may require 2FA).
+ * @api POST /api/ring/auth/start
+ * @access Authenticated
+ * @body email,password,ringAccountId?,accountLabel?
+ * @success 200 { requires2fa, authSessionId, prompt, expiresAt } or { refreshToken }
+ */
 router.post('/auth/start', requireAuth, asyncHandler(async (req, res) => {
   const { email, password, ringAccountId, accountLabel } = req.body ?? {};
   if (
@@ -135,6 +163,13 @@ router.post('/auth/start', requireAuth, asyncHandler(async (req, res) => {
   }
 }));
 
+/**
+ * Verify Ring 2FA code and return refresh token.
+ * @api POST /api/ring/auth/verify
+ * @access Authenticated
+ * @body authSessionId,code
+ * @success 200 { refreshToken }
+ */
 router.post('/auth/verify', requireAuth, asyncHandler(async (req, res) => {
   const { authSessionId, code } = req.body ?? {};
   if (
@@ -162,11 +197,24 @@ router.post('/auth/verify', requireAuth, asyncHandler(async (req, res) => {
   }
 }));
 
+/**
+ * List Ring accounts for current user.
+ * @api GET /api/ring/accounts
+ * @access Authenticated
+ * @success 200 { accounts[] }
+ */
 router.get('/accounts', requireAuth, asyncHandler(async (req, res) => {
   const accounts = await listRingAccountsForUser(req.session.auth!.id);
   res.json({ accounts: accounts.map(sanitizeAccount) });
 }));
 
+/**
+ * Create a Ring account entry for current user.
+ * @api POST /api/ring/accounts
+ * @access Authenticated
+ * @body label
+ * @success 200 { account }
+ */
 router.post('/accounts', requireAuth, asyncHandler(async (req, res) => {
   const { label } = req.body ?? {};
   if (typeof label !== 'string' || !label.trim()) {
@@ -176,6 +224,13 @@ router.post('/accounts', requireAuth, asyncHandler(async (req, res) => {
   res.json({ account: sanitizeAccount(account) });
 }));
 
+/**
+ * Update account label/default flag for a Ring account.
+ * @api PATCH /api/ring/accounts/:id
+ * @access Authenticated
+ * @body label?,isDefault?
+ * @success 200 { account }
+ */
 router.patch('/accounts/:id', requireAuth, asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   if (!id) {
@@ -196,6 +251,12 @@ router.patch('/accounts/:id', requireAuth, asyncHandler(async (req, res) => {
   res.json({ account: updated ? sanitizeAccount(updated) : null });
 }));
 
+/**
+ * Disable (soft delete) a Ring account.
+ * @api DELETE /api/ring/accounts/:id
+ * @access Authenticated
+ * @success 200 { ok: true }
+ */
 router.delete('/accounts/:id', requireAuth, asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   if (!id) {
@@ -210,6 +271,12 @@ router.delete('/accounts/:id', requireAuth, asyncHandler(async (req, res) => {
   res.json({ ok: true });
 }));
 
+/**
+ * Return Ring intercom summary for current user.
+ * @api GET /api/ring/summary
+ * @access Authenticated
+ * @success 200 { summary }
+ */
 router.get('/summary', requireAuth, asyncHandler(async (req, res) => {
   try {
     const summary = await getRingSummaryForUser(req.session.auth!.id);
@@ -219,6 +286,13 @@ router.get('/summary', requireAuth, asyncHandler(async (req, res) => {
   }
 }));
 
+/**
+ * Trigger unlock on an intercom.
+ * @api POST /api/ring/unlock
+ * @access Authenticated
+ * @body intercomId,ringAccountId?
+ * @success 200 { ok: true }
+ */
 router.post('/unlock', requireAuth, asyncHandler(async (req, res) => {
   const { intercomId, ringAccountId } = req.body ?? {};
   if (!intercomId) {
@@ -255,6 +329,13 @@ router.post('/unlock', requireAuth, asyncHandler(async (req, res) => {
   }
 }));
 
+/**
+ * Get device health history for a specific intercom.
+ * @api GET /api/ring/health/history
+ * @access Authenticated
+ * @query intercomId
+ * @success 200 { history[] }
+ */
 router.get('/health/history', requireAuth, asyncHandler(async (req, res) => {
   const intercomId = req.query.intercomId ? String(req.query.intercomId) : '';
   if (!intercomId) {

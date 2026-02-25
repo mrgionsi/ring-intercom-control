@@ -5,7 +5,11 @@ const sidebars: SidebarsConfig = {
     'intro',
     'architecture',
     'deployment',
-    'api',
+    {
+      type: 'category',
+      label: 'API',
+      items: ['api/index', 'api/reference'],
+    },
     'development',
     'security',
     'contributing',

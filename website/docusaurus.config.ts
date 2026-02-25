@@ -5,7 +5,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 const config: Config = {
   title: 'Ring Intercom Control Docs',
   tagline: 'Setup, deployment, and operations documentation',
-  favicon: 'img/favicon.ico',
+  favicon: 'img/ring_intercom_logo.png',
   future: {
     v4: true,
   },
@@ -43,7 +43,7 @@ const config: Config = {
       title: 'Ring Intercom Docs',
       logo: {
         alt: 'Ring Intercom Control',
-        src: 'img/logo.svg',
+        src: 'img/ring_intercom_logo.png',
       },
       items: [
         {

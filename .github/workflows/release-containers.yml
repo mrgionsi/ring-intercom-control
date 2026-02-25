@@ -14,13 +14,14 @@ on:
       publish_latest:
         description: 'Also publish latest tag'
         required: true
-        default: true
+        default: false
         type: boolean
 
 permissions:
   contents: write
   packages: write
   id-token: write
+  attestations: write
 
 jobs:
   build-and-push:
@@ -73,7 +74,7 @@ jobs:
             EXTRA_TAGS+=$'type=raw,value='"$RELEASE_TAG"$'\n'
             RELEASE_LABEL="$RELEASE_TAG"
           fi
-          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" || "$PUBLISH_LATEST" == "true" ]]; then
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" || ("${GITHUB_REF}" == "refs/heads/main" && "$PUBLISH_LATEST" == "true") ]]; then
             EXTRA_TAGS+=$'type=raw,value=latest\n'
           fi
           EXTRA_TAGS+=$'type=raw,value='"$COMPONENT_VERSION"$'\n'
@@ -152,7 +153,7 @@ jobs:
       needs.build-and-push.result == 'success' &&
       (
         github.event_name == 'workflow_dispatch' ||
-        !contains(join(github.event.pull_request.labels.*.name, ','), 'skip-changelog')
+        !contains(github.event.pull_request.labels.*.name, 'skip-changelog')
       )
     environment: production
     steps:

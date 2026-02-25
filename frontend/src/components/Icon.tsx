@@ -15,7 +15,18 @@ type IconName =
   | 'status'
   | 'firmware'
   | 'wifi'
-  | 'ota';
+  | 'ota'
+  | 'create'
+  | 'template'
+  | 'calendar'
+  | 'uses'
+  | 'label'
+  | 'open'
+  | 'edit'
+  | 'disable'
+  | 'save'
+  | 'cancel'
+  | 'search';
 
 const iconProps = {
   className: 'nav-icon',
@@ -44,6 +55,98 @@ export function Icon({ name }: { name: IconName }) {
       <svg {...iconProps}>
         <path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 1 0-7.07-7.07L11 5" />
         <path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 1 0 7.07 7.07L13 19" />
+      </svg>
+    );
+  }
+  if (name === 'create') {
+    return (
+      <svg {...iconProps}>
+        <line x1="12" y1="5" x2="12" y2="19" />
+        <line x1="5" y1="12" x2="19" y2="12" />
+      </svg>
+    );
+  }
+  if (name === 'template') {
+    return (
+      <svg {...iconProps}>
+        <rect x="4" y="3" width="16" height="18" rx="2" />
+        <line x1="8" y1="8" x2="16" y2="8" />
+        <line x1="8" y1="12" x2="16" y2="12" />
+      </svg>
+    );
+  }
+  if (name === 'calendar') {
+    return (
+      <svg {...iconProps}>
+        <rect x="3" y="5" width="18" height="16" rx="2" />
+        <line x1="3" y1="10" x2="21" y2="10" />
+        <line x1="8" y1="3" x2="8" y2="7" />
+        <line x1="16" y1="3" x2="16" y2="7" />
+      </svg>
+    );
+  }
+  if (name === 'uses') {
+    return (
+      <svg {...iconProps}>
+        <path d="M8 10h8" />
+        <path d="M8 14h5" />
+        <circle cx="12" cy="12" r="9" />
+      </svg>
+    );
+  }
+  if (name === 'label') {
+    return (
+      <svg {...iconProps}>
+        <path d="M20 10l-8 8-8-8V4h10z" />
+        <circle cx="11" cy="9" r="1.5" />
+      </svg>
+    );
+  }
+  if (name === 'open') {
+    return (
+      <svg {...iconProps}>
+        <path d="M14 4h6v6" />
+        <path d="M10 14L20 4" />
+        <path d="M20 14v6h-16V4h6" />
+      </svg>
+    );
+  }
+  if (name === 'edit') {
+    return (
+      <svg {...iconProps}>
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+      </svg>
+    );
+  }
+  if (name === 'disable') {
+    return (
+      <svg {...iconProps}>
+        <circle cx="12" cy="12" r="9" />
+        <line x1="8" y1="8" x2="16" y2="16" />
+      </svg>
+    );
+  }
+  if (name === 'save') {
+    return (
+      <svg {...iconProps}>
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+    );
+  }
+  if (name === 'cancel') {
+    return (
+      <svg {...iconProps}>
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+      </svg>
+    );
+  }
+  if (name === 'search') {
+    return (
+      <svg {...iconProps}>
+        <circle cx="11" cy="11" r="7" />
+        <line x1="20" y1="20" x2="16.5" y2="16.5" />
       </svg>
     );
   }

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { apiFetch } from '../api';
 import { useTranslation } from 'react-i18next';
+import { Icon } from '../components/Icon';
 import { formatDateTime, toDateTimeLocalValue } from '../utils/dateTime';
 import {
   getLinkStatus,
@@ -405,7 +406,7 @@ export default function GuestLinks() {
       ) : null}
       <section className="card">
         <h2 className="section-title">
-          <UiIcon name="create" />
+          <Icon name="create" />
           {t('guest_links.create_title')}
         </h2>
         <div className="actions guest-link-actions">
@@ -416,14 +417,14 @@ export default function GuestLinks() {
             onClick={() => setTemplateModalOpen(true)}
             ref={templateTriggerRef}
           >
-            <UiIcon name="template" />
+            <Icon name="template" />
             {t('guest_links.manage_templates')}
           </button>
         </div>
         <div className="grid two guest-link-form-grid guest-link-template-row">
           <label className="field">
             <span className="field-label">
-              <UiIcon name="template" />
+              <Icon name="template" />
               {t('guest_links.template_optional')}
             </span>
             <select
@@ -443,7 +444,7 @@ export default function GuestLinks() {
         <div className="grid two guest-link-form-grid guest-link-main-row">
           <label className="field">
             <span className="field-label">
-              <UiIcon name="intercom" />
+              <Icon name="intercom" />
               {t('guest_links.account')}
             </span>
             <select
@@ -467,7 +468,7 @@ export default function GuestLinks() {
           </label>
           <label className="field">
             <span className="field-label">
-              <UiIcon name="label" />
+              <Icon name="label" />
               {t('guest_links.label')}
             </span>
             <input
@@ -481,7 +482,7 @@ export default function GuestLinks() {
           </label>
           <label className="field">
             <span className="field-label">
-              <UiIcon name="intercom" />
+              <Icon name="intercom" />
               {t('guest_links.intercom')}
             </span>
             <select
@@ -504,7 +505,7 @@ export default function GuestLinks() {
           </label>
           <label className="field">
             <span className="field-label">
-              <UiIcon name="calendar" />
+              <Icon name="calendar" />
               {t('guest_links.starts_at')}
             </span>
             <input
@@ -521,7 +522,7 @@ export default function GuestLinks() {
           </label>
           <label className="field">
             <span className="field-label">
-              <UiIcon name="calendar" />
+              <Icon name="calendar" />
               {t('guest_links.expires_at')}
             </span>
             <input
@@ -539,7 +540,7 @@ export default function GuestLinks() {
           </label>
           <label className="field">
             <span className="field-label">
-              <UiIcon name="uses" />
+              <Icon name="uses" />
               {t('guest_links.max_uses')}
             </span>
             <input
@@ -562,7 +563,7 @@ export default function GuestLinks() {
           onClick={handleCreate}
           disabled={!isCreateReady || initializing}
         >
-          <UiIcon name="create" />
+          <Icon name="create" />
           {t('guest_links.create')}
         </button>
         {error ? <div className="error">{error}</div> : null}
@@ -570,7 +571,7 @@ export default function GuestLinks() {
 
       <section className="card">
         <h2 className="section-title">
-          <UiIcon name="links" />
+          <Icon name="links" />
           {t('guest_links.existing')}
         </h2>
         <div className="status-legend">
@@ -590,7 +591,7 @@ export default function GuestLinks() {
         <div className="links-filters">
           <label className="field links-search">
             <span className="field-label">
-              <UiIcon name="search" />
+              <Icon name="search" />
               {t('guest_links.search_label')}
             </span>
             <input
@@ -678,7 +679,7 @@ export default function GuestLinks() {
                             target="_blank"
                             rel="noreferrer"
                           >
-                            <UiIcon name="open" />
+                            <Icon name="open" />
                             {t('guest_links.open')}
                           </a>
                           {editingLinkId === link.id ? (
@@ -688,7 +689,7 @@ export default function GuestLinks() {
                                 className="btn ghost nav-link"
                                 onClick={() => handleCancelEdit()}
                               >
-                                <UiIcon name="cancel" />
+                                <Icon name="cancel" />
                                 {t('guest_links.cancel')}
                               </button>
                               <button
@@ -697,7 +698,7 @@ export default function GuestLinks() {
                                 onClick={() => handleSaveEdit(link)}
                                 disabled={!editExpiresAt}
                               >
-                                <UiIcon name="save" />
+                                <Icon name="save" />
                                 {t('guest_links.save')}
                               </button>
                             </>
@@ -708,7 +709,7 @@ export default function GuestLinks() {
                               onClick={() => handleStartEdit(link)}
                               disabled={link.disabled === 1}
                             >
-                              <UiIcon name="edit" />
+                              <Icon name="edit" />
                               {t('guest_links.edit')}
                             </button>
                           )}
@@ -721,7 +722,7 @@ export default function GuestLinks() {
                             }}
                             disabled={link.disabled === 1 || editingLinkId === link.id}
                           >
-                            <UiIcon name="disable" />
+                            <Icon name="disable" />
                             {t('guest_links.disable')}
                           </button>
                         </div>
@@ -778,7 +779,7 @@ export default function GuestLinks() {
             </button>
             <div className="actions">
               <h2 className="section-title" id={templateModalTitleId}>
-                <UiIcon name="template" />
+                <Icon name="template" />
                 {t('guest_links.templates_title')}
               </h2>
               <button
@@ -793,7 +794,7 @@ export default function GuestLinks() {
             <div className="grid two">
               <label className="field">
                 <span className="field-label">
-                  <UiIcon name="label" />
+                  <Icon name="label" />
                   {t('guest_links.template_name')}
                 </span>
                 <input
@@ -804,7 +805,7 @@ export default function GuestLinks() {
               </label>
               <label className="field">
                 <span className="field-label">
-                  <UiIcon name="calendar" />
+                  <Icon name="calendar" />
                   {t('guest_links.template_duration')}
                 </span>
                 <input
@@ -816,7 +817,7 @@ export default function GuestLinks() {
               </label>
               <label className="field">
                 <span className="field-label">
-                  <UiIcon name="uses" />
+                  <Icon name="uses" />
                   {t('guest_links.template_max_uses')}
                 </span>
                 <input
@@ -828,7 +829,7 @@ export default function GuestLinks() {
               </label>
             </div>
             <button type="button" className="btn nav-link" onClick={handleCreateTemplate}>
-              <UiIcon name="create" />
+              <Icon name="create" />
               {t('guest_links.template_create')}
             </button>
 
@@ -873,149 +874,4 @@ function statusLabelFor(status: GuestLinkStatus, t: (key: string) => string): st
   if (status === 'expired') return t('guest_links.expired');
   if (status === 'invalid_date') return t('guest_links.invalid_date');
   return t('guest_links.valid');
-}
-
-function UiIcon({
-  name
-}: {
-  name:
-    | 'create'
-    | 'template'
-    | 'intercom'
-    | 'calendar'
-    | 'uses'
-    | 'label'
-    | 'links'
-    | 'open'
-    | 'edit'
-    | 'disable'
-    | 'save'
-    | 'cancel'
-    | 'search';
-}) {
-  const common = {
-    className: 'nav-icon',
-    viewBox: '0 0 24 24',
-    fill: 'none',
-    stroke: 'currentColor',
-    strokeWidth: '2',
-    strokeLinecap: 'round' as const,
-    strokeLinejoin: 'round' as const,
-    'aria-hidden': true
-  };
-
-  if (name === 'create') {
-    return (
-      <svg {...common}>
-        <line x1="12" y1="5" x2="12" y2="19" />
-        <line x1="5" y1="12" x2="19" y2="12" />
-      </svg>
-    );
-  }
-  if (name === 'template') {
-    return (
-      <svg {...common}>
-        <rect x="4" y="3" width="16" height="18" rx="2" />
-        <line x1="8" y1="8" x2="16" y2="8" />
-        <line x1="8" y1="12" x2="16" y2="12" />
-      </svg>
-    );
-  }
-  if (name === 'intercom') {
-    return (
-      <svg {...common}>
-        <rect x="4" y="3" width="16" height="18" rx="2" />
-        <circle cx="12" cy="14" r="1.5" />
-      </svg>
-    );
-  }
-  if (name === 'calendar') {
-    return (
-      <svg {...common}>
-        <rect x="3" y="5" width="18" height="16" rx="2" />
-        <line x1="3" y1="10" x2="21" y2="10" />
-        <line x1="8" y1="3" x2="8" y2="7" />
-        <line x1="16" y1="3" x2="16" y2="7" />
-      </svg>
-    );
-  }
-  if (name === 'uses') {
-    return (
-      <svg {...common}>
-        <path d="M8 10h8" />
-        <path d="M8 14h5" />
-        <circle cx="12" cy="12" r="9" />
-      </svg>
-    );
-  }
-  if (name === 'label') {
-    return (
-      <svg {...common}>
-        <path d="M20 10l-8 8-8-8V4h10z" />
-        <circle cx="11" cy="9" r="1.5" />
-      </svg>
-    );
-  }
-  if (name === 'links') {
-    return (
-      <svg {...common}>
-        <path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 1 0-7.07-7.07L11 5" />
-        <path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 1 0 7.07 7.07L13 19" />
-      </svg>
-    );
-  }
-  if (name === 'open') {
-    return (
-      <svg {...common}>
-        <path d="M14 4h6v6" />
-        <path d="M10 14L20 4" />
-        <path d="M20 14v6h-16V4h6" />
-      </svg>
-    );
-  }
-  if (name === 'edit') {
-    return (
-      <svg {...common}>
-        <path d="M12 20h9" />
-        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
-      </svg>
-    );
-  }
-  if (name === 'disable') {
-    return (
-      <svg {...common}>
-        <circle cx="12" cy="12" r="9" />
-        <line x1="8" y1="8" x2="16" y2="16" />
-      </svg>
-    );
-  }
-  if (name === 'save') {
-    return (
-      <svg {...common}>
-        <polyline points="20 6 9 17 4 12" />
-      </svg>
-    );
-  }
-  if (name === 'cancel') {
-    return (
-      <svg {...common}>
-        <line x1="18" y1="6" x2="6" y2="18" />
-        <line x1="6" y1="6" x2="18" y2="18" />
-      </svg>
-    );
-  }
-  if (name === 'search') {
-    return (
-      <svg {...common}>
-        <circle cx="11" cy="11" r="7" />
-        <line x1="20" y1="20" x2="16.5" y2="16.5" />
-      </svg>
-    );
-  }
-  return (
-    <svg {...common}>
-      <path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 1 0-7.07-7.07L11 5" />
-      <path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 1 0 7.07 7.07L13 19" />
-    </svg>
-  );
 }

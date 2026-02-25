@@ -13,7 +13,7 @@ const resources = {
   es: { translation: es },
   de: { translation: de }
 } as const;
-const SUPPORTED_LANGUAGES = Object.keys(resources) as Array<keyof typeof resources>;
+export const SUPPORTED_LANGUAGES = Object.keys(resources) as Array<keyof typeof resources>;
 
 i18n.use(initReactI18next).init({
   resources,

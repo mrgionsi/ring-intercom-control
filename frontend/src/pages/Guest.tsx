@@ -5,7 +5,7 @@ import { apiFetch } from '../api';
 import { useTranslation } from 'react-i18next';
 import { formatDateTime } from '../utils/dateTime';
 import type { GuestLinkStatus } from './guestLinkStatus';
-import { setLanguage } from '../i18n';
+import { SUPPORTED_LANGUAGES, setLanguage } from '../i18n';
 import { Icon } from '../components/Icon';
 
 type GuestStatus = {
@@ -54,7 +54,17 @@ export default function Guest() {
     const fallback = t('guest.link_not_found');
     apiFetch<GuestStatus>(`/api/guest/${token}`)
       .then(setStatus)
-      .catch((err) => setError(err.message ?? fallback));
+      .catch((err: unknown) => {
+        const message =
+          typeof err === 'object' &&
+          err !== null &&
+          'message' in err &&
+          typeof (err as { message: unknown }).message === 'string' &&
+          (err as { message: string }).message.trim()
+            ? (err as { message: string }).message
+            : fallback;
+        setError(message);
+      });
   }, [token]);
 
   useEffect(() => {
@@ -148,10 +158,11 @@ export default function Guest() {
               value={currentLanguage}
               onChange={(e) => setLanguage(e.target.value)}
             >
-              <option value="en">EN</option>
-              <option value="it">IT</option>
-              <option value="es">ES</option>
-              <option value="de">DE</option>
+              {SUPPORTED_LANGUAGES.map((lang) => (
+                <option key={lang} value={lang}>
+                  {lang.toUpperCase()}
+                </option>
+              ))}
             </select>
           </div>
         </div>

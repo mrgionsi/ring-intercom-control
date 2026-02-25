@@ -194,13 +194,13 @@ jobs:
             exit 1
           fi
 
-      - name: Build release notes
+      - name: Build release notes appendix
         run: |
           CURRENT_TAG="${{ steps.release_vars.outputs.tag }}"
           PREVIOUS_TAG="$(git tag --list 'containers-*' --sort=-creatordate | grep -vx "$CURRENT_TAG" | head -n1 || true)"
 
           {
-            echo "# Container image publish"
+            echo "## Container image publish"
             echo
             echo "- Commit: \`${{ github.sha }}\`"
             echo "- Workflow run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
@@ -250,6 +250,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           draft: true
+          generate_release_notes: true
+          append_body: true
           tag_name: ${{ steps.release_vars.outputs.tag }}
           target_commitish: ${{ github.sha }}
           name: ${{ steps.release_vars.outputs.name }}

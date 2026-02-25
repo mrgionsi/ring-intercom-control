@@ -157,6 +157,11 @@ jobs:
       )
     environment: production
     steps:
+      - name: Checkout repository (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Prepare release metadata
         id: release_vars
         shell: bash
@@ -191,11 +196,19 @@ jobs:
 
       - name: Build release notes appendix
         run: |
+          CURRENT_TAG="${{ steps.release_vars.outputs.tag }}"
+          PREVIOUS_TAG="$(git tag --list 'containers-*' --sort=-creatordate | grep -vx "$CURRENT_TAG" | head -n1 || true)"
+
           {
             echo "## Container image publish"
             echo
             echo "- Commit: \`${{ github.sha }}\`"
             echo "- Workflow run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            if [ -n "$PREVIOUS_TAG" ]; then
+              echo "- Previous container release tag: \`$PREVIOUS_TAG\`"
+            else
+              echo "- Previous container release tag: _(none found)_"
+            fi
             echo
             shopt -s nullglob
             files=(release-manifests/*.md)
@@ -204,6 +217,33 @@ jobs:
               cat "$file"
               echo
             done
+
+            echo "## Changes from commits"
+            if [ -n "$PREVIOUS_TAG" ]; then
+              RANGE="$PREVIOUS_TAG..${{ github.sha }}"
+              echo
+              echo "_Range: \`$RANGE\`_"
+              echo
+            else
+              RANGE="${{ github.sha }}"
+              echo
+              echo "_Range: repository history up to \`${{ github.sha }}\` (no previous \`containers-*\` tag found)_"
+              echo
+            fi
+
+            if git log --pretty=format:'- `%h` %s — %an' "$RANGE" | grep -q .; then
+              git log --pretty=format:'- `%h` %s — %an' "$RANGE"
+            else
+              echo "- No commits found in range."
+            fi
+            echo
+            echo
+            echo "## Contributors (commit authors)"
+            if git log --format='%an' "$RANGE" | grep -q .; then
+              git log --format='%an' "$RANGE" | sort | uniq -c | sort -nr | awk '{count=$1; $1=\"\"; sub(/^ /, \"\"); print \"- \" $0 \" (\" count \" commits)\"}'
+            else
+              echo "- None"
+            fi
           } > RELEASE_NOTES.md
 
       - name: Create draft release

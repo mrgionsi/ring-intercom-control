@@ -127,6 +127,7 @@
     "error_max_uses_invalid": "Max uses must be a positive integer.",
     "date_format_hint": "Date format: dd/mm/yyyy hh:mm",
     "disable": "Disable",
+    "disable_confirm": "Disable this guest link?",
     "open": "Open",
     "page": "Page",
     "prev": "Prev",
@@ -146,6 +147,7 @@
     "state_valid": "Valid",
     "state_scheduled": "Scheduled",
     "state_expired": "Expired",
+    "state_unknown": "Unknown",
     "state_used_up": "Used up",
     "state_disabled": "Disabled",
     "state_invalid": "Invalid date",
@@ -156,6 +158,7 @@
     "used_up": "This link has reached the maximum number of uses.",
     "disabled": "This link is disabled.",
     "invalid_date": "This link has invalid date data.",
+    "link_not_found": "Link not found",
     "error": "Unlock failed"
   },
   "admin": {

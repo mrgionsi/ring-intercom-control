@@ -189,8 +189,10 @@ jobs:
             echo "- Commit: \`${{ github.sha }}\`"
             echo "- Workflow run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
             echo
-            for file in $(ls -1 release-manifests/*.md | sort); do
-              echo "### $(basename "$file" .md)"
+            shopt -s nullglob
+            files=(release-manifests/*.md)
+            mapfile -t files < <(printf '%s\n' "${files[@]}" | sort)
+            for file in "${files[@]}"; do
               cat "$file"
               echo
             done

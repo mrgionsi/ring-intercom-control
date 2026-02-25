@@ -667,7 +667,7 @@ textarea {
   font-weight: 700;
   letter-spacing: 2px;
   opacity: 0.7;
-  animation: slideHintPulse 1400ms ease-in-out infinite;
+  animation: slide-hint-pulse 1400ms ease-in-out infinite;
   transition: opacity 140ms ease;
 }
 
@@ -718,7 +718,7 @@ textarea {
   background: #e7f7ee;
   color: #0c6a3a;
   font-weight: 700;
-  animation: popIn 220ms ease-out;
+  animation: pop-in 220ms ease-out;
 }
 
 .unlock-success-dot {
@@ -733,7 +733,7 @@ textarea {
   font-size: 12px;
 }
 
-@keyframes popIn {
+@keyframes pop-in {
   from {
     opacity: 0;
     transform: translateY(4px) scale(0.96);
@@ -744,7 +744,7 @@ textarea {
   }
 }
 
-@keyframes slideHintPulse {
+@keyframes slide-hint-pulse {
   0% {
     transform: translateY(-50%) translateX(0);
     opacity: 0.45;

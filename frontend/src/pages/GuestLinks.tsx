@@ -714,8 +714,11 @@ export default function GuestLinks() {
                           )}
                           <button
                             type="button"
-                            className="btn nav-link"
-                            onClick={() => handleDisable(link.id)}
+                            className="btn danger nav-link"
+                            onClick={() => {
+                              if (!window.confirm(t('guest_links.disable_confirm'))) return;
+                              void handleDisable(link.id);
+                            }}
                             disabled={link.disabled === 1 || editingLinkId === link.id}
                           >
                             <UiIcon name="disable" />

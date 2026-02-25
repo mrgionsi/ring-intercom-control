@@ -85,10 +85,11 @@ The project supports containerized deployment for both backend and frontend.
 - Compose stack: `docker-compose/docker-compose.yml`
 - Env template: `docker-compose/.env.example`
 
-Quick run with Compose:
+### Frontend Container (Standalone)
+
+Build:
 
 ```bash
-<<<<<<< dev
 docker build ./frontend -t mrgionsi/ring-intercom-control-frontend:0.1.0-beta
 ```
 
@@ -122,6 +123,7 @@ Run:
 
 ```bash
 cd docker-compose
+cp .env.example .env
 docker compose up -d
 ```
 
@@ -197,14 +199,10 @@ These are currently tracked and deferred until upstream fix availability and the
 - Extended automated test coverage (API + UI)
 
 ## License
-=======
-cd docker-compose
-cp .env.example .env
-docker compose up -d
-```
+
+- See `LICENSE`.
 
 ## Community
->>>>>>> main
 
 - Contribution guide: `CONTRIBUTING.md`
 - Security policy: `SECURITY.md`

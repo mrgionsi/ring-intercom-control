@@ -123,6 +123,7 @@
     "error_max_uses_invalid": "Los usos máximos deben ser un número entero positivo.",
     "date_format_hint": "Formato de fecha: dd/mm/yyyy hh:mm",
     "disable": "Desactivar",
+    "disable_confirm": "¿Desactivar este enlace de invitado?",
     "open": "Abrir",
     "page": "Página",
     "prev": "Ant",
@@ -146,6 +147,7 @@
     "state_valid": "Válido",
     "state_scheduled": "Programado",
     "state_expired": "Expirado",
+    "state_unknown": "Desconocido",
     "state_used_up": "Agotado",
     "state_disabled": "Desactivado",
     "state_invalid": "Fecha inválida",
@@ -156,7 +158,8 @@
     "expired": "Este enlace ya expiró.",
     "used_up": "Este enlace alcanzó el número máximo de usos.",
     "disabled": "Este enlace está deshabilitado.",
-    "invalid_date": "Este enlace tiene fechas inválidas."
+    "invalid_date": "Este enlace tiene fechas inválidas.",
+    "link_not_found": "Enlace no encontrado"
   },
   "admin": {
     "create_user": "Crear usuario",

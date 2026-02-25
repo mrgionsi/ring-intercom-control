@@ -123,6 +123,7 @@
     "error_max_uses_invalid": "Gli usi massimi devono essere un numero intero positivo.",
     "date_format_hint": "Formato data: dd/mm/yyyy hh:mm",
     "disable": "Disattiva",
+    "disable_confirm": "Disattivare questo link ospite?",
     "open": "Apri",
     "page": "Pagina",
     "prev": "Prec",
@@ -146,6 +147,7 @@
     "state_valid": "Valido",
     "state_scheduled": "Programmato",
     "state_expired": "Scaduto",
+    "state_unknown": "Sconosciuto",
     "state_used_up": "Esaurito",
     "state_disabled": "Disabilitato",
     "state_invalid": "Data non valida",
@@ -156,7 +158,8 @@
     "expired": "Questo link è scaduto.",
     "used_up": "Questo link ha raggiunto il numero massimo di utilizzi.",
     "disabled": "Questo link è disabilitato.",
-    "invalid_date": "Questo link contiene date non valide."
+    "invalid_date": "Questo link contiene date non valide.",
+    "link_not_found": "Link non trovato"
   },
   "admin": {
     "create_user": "Crea Utente",

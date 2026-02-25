@@ -29,6 +29,16 @@ export default function Guest() {
   const [unlockSuccess, setUnlockSuccess] = useState(false);
   const [slideValue, setSlideValue] = useState(0);
   const unlockInProgressRef = useRef(false);
+  const unlockTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const messageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const slideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearTimeoutRef = (ref: { current: ReturnType<typeof setTimeout> | null }) => {
+    if (ref.current !== null) {
+      clearTimeout(ref.current);
+      ref.current = null;
+    }
+  };
 
   const getStateMessage = (state: GuestLinkStatus): string | null => {
     if (state === 'scheduled') return t('guest.not_active_yet');
@@ -43,12 +53,21 @@ export default function Guest() {
     if (!token) return;
     apiFetch<GuestStatus>(`/api/guest/${token}`)
       .then(setStatus)
-      .catch((err) => setError(err.message ?? 'Link not found'));
-  }, [token]);
+      .catch((err) => setError(err.message ?? t('guest.link_not_found')));
+  }, [token, t]);
 
   useEffect(() => {
     setSlideValue(0);
   }, [status?.state]);
+
+  useEffect(
+    () => () => {
+      clearTimeoutRef(unlockTimeoutRef);
+      clearTimeoutRef(messageTimeoutRef);
+      clearTimeoutRef(slideTimeoutRef);
+    },
+    []
+  );
 
   const handleUnlock = async () => {
     if (!token) return;
@@ -59,8 +78,16 @@ export default function Guest() {
       await apiFetch(`/api/guest/${token}/unlock`, { method: 'POST' });
       setMessage(t('guest.requested'));
       setUnlockSuccess(true);
-      setTimeout(() => setUnlockSuccess(false), 1600);
-      setTimeout(() => setMessage(null), 2200);
+      clearTimeoutRef(unlockTimeoutRef);
+      clearTimeoutRef(messageTimeoutRef);
+      unlockTimeoutRef.current = setTimeout(() => {
+        setUnlockSuccess(false);
+        unlockTimeoutRef.current = null;
+      }, 1600);
+      messageTimeoutRef.current = setTimeout(() => {
+        setMessage(null);
+        messageTimeoutRef.current = null;
+      }, 2200);
     } catch (err: any) {
       setError(err.message ?? t('guest.error'));
     } finally {
@@ -84,8 +111,10 @@ export default function Guest() {
     unlockInProgressRef.current = true;
     await handleUnlock();
     setSlideValue(0);
-    setTimeout(() => {
+    clearTimeoutRef(slideTimeoutRef);
+    slideTimeoutRef.current = setTimeout(() => {
       unlockInProgressRef.current = false;
+      slideTimeoutRef.current = null;
     }, 300);
   };
 
@@ -217,13 +246,14 @@ function statusBadgeClass(state: GuestLinkStatus): string {
 }
 
 function statusStateLabel(
-  state: GuestLinkStatus,
+  state: GuestLinkStatus | string,
   t: (key: string) => string
 ): string {
   if (state === 'valid') return t('guest.state_valid');
   if (state === 'scheduled') return t('guest.state_scheduled');
+  if (state === 'expired') return t('guest.state_expired');
   if (state === 'used_up') return t('guest.state_used_up');
   if (state === 'disabled') return t('guest.state_disabled');
   if (state === 'invalid_date') return t('guest.state_invalid');
-  return t('guest.state_expired');
+  return t('guest.state_unknown');
 }

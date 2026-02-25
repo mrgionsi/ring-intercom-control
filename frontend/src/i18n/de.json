@@ -123,6 +123,7 @@
     "error_max_uses_invalid": "Maximale Nutzungen müssen eine positive ganze Zahl sein.",
     "date_format_hint": "Datumsformat: dd/mm/yyyy hh:mm",
     "disable": "Deaktivieren",
+    "disable_confirm": "Diesen Gäste-Link deaktivieren?",
     "open": "Öffnen",
     "page": "Seite",
     "prev": "Zurück",
@@ -142,6 +143,14 @@
     "expires": "Läuft ab",
     "unlock": "Tür öffnen",
     "unlocking": "Entriegeln…",
+    "slide_to_unlock": "Zum Entriegeln schieben",
+    "state_valid": "Gültig",
+    "state_scheduled": "Geplant",
+    "state_expired": "Abgelaufen",
+    "state_unknown": "Unbekannt",
+    "state_used_up": "Aufgebraucht",
+    "state_disabled": "Deaktiviert",
+    "state_invalid": "Ungültiges Datum",
     "checking": "Zugriff prüfen…",
     "requested": "Türöffnung angefordert.",
     "error": "Entriegeln fehlgeschlagen",
@@ -149,7 +158,8 @@
     "expired": "Dieser Link ist abgelaufen.",
     "used_up": "Dieser Link hat die maximale Nutzungsanzahl erreicht.",
     "disabled": "Dieser Link ist deaktiviert.",
-    "invalid_date": "Dieser Link enthält ungültige Datumswerte."
+    "invalid_date": "Dieser Link enthält ungültige Datumswerte.",
+    "link_not_found": "Link nicht gefunden"
   },
   "admin": {
     "create_user": "Benutzer erstellen",

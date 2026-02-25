@@ -85,13 +85,122 @@ The project supports containerized deployment for both backend and frontend.
 - Compose stack: `docker-compose/docker-compose.yml`
 - Env template: `docker-compose/.env.example`
 
-Quick run with Compose:
+### Frontend Container (Standalone)
+
+Build:
+
+```bash
+docker build ./frontend -t mrgionsi/ring-intercom-control-frontend:0.1.0-beta
+```
+
+Run:
+
+```bash
+docker run --rm -p 5173:5173 \
+  -e PORT=5173 \
+  -e BACKEND_URL=http://host.docker.internal:3001 \
+  mrgionsi/ring-intercom-control-frontend:0.1.0-beta
+```
+
+Notes:
+
+- `BACKEND_URL` is optional. If set, `/api/*` requests are proxied to backend.
+- `host.docker.internal` works by default on Docker Desktop (Windows/macOS). On Linux, add:
+  - `--add-host=host.docker.internal:host-gateway`
+- Health endpoint inside container: `GET /health` returns `{ "ok": true }`.
+- Static cache policy:
+  - `index.html`: `no-cache`
+  - `/assets/*`: `public, max-age=31536000, immutable`
+
+### Docker Compose (Backend + Frontend)
+
+Files:
+
+- `docker-compose/docker-compose.yml`
+- `docker-compose/.env`
+
+Run:
 
 ```bash
 cd docker-compose
 cp .env.example .env
 docker compose up -d
 ```
+
+Stop:
+
+```bash
+cd docker-compose
+docker compose down
+```
+
+## Validation and QA
+
+### Build Checks
+
+```bash
+cd backend && npm run build
+cd ../frontend && npm run build
+```
+
+### Smoke Tests
+
+PowerShell:
+
+```powershell
+scripts/smoke-test.ps1
+```
+
+Bash:
+
+```bash
+scripts/smoke-test.sh
+```
+
+Optional authenticated smoke checks:
+
+- `SMOKE_USERNAME=<username>`
+- `SMOKE_PASSWORD=<password>`
+- `SMOKE_BASE_URL=http://localhost:3001`
+
+### Security Audit
+
+PowerShell:
+
+```powershell
+scripts/security-check.ps1
+```
+
+Bash:
+
+```bash
+scripts/security-check.sh
+```
+
+## Known Dependency Advisories
+
+Current `npm audit` reports high-severity vulnerabilities in transitive dependencies:
+
+- `ip` via `ring-client-api` (fix path requires breaking downgrade)
+- `tar` via `sqlite3` / `node-gyp` (fix path requires breaking downgrade)
+
+These are currently tracked and deferred until upstream fix availability and the planned DB migration.
+
+## Branching Model
+
+- `main`: stable, production-ready branch
+- `dev`: integration and pre-release branch
+- `feature/*`: short-lived implementation branches
+- `hotfix/*`: emergency fixes from `main`
+
+## Roadmap
+
+- Optional managed DB migration path (Supabase/Postgres)
+- Extended automated test coverage (API + UI)
+
+## License
+
+- See `LICENSE`.
 
 ## Community
 

@@ -38,6 +38,7 @@ const contentTypes = {
 };
 
 function sanitizePath(pathname) {
+  // inDist is the canonical security boundary; this only strips leading traversal.
   const safe = normalize(pathname).replace(/^(\.\.(\/|\\|$))+/, '');
   return join(distDir, safe);
 }
@@ -102,6 +103,9 @@ async function proxyApi(req, res) {
 
   const responseHeaders = {};
   upstream.headers.forEach((value, key) => {
+    if (key.toLowerCase() === 'set-cookie') {
+      return;
+    }
     responseHeaders[key] = value;
   });
   if (typeof upstream.headers.getSetCookie === 'function') {
@@ -129,7 +133,7 @@ async function handleStatic(req, res) {
   } catch (error) {
     if (error instanceof URIError) {
       res.writeHead(400, { 'content-type': 'text/plain; charset=utf-8' });
-      res.end('Bad request');
+      res.end('Bad Request');
       return;
     }
     throw error;

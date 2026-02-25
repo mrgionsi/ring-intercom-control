@@ -1,0 +1,59 @@
+services:
+  backend:
+    image: ${BACKEND_IMAGE}
+    container_name: ring-intercom-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DB_PATH: /data/data.db
+      SESSION_SECRET: ${SESSION_SECRET}
+      MASTER_KEY: ${MASTER_KEY}
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH}
+      CLIENT_ORIGIN: ${CLIENT_ORIGIN}
+      PORT: 3001
+    ports:
+      - "${BACKEND_PORT}:3001"
+    volumes:
+      - ring-intercom-data:/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3001/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  frontend:
+    image: ${FRONTEND_IMAGE}
+    container_name: ring-intercom-frontend
+    restart: unless-stopped
+    environment:
+      PORT: 5173
+      BACKEND_URL: http://backend:3001
+      PROXY_TIMEOUT_MS: ${PROXY_TIMEOUT_MS}
+    ports:
+      - "${FRONTEND_PORT}:5173"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://127.0.0.1:5173/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  ring-intercom-data:

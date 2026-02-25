@@ -15,6 +15,17 @@ const router = Router();
 const MAX_FAILED_LOGINS = 5;
 const LOCKOUT_MINUTES = 15;
 
+/**
+ * Authenticate an admin or standard user and create a session.
+ * @api POST /api/auth/login
+ * @access Public
+ * @body username:string,password:string
+ * @success 200 { ok, username, role }
+ * @error 400 Missing credentials
+ * @error 401 Invalid credentials
+ * @error 403 User is disabled
+ * @error 423 Account locked
+ */
 router.post('/login', async (req, res) => {
   const { username, password } = req.body ?? {};
   if (!username || !password) {
@@ -142,12 +153,25 @@ router.post('/login', async (req, res) => {
   return res.json({ ok: true, username: user.username, role: 'user' });
 });
 
+/**
+ * Destroy the current authenticated session.
+ * @api POST /api/auth/logout
+ * @access Authenticated
+ * @success 200 { ok: true }
+ */
 router.post('/logout', (req, res) => {
   req.session.destroy(() => {
     res.json({ ok: true });
   });
 });
 
+/**
+ * Return the current logged-in user profile from session.
+ * @api GET /api/auth/me
+ * @access Authenticated
+ * @success 200 { username, role }
+ * @error 401 Not authenticated
+ */
 router.get('/me', (req, res) => {
   if (!req.session.auth) {
     return res.status(401).json({ error: 'Not authenticated' });

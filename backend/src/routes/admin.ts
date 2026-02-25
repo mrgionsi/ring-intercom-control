@@ -22,6 +22,12 @@ import { getRateLimits, updateRateLimits } from '../rateLimits.js';
 
 const router = Router();
 
+/**
+ * List users and lockout status.
+ * @api GET /api/admin/users
+ * @access Admin
+ * @success 200 { users[] }
+ */
 router.get('/users', requireAdmin, async (_req, res) => {
   const users = await listUsers();
   const attempts = await listLoginAttempts();
@@ -41,6 +47,14 @@ router.get('/users', requireAdmin, async (_req, res) => {
   });
 });
 
+/**
+ * Create a new application user.
+ * @api POST /api/admin/users
+ * @access Admin
+ * @body username,password,role?,firstName?,lastName?,structure?
+ * @success 200 { ok, user }
+ * @error 400 Validation or duplicate user error
+ */
 router.post('/users', requireAdmin, async (req, res) => {
   const { username, password, role, firstName, lastName, structure } = req.body ?? {};
   if (!username || !password) {
@@ -75,6 +89,14 @@ router.post('/users', requireAdmin, async (req, res) => {
   }
 });
 
+/**
+ * Update user profile, password, and disabled flag.
+ * @api PUT /api/admin/users/:id
+ * @access Admin
+ * @body username?,password?,firstName?,lastName?,structure?,disabled?
+ * @success 200 { ok: true }
+ * @error 400 Invalid id or self-disable attempt
+ */
 router.put('/users/:id', requireAdmin, async (req, res) => {
   const id = Number(req.params.id);
   if (!id) {
@@ -96,6 +118,12 @@ router.put('/users/:id', requireAdmin, async (req, res) => {
   res.json({ ok: true });
 });
 
+/**
+ * Soft delete (disable) a user account.
+ * @api DELETE /api/admin/users/:id
+ * @access Admin
+ * @success 200 { ok: true }
+ */
 router.delete('/users/:id', requireAdmin, async (req, res) => {
   const id = Number(req.params.id);
   if (!id) {
@@ -105,6 +133,14 @@ router.delete('/users/:id', requireAdmin, async (req, res) => {
   res.json({ ok: true });
 });
 
+/**
+ * Permanently delete a non-admin user and related data.
+ * @api DELETE /api/admin/users/:id/permanent
+ * @access Admin
+ * @success 200 { ok: true }
+ * @error 400 Invalid/self/admin delete
+ * @error 404 User not found
+ */
 router.delete('/users/:id/permanent', requireAdmin, async (req, res) => {
   const id = Number(req.params.id);
   if (!id) {
@@ -124,6 +160,12 @@ router.delete('/users/:id/permanent', requireAdmin, async (req, res) => {
   res.json({ ok: true });
 });
 
+/**
+ * Reset password for a non-admin user and return a temporary password.
+ * @api POST /api/admin/users/:id/reset-password
+ * @access Admin
+ * @success 200 { ok: true, tempPassword }
+ */
 router.post('/users/:id/reset-password', requireAdmin, async (req, res) => {
   const id = Number(req.params.id);
   if (!id) {
@@ -142,6 +184,12 @@ router.post('/users/:id/reset-password', requireAdmin, async (req, res) => {
   res.json({ ok: true, tempPassword });
 });
 
+/**
+ * List each user and their Ring device summary (admin view).
+ * @api GET /api/admin/devices
+ * @access Admin
+ * @success 200 { users[] }
+ */
 router.get('/devices', requireAdmin, async (_req, res) => {
   const users = await listUsersWithTokens();
   const results = await Promise.all(
@@ -179,6 +227,13 @@ router.get('/devices', requireAdmin, async (_req, res) => {
   res.json({ users: results });
 });
 
+/**
+ * List unlock audit events globally or by user.
+ * @api GET /api/admin/audit
+ * @access Admin
+ * @query userId?,page?,pageSize?
+ * @success 200 { events, total, page, pageSize }
+ */
 router.get('/audit', requireAdmin, async (req, res) => {
   const userId = req.query.userId ? Number(req.query.userId) : null;
   const page = Math.max(1, Number(req.query.page ?? 1) || 1);
@@ -198,15 +253,34 @@ router.get('/audit', requireAdmin, async (req, res) => {
   return res.json({ events, total, page, pageSize });
 });
 
+/**
+ * List login audit events.
+ * @api GET /api/admin/login-audit
+ * @access Admin
+ * @success 200 { events[] }
+ */
 router.get('/login-audit', requireAdmin, async (_req, res) => {
   const events = await listLoginAudit(200);
   res.json({ events });
 });
 
+/**
+ * Read runtime rate limits.
+ * @api GET /api/admin/limits
+ * @access Admin
+ * @success 200 { guestPerMinute, authPerMinute }
+ */
 router.get('/limits', requireAdmin, async (_req, res) => {
   res.json(getRateLimits());
 });
 
+/**
+ * Update runtime rate limits.
+ * @api POST /api/admin/limits
+ * @access Admin
+ * @body guestPerMinute?,authPerMinute?
+ * @success 200 { guestPerMinute, authPerMinute }
+ */
 router.post('/limits', requireAdmin, async (req, res) => {
   const { guestPerMinute, authPerMinute } = req.body ?? {};
   const updated = await updateRateLimits({

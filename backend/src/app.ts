@@ -85,6 +85,12 @@ export async function createApp() {
     })
   );
 
+  /**
+   * Generate a CSRF token and set cookie pair used by mutating API requests.
+   * @api GET /api/auth/csrf
+   * @access Public
+   * @success 200 { csrfToken }
+   */
   app.get('/api/auth/csrf', (req, res) => {
     const token = generateCsrfToken();
     res.cookie('csrf_token', token, {
@@ -147,6 +153,12 @@ export async function createApp() {
   app.use('/api/ring', authLimiter);
   app.use('/api/guest-links', authLimiter);
 
+  /**
+   * Liveness probe endpoint.
+   * @api GET /api/health
+   * @access Public
+   * @success 200 { ok: true }
+   */
   app.get('/api/health', (_req, res) => {
     res.json({ ok: true });
   });

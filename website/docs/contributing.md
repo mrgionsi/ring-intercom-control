@@ -4,6 +4,8 @@ sidebar_position: 7
 
 # Contributing
 
+Live docs URL: `https://mrgionsi.github.io/ring-intercom-control/`
+
 ## Branch strategy
 
 - `main`: stable

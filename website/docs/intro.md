@@ -4,6 +4,8 @@ sidebar_position: 1
 
 # Introduction
 
+Live docs URL: `https://mrgionsi.github.io/ring-intercom-control/`
+
 `ring-intercom-control` is a self-hosted web application to manage Amazon Ring Intercom access for hospitality and property workflows.
 
 It is a practical option for B&B hosts using Ring Intercom: create temporary guest links so guests can unlock the entrance during their stay window.
@@ -34,6 +36,7 @@ This documentation covers:
 
 - [Architecture](./architecture)
 - [Deployment](./deployment)
+- [Environment Variables](./environment)
 - [API](./api)
 - [Development](./development)
 - [Security](./security)

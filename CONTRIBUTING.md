@@ -2,6 +2,8 @@
 
 Thanks for contributing to `ring-intercom-control`.
 
+Published docs: `https://mrgionsi.github.io/ring-intercom-control/`
+
 ## Development Flow
 
 - Base branch for active work: `dev`

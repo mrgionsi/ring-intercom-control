@@ -4,6 +4,8 @@ sidebar_position: 1
 
 # API
 
+Live docs URL: `https://mrgionsi.github.io/ring-intercom-control/`
+
 ## Base URL
 
 - Local backend base URL: `http://localhost:3001`

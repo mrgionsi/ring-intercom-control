@@ -23,7 +23,7 @@ Most project details are maintained in Docusaurus:
 - Security: `website/docs/security.md`
 - Contributing: `website/docs/contributing.md`
 
-If published with GitHub Pages, docs URL is typically:
+Published docs:
 - `https://mrgionsi.github.io/ring-intercom-control/`
 
 ## Key Capabilities

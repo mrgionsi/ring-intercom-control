@@ -4,6 +4,8 @@ sidebar_position: 3
 
 # Deployment
 
+Live docs URL: `https://mrgionsi.github.io/ring-intercom-control/`
+
 ## Docker images
 
 The project publishes two images:
@@ -16,6 +18,8 @@ Tags include package version, sha-based tags, and optional manual release tags.
 ## Docker Compose
 
 Use `docker-compose/docker-compose.yml` with `docker-compose/.env`.
+
+For a complete variable reference, see [Environment Variables](./environment).
 
 ```bash
 cd docker-compose

@@ -142,15 +142,15 @@ jobs:
     needs: [backend-tests, frontend-tests]
     env:
       SESSION_SECRET: ci-session-secret
-      MASTER_KEY: ${{ secrets.MASTER_KEY }}
+      MASTER_KEY: ${{ secrets.MASTER_KEY || '7sQb2MQ4mL/QBjxJgRLZ2TLGnciP9f4pBf3MQXybP5Q=' }}
       ADMIN_USERNAME: admin
-      ADMIN_PASSWORD_HASH: ${{ secrets.ADMIN_PASSWORD_HASH }}
+      ADMIN_PASSWORD_HASH: ${{ secrets.ADMIN_PASSWORD_HASH || '$2a$12$PIYufC/q7nqCUcvQd9Czf.mEBMdx7reA7I1TVHoiUYNF6CjVC6bcq' }}
       CLIENT_ORIGIN: http://127.0.0.1:5173
       PORT: 3001
       DB_PATH: ./data.db
       E2E_USERNAME: admin
-      E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
-      E2E_ADMIN_PASSWORD_HASH: ${{ secrets.E2E_ADMIN_PASSWORD_HASH }}
+      E2E_PASSWORD: ${{ secrets.E2E_PASSWORD || 'e2e-admin-pass' }}
+      E2E_ADMIN_PASSWORD_HASH: ${{ secrets.E2E_ADMIN_PASSWORD_HASH || '$2a$12$PIYufC/q7nqCUcvQd9Czf.mEBMdx7reA7I1TVHoiUYNF6CjVC6bcq' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -187,4 +187,3 @@ jobs:
           name: playwright-report
           path: frontend/playwright-report
           if-no-files-found: ignore
-

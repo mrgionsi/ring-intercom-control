@@ -1,7 +1,7 @@
 {
   "name": "ring-intercom-frontend",
   "private": true,
-  "version": "0.1.1-beta",
+  "version": "0.1.2-beta",
   "type": "module",
   "engines": {
     "node": ">=20.17.0"

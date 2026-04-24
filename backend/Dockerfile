@@ -25,6 +25,8 @@ RUN npm ci --omit=dev
 # Stage: prod
 FROM gcr.io/distroless/nodejs20-debian13
 
+LABEL org.opencontainers.image.description="Backend API for Ring Intercom Control, providing authentication, Ring integration, unlock auditing, and guest links."
+
 WORKDIR /app
 
 COPY --from=builder --chown=65532:65532 /app/package.json ./

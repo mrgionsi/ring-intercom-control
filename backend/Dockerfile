@@ -1,5 +1,5 @@
 # Stage: build
-FROM node:20-bookworm-slim AS builder
+FROM node:20.19-bookworm-slim AS builder
 
 WORKDIR /app
 COPY package.json package-lock.json* ./
@@ -16,7 +16,7 @@ RUN npm run build
 RUN mkdir -p /runtime-data && chown -R 65532:65532 /runtime-data
 
 # Stage: prod dependencies only
-FROM node:20-bookworm-slim AS prod-deps
+FROM node:20.19-bookworm-slim AS prod-deps
 
 WORKDIR /app
 COPY package.json package-lock.json* ./

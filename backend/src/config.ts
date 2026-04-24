@@ -15,15 +15,51 @@ for (const key of required) {
   }
 }
 
+function parseIntegerEnv(
+  key: string,
+  value: string | undefined,
+  fallback: number
+): number {
+  const normalized = value?.trim();
+  const parsed = Number(normalized ? normalized : fallback);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error(`${key} must be a positive integer`);
+  }
+  return parsed;
+}
+
+const nodeEnv = process.env.NODE_ENV ?? 'development';
+const port = parseIntegerEnv('PORT', process.env.PORT, 3001);
+const unlockEventsMax = parseIntegerEnv(
+  'UNLOCK_EVENTS_MAX',
+  process.env.UNLOCK_EVENTS_MAX,
+  10000
+);
+const masterKey = process.env.MASTER_KEY as string;
+const sessionSecret = process.env.SESSION_SECRET as string;
+
+const decodedMasterKey = Buffer.from(masterKey, 'base64');
+if (
+  /\s/.test(masterKey) ||
+  decodedMasterKey.length !== 32 ||
+  decodedMasterKey.toString('base64') !== masterKey
+) {
+  throw new Error('MASTER_KEY must be 32 bytes, base64-encoded');
+}
+
+if (nodeEnv === 'production' && sessionSecret.length < 32) {
+  throw new Error('SESSION_SECRET must be at least 32 characters in production');
+}
+
 export const config = {
-  NODE_ENV: process.env.NODE_ENV ?? 'development',
-  PORT: Number(process.env.PORT ?? 3001),
+  NODE_ENV: nodeEnv,
+  PORT: port,
   CLIENT_ORIGIN: process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
   ADMIN_USERNAME: process.env.ADMIN_USERNAME as string,
   ADMIN_PASSWORD_HASH: process.env.ADMIN_PASSWORD_HASH as string,
-  SESSION_SECRET: process.env.SESSION_SECRET as string,
-  MASTER_KEY: process.env.MASTER_KEY as string,
+  SESSION_SECRET: sessionSecret,
+  MASTER_KEY: masterKey,
   DB_PATH: process.env.DB_PATH ?? './data.db',
   SESSION_DB_FILE: process.env.SESSION_DB_FILE ?? 'session.db',
-  UNLOCK_EVENTS_MAX: Number(process.env.UNLOCK_EVENTS_MAX ?? 10000)
+  UNLOCK_EVENTS_MAX: unlockEventsMax
 };

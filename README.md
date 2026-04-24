@@ -53,6 +53,9 @@ Published docs:
 
 ## Quick Start
 
+Prerequisite: Node.js `20.17.0` or newer. The repository includes `.nvmrc`
+with the CI/docs baseline (`20.19.0`).
+
 ```bash
 cd backend && npm install
 cd ../frontend && npm install
@@ -134,6 +137,13 @@ cd docker-compose
 docker compose down
 ```
 
+Container logs are written to stdout/stderr, so they are visible with:
+
+```bash
+docker logs ring-intercom-backend
+docker logs ring-intercom-frontend
+```
+
 ## Validation and QA
 
 ### Build Checks
@@ -181,10 +191,16 @@ scripts/security-check.sh
 
 Current `npm audit` reports high-severity vulnerabilities in transitive dependencies:
 
-- `ip` via `ring-client-api` (fix path requires breaking downgrade)
-- `tar` via `sqlite3` / `node-gyp` (fix path requires breaking downgrade)
+- `ip` via `ring-client-api` -> `werift` / `werift-ice`; `ip@2.0.1` is still
+  the latest published version and npm's fix path is a breaking downgrade of
+  `ring-client-api`.
 
-These are currently tracked and deferred until upstream fix availability and the planned DB migration.
+These are currently tracked and deferred until upstream fix availability.
+
+The docs site currently reports moderate dev-server advisories through
+Docusaurus' `webpack-dev-server` -> `sockjs` -> `uuid` dependency chain. The
+static production docs build is successful, and npm reports no available
+Docusaurus fix yet.
 
 ## Branching Model
 

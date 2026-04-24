@@ -43,6 +43,7 @@
     "vitest": "^4.1.5"
   },
   "overrides": {
-    "sqlite3": "$sqlite3"
+    "sqlite3": "$sqlite3",
+    "uuid": "^14.0.0"
   }
 }

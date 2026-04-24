@@ -1,5 +1,5 @@
 # Stage: build
-FROM node:20-bookworm-slim AS builder
+FROM node:20.19-bookworm-slim AS builder
 
 WORKDIR /app
 COPY package.json package-lock.json* ./

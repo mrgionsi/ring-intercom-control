@@ -149,7 +149,7 @@ lines.push('title: API Reference (Generated)');
 lines.push('sidebar_position: 2');
 lines.push('---');
 lines.push('');
-lines.push('<!-- Auto-generated from backend route docstrings. Do not edit manually. -->');
+lines.push('{/* Auto-generated from backend route docstrings. Do not edit manually. */}');
 lines.push('');
 lines.push('This page is generated from JSDoc `@api` blocks in backend source files.');
 lines.push('');

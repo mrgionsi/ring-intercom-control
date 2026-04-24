@@ -3,7 +3,7 @@ title: API Reference (Generated)
 sidebar_position: 2
 ---
 
-<!-- Auto-generated from backend route docstrings. Do not edit manually. -->
+{/* Auto-generated from backend route docstrings. Do not edit manually. */}
 
 This page is generated from JSDoc `@api` blocks in backend source files.
 

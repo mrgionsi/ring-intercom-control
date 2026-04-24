@@ -7,6 +7,7 @@ const config: Config = {
   tagline: 'Setup, deployment, and operations documentation',
   favicon: 'img/ring_intercom_logo.png',
   future: {
+    faster: true,
     v4: true,
   },
   url: 'https://mrgionsi.github.io',

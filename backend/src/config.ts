@@ -15,6 +15,19 @@ for (const key of required) {
   }
 }
 
+function parseIntegerEnv(
+  key: string,
+  value: string | undefined,
+  fallback: number
+): number {
+  const normalized = value?.trim();
+  const parsed = Number(normalized ? normalized : fallback);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error(`${key} must be a positive integer`);
+  }
+  return parsed;
+}
+
 const nodeEnv = process.env.NODE_ENV ?? 'development';
 const port = parseIntegerEnv('PORT', process.env.PORT, 3001);
 const unlockEventsMax = parseIntegerEnv(
@@ -25,7 +38,12 @@ const unlockEventsMax = parseIntegerEnv(
 const masterKey = process.env.MASTER_KEY as string;
 const sessionSecret = process.env.SESSION_SECRET as string;
 
-if (Buffer.from(masterKey, 'base64').length !== 32) {
+const decodedMasterKey = Buffer.from(masterKey, 'base64');
+if (
+  /\s/.test(masterKey) ||
+  decodedMasterKey.length !== 32 ||
+  decodedMasterKey.toString('base64') !== masterKey
+) {
   throw new Error('MASTER_KEY must be 32 bytes, base64-encoded');
 }
 
@@ -45,15 +63,3 @@ export const config = {
   SESSION_DB_FILE: process.env.SESSION_DB_FILE ?? 'session.db',
   UNLOCK_EVENTS_MAX: unlockEventsMax
 };
-
-function parseIntegerEnv(
-  key: string,
-  value: string | undefined,
-  fallback: number
-): number {
-  const parsed = Number(value ?? fallback);
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    throw new Error(`${key} must be a positive integer`);
-  }
-  return parsed;
-}

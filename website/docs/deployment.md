@@ -65,3 +65,22 @@ docker compose up -d
 - Protect secrets via secret manager
 - Back up SQLite volume regularly
 - Monitor logs and failed auth attempts
+
+## Logs
+
+Backend request logs, startup output, and runtime errors are written to
+stdout/stderr. The frontend static/proxy server does the same. In Docker and
+Docker Compose deployments, inspect them with:
+
+```bash
+docker logs ring-intercom-backend
+docker logs ring-intercom-frontend
+```
+
+or:
+
+```bash
+cd docker-compose
+docker compose logs backend
+docker compose logs frontend
+```

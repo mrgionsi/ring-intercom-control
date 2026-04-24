@@ -10,6 +10,7 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV}
       DB_PATH: ${DB_PATH}
+      SESSION_DB_FILE: ${SESSION_DB_FILE}
       SESSION_SECRET: ${SESSION_SECRET}
       MASTER_KEY: ${MASTER_KEY}
       ADMIN_USERNAME: ${ADMIN_USERNAME}
@@ -45,6 +46,7 @@ services:
       PORT: 5173
       BACKEND_URL: http://backend:3001
       PROXY_TIMEOUT_MS: ${PROXY_TIMEOUT_MS}
+      MAX_BODY_BYTES: ${MAX_BODY_BYTES}
     ports:
       - "${FRONTEND_PORT}:5173"
     healthcheck:

@@ -29,6 +29,8 @@ These variables are read by `docker-compose/docker-compose.yml`.
   - Backend runtime mode (Compose default: `production`)
 - `DB_PATH`
   - SQLite database path inside the backend container (Compose default: `/data/data.db`)
+- `SESSION_DB_FILE`
+  - SQLite session database filename stored next to `DB_PATH` (Compose default: `session.db`)
 - `SESSION_SECRET`
   - Required; session signing secret
 - `MASTER_KEY`
@@ -44,21 +46,23 @@ These variables are read by `docker-compose/docker-compose.yml`.
 
 - `PROXY_TIMEOUT_MS`
   - Timeout for frontend server proxy requests to backend (milliseconds)
+- `MAX_BODY_BYTES`
+  - Maximum proxied API request body size accepted by the frontend server
 
 ## Backend API (`backend/src/config.ts`)
 
 Backend process variables and defaults:
 
 - `NODE_ENV` (default: `development`)
-- `PORT` (default: `3001`)
+- `PORT` (default: `3001`; must be a positive integer)
 - `CLIENT_ORIGIN` (default: `http://localhost:5173`)
 - `ADMIN_USERNAME` (required)
 - `ADMIN_PASSWORD_HASH` (required)
-- `SESSION_SECRET` (required)
-- `MASTER_KEY` (required)
+- `SESSION_SECRET` (required; must be at least 32 characters when `NODE_ENV=production`)
+- `MASTER_KEY` (required; must decode from base64 to exactly 32 bytes)
 - `DB_PATH` (default: `./data.db`)
 - `SESSION_DB_FILE` (default: `session.db`)
-- `UNLOCK_EVENTS_MAX` (default: `10000`)
+- `UNLOCK_EVENTS_MAX` (default: `10000`; must be a positive integer)
 
 ## Frontend browser app (`frontend/src/api.ts`)
 
@@ -102,3 +106,4 @@ Variables used by the production frontend Node server:
 
 - For Docker Compose local usage, edit `docker-compose/.env` rather than hardcoding values in `docker-compose/docker-compose.yml`.
 - In production over HTTPS, keep backend `NODE_ENV=production` to preserve secure cookie behavior.
+- Container stdout/stderr is visible via `docker logs` and `docker compose logs`.

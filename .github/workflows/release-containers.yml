@@ -8,11 +8,11 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Optional docker/release tag (example: beta, alpha, 1.0.0)'
+        description: "Optional docker/release tag (example: beta, alpha, 1.0.0)"
         required: false
         type: string
       publish_latest:
-        description: 'Also publish latest tag'
+        description: "Also publish latest tag"
         required: true
         default: false
         type: boolean
@@ -171,8 +171,8 @@ jobs:
           TAG="containers-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           NAME="Container publish ${GITHUB_RUN_NUMBER}"
           if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" && -n "$RELEASE_TAG" ]]; then
-            TAG="containers-${RELEASE_TAG}"
-            NAME="Container publish ${RELEASE_TAG}"
+            TAG="$RELEASE_TAG"
+            NAME="Release ${RELEASE_TAG}"
           fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
@@ -196,18 +196,19 @@ jobs:
 
       - name: Build release notes appendix
         run: |
+          CURRENT_SHA="${{ github.sha }}"
           CURRENT_TAG="${{ steps.release_vars.outputs.tag }}"
-          PREVIOUS_TAG="$(git tag --list 'containers-*' --sort=-creatordate | grep -vx "$CURRENT_TAG" | head -n1 || true)"
+          PREVIOUS_TAG="$(git describe --tags --match '[0-9]*.[0-9]*.[0-9]*' --abbrev=0 "${CURRENT_SHA}^" 2>/dev/null || true)"
 
           {
             echo "## Container image publish"
             echo
-            echo "- Commit: \`${{ github.sha }}\`"
+            echo "- Commit: \`${CURRENT_SHA}\`"
             echo "- Workflow run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
             if [ -n "$PREVIOUS_TAG" ]; then
-              echo "- Previous container release tag: \`$PREVIOUS_TAG\`"
+              echo "- Previous release tag: \`$PREVIOUS_TAG\`"
             else
-              echo "- Previous container release tag: _(none found)_"
+              echo "- Previous release tag: _(none found)_"
             fi
             echo
             shopt -s nullglob
@@ -220,14 +221,14 @@ jobs:
 
             echo "## Changes from commits"
             if [ -n "$PREVIOUS_TAG" ]; then
-              RANGE="$PREVIOUS_TAG..${{ github.sha }}"
+              RANGE="$PREVIOUS_TAG..$CURRENT_SHA"
               echo
               echo "_Range: \`$RANGE\`_"
               echo
             else
-              RANGE="${{ github.sha }}"
+              RANGE="$CURRENT_SHA"
               echo
-              echo "_Range: repository history up to \`${{ github.sha }}\` (no previous \`containers-*\` tag found)_"
+              echo "_Range: repository history up to \`${CURRENT_SHA}\` (no previous release tag found)_"
               echo
             fi
 

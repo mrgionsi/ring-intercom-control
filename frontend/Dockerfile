@@ -16,6 +16,8 @@ RUN npm run build
 # Stage: prod
 FROM gcr.io/distroless/nodejs20-debian13
 
+LABEL org.opencontainers.image.description="Frontend web app for Ring Intercom Control."
+
 WORKDIR /app
 
 COPY --from=builder --chown=65532:65532 /app/dist ./dist

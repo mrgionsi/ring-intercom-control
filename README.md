@@ -64,6 +64,37 @@ cd ../frontend && npm install
 ```bash
 cd backend
 cp .env.example .env
+openssl rand -hex 32
+openssl rand -base64 32
+npm run hash-password -- yourAdminPassword
+```
+
+If you prefer not to use `npm run`, generate the same bcrypt hash directly with
+Node after `backend/npm install`:
+
+```bash
+node -e "const bcrypt=require('./backend/node_modules/bcryptjs'); console.log(bcrypt.hashSync('yourAdminPassword', 12));"
+```
+
+Set the generated values in `backend/.env`:
+
+```env
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD_HASH=<paste the hash from `npm run hash-password -- yourAdminPassword`>
+SESSION_SECRET=<paste the hex value from `openssl rand -hex 32`>
+MASTER_KEY=<paste the Base64 value from `openssl rand -base64 32`>
+```
+
+`MASTER_KEY` must be a Base64-encoded 32-byte key because the backend uses
+AES-256-GCM to encrypt Ring refresh tokens.
+
+If you place `ADMIN_PASSWORD_HASH` directly in Docker Compose YAML, escape each
+`$` as `$$`. Bcrypt hashes contain `$` separators and Docker Compose treats `$`
+as variable interpolation syntax. In Portainer stack deployments, keep the same
+rule and escape the bcrypt hash as `$$` there as well.
+
+```bash
+cd backend
 npm run dev
 ```
 
@@ -129,6 +160,17 @@ cd docker-compose
 cp .env.example .env
 docker compose up -d
 ```
+
+Environment notes:
+
+- `NODE_ENV=production`: use for real deployments. Cookies are treated as
+  secure in current releases, so pair this with HTTPS.
+- `NODE_ENV=development`: useful for local or private-LAN HTTP testing when you
+  are not terminating TLS yet.
+- `CLIENT_ORIGIN`: set this to the browser-facing frontend URL, for example
+  `http://192.168.1.50:5173`.
+- `BACKEND_URL` in the frontend container should usually point to the Docker
+  service name, for example `http://backend:3001`, not the host LAN IP.
 
 Stop:
 

@@ -168,11 +168,13 @@ Environment notes:
   secure in current releases, so pair this with HTTPS.
 - `NODE_ENV=development`: useful for local or private-LAN HTTP testing when you
   are not terminating TLS yet.
-- `TRUST_PROXY=0`: use this when requests reach the backend directly, without a
-  reverse proxy in front of it.
+- `TRUST_PROXY=0`: use this when the backend is not behind a reverse proxy. Use
+  this for plain Docker Compose setups where requests go straight to the app
+  containers.
 - `TRUST_PROXY=1`: use this when the backend sits behind one trusted proxy hop,
-  for example Traefik. This affects `req.ip`, login audit IPs, rate limiting,
-  and secure-cookie handling behind HTTPS termination.
+  for example Traefik or another HTTPS-terminating reverse proxy. This affects
+  `req.ip`, login audit IPs, rate limiting, and secure-cookie handling behind
+  HTTPS termination.
 - `CLIENT_ORIGIN`: set this to the browser-facing frontend URL, for example
   `http://192.168.1.50:5173`.
 - `BACKEND_URL` in the frontend container should usually point to the Docker
@@ -202,7 +204,6 @@ Create the external Docker networks first if they do not already exist:
 
 ```bash
 docker network create ring-intercom
-docker network create traefik_default
 ```
 
 Portainer notes:
@@ -215,6 +216,8 @@ Portainer notes:
 - `CLIENT_ORIGIN` should be the public browser URL, for example
   `https://intercom.srv.home.gionsi.me`.
 - `BACKEND_URL` should stay internal as `http://backend:3001`.
+- `traefik_default` is expected to already exist as the external network used by
+  your Traefik deployment.
 - In Portainer stack deployments, escape bcrypt `$` characters as `$$` for
   `ADMIN_PASSWORD_HASH`.
 

@@ -11,6 +11,7 @@ services:
       NODE_ENV: ${NODE_ENV}
       DB_PATH: ${DB_PATH}
       SESSION_DB_FILE: ${SESSION_DB_FILE}
+      TRUST_PROXY: ${TRUST_PROXY}
       SESSION_SECRET: ${SESSION_SECRET}
       MASTER_KEY: ${MASTER_KEY}
       ADMIN_USERNAME: ${ADMIN_USERNAME}
@@ -44,7 +45,7 @@ services:
     restart: unless-stopped
     environment:
       PORT: 5173
-      BACKEND_URL: http://backend:3001
+      BACKEND_URL: ${BACKEND_URL}
       PROXY_TIMEOUT_MS: ${PROXY_TIMEOUT_MS}
       MAX_BODY_BYTES: ${MAX_BODY_BYTES}
     ports:

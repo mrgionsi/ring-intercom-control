@@ -27,6 +27,10 @@ These variables are read by `docker-compose/docker-compose.yml`.
 
 - `NODE_ENV`
   - Backend runtime mode (Compose default: `production`)
+- `TRUST_PROXY`
+  - Number of trusted proxy hops used by Express (Compose example default: `0`)
+  - Use `0` when the backend is reached directly, without a reverse proxy
+  - Use `1` when the backend is behind one trusted reverse proxy hop, such as Traefik
 - `DB_PATH`
   - SQLite database path inside the backend container (Compose default: `/data/data.db`)
 - `SESSION_DB_FILE`
@@ -44,16 +48,26 @@ These variables are read by `docker-compose/docker-compose.yml`.
 
 ### Frontend runtime (compose-provided)
 
+- `BACKEND_URL`
+  - Backend origin used by the frontend Node server to proxy `/api/*` requests
+  - Typical container value: `http://backend:3001`
 - `PROXY_TIMEOUT_MS`
   - Timeout for frontend server proxy requests to backend (milliseconds)
 - `MAX_BODY_BYTES`
   - Maximum proxied API request body size accepted by the frontend server
+
+### Portainer / Traefik-specific variables
+
+- `TRAEFIK_HOST`
+  - Optional hostname used by `docker-compose/docker-compose.portainer.yml` for the Traefik router rule
+  - Default example: `intercom.srv.home.gionsi.me`
 
 ## Backend API (`backend/src/config.ts`)
 
 Backend process variables and defaults:
 
 - `NODE_ENV` (default: `development`)
+- `TRUST_PROXY` (default: `0`; must be a non-negative integer)
 - `PORT` (default: `3001`; must be a positive integer)
 - `CLIENT_ORIGIN` (default: `http://localhost:5173`)
 - `ADMIN_USERNAME` (required)
@@ -106,4 +120,8 @@ Variables used by the production frontend Node server:
 
 - For Docker Compose local usage, edit `docker-compose/.env` rather than hardcoding values in `docker-compose/docker-compose.yml`.
 - In production over HTTPS, keep backend `NODE_ENV=production` to preserve secure cookie behavior.
+- Use `TRUST_PROXY=0` for direct deployments without a reverse proxy.
+- Use `TRUST_PROXY=1` when the backend is behind one trusted reverse proxy hop, such as Traefik.
+- `docker-compose/docker-compose.portainer.yml` expects the external Docker network `ring-intercom` to exist.
+- `docker-compose/docker-compose.portainer.yml` also references `traefik_default`, which should already exist as the external network used by your Traefik deployment.
 - Container stdout/stderr is visible via `docker logs` and `docker compose logs`.

@@ -39,8 +39,7 @@ Notes:
   `http://192.168.1.50:5173`.
 - In the frontend container, `BACKEND_URL` should normally point to the Docker
   service name, for example `http://backend:3001`.
-- Set `TRUST_PROXY=0` when requests reach the backend directly, without a
-  reverse proxy in front of it.
+- Set `TRUST_PROXY=0` when the backend is not behind a reverse proxy or `TRUST_PROXY=1` if you run backend behind proxy (i.e. Traefik)
 - If you paste `ADMIN_PASSWORD_HASH` directly into Compose YAML, escape each
   `$` as `$$`.
 
@@ -53,7 +52,7 @@ network.
 Recommended flow:
 
 1. Create the external Docker networks if they do not already exist:
-   `ring-intercom` and `traefik_default`.
+   `ring-intercom`.
 2. Open Portainer and create a new stack.
 3. Paste or import `docker-compose/docker-compose.portainer.yml`.
 4. Add the environment variables in the Portainer stack UI.
@@ -65,18 +64,19 @@ Notes:
   as `$$` when they are consumed by the stack. This applies even when you enter
   the value through Portainer's variables UI.
 - Set `TRUST_PROXY=1` when running behind Traefik or another single trusted
-  reverse proxy hop.
+  reverse proxy hop or `TRUST_PROXY=0` if you are exposing direct IP.
 - `frontend` is attached to both `traefik_default` and `ring-intercom`.
 - `backend` is attached only to `ring-intercom` and is not exposed publicly.
 - Keep `CLIENT_ORIGIN` set to the frontend URL seen by the browser.
 - Keep `BACKEND_URL` in the frontend container pointed at the internal Docker
   service, usually `http://backend:3001`.
+- `traefik_default` is expected to already exist as the external network used by
+  your Traefik deployment.
 
 Create the networks from the Docker host if needed:
 
 ```bash
 docker network create ring-intercom
-docker network create traefik_default
 ```
 
 ## Required backend environment
@@ -128,7 +128,8 @@ docker network create traefik_default
 
 - `TRUST_PROXY=0`
   - Use when the backend receives requests directly.
-  - This is the safe default when no reverse proxy is in front of the app.
+  - This is the safe default when no reverse proxy is in front of the app, for
+    example a direct Docker Compose deployment.
 
 - `TRUST_PROXY=1`
   - Use when the backend is behind one trusted reverse proxy hop, such as

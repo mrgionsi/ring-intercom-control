@@ -28,7 +28,25 @@ function parseIntegerEnv(
   return parsed;
 }
 
+function parseNonNegativeIntegerEnv(
+  key: string,
+  value: string | undefined,
+  fallback: number
+): number {
+  const normalized = value?.trim();
+  const parsed = Number(normalized ? normalized : fallback);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new Error(`${key} must be a non-negative integer`);
+  }
+  return parsed;
+}
+
 const nodeEnv = process.env.NODE_ENV ?? 'development';
+const trustProxy = parseNonNegativeIntegerEnv(
+  'TRUST_PROXY',
+  process.env.TRUST_PROXY,
+  0
+);
 const port = parseIntegerEnv('PORT', process.env.PORT, 3001);
 const unlockEventsMax = parseIntegerEnv(
   'UNLOCK_EVENTS_MAX',
@@ -53,6 +71,7 @@ if (nodeEnv === 'production' && sessionSecret.length < 32) {
 
 export const config = {
   NODE_ENV: nodeEnv,
+  trustProxy,
   PORT: port,
   CLIENT_ORIGIN: process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
   ADMIN_USERNAME: process.env.ADMIN_USERNAME as string,

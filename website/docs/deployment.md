@@ -15,15 +15,68 @@ The project publishes two images:
 
 Tags include package version, sha-based tags, and optional manual release tags.
 
-## Docker Compose
+## Deploy via Docker Compose
 
 Use `docker-compose/docker-compose.yml` with `docker-compose/.env`.
 
 For a complete variable reference, see [Environment Variables](./environment).
 
+Recommended flow:
+
+1. Copy the example env file.
+2. Fill in the required secrets.
+3. Start the stack.
+
 ```bash
 cd docker-compose
+cp .env.example .env
 docker compose up -d
+```
+
+Notes:
+
+- Set `CLIENT_ORIGIN` to the browser-facing frontend URL, for example
+  `http://192.168.1.50:5173`.
+- In the frontend container, `BACKEND_URL` should normally point to the Docker
+  service name, for example `http://backend:3001`.
+- Set `TRUST_PROXY=0` when requests reach the backend directly, without a
+  reverse proxy in front of it.
+- If you paste `ADMIN_PASSWORD_HASH` directly into Compose YAML, escape each
+  `$` as `$$`.
+
+## Deploy via Portainer
+
+Use `docker-compose/docker-compose.portainer.yml` when deploying behind Traefik
+and keeping the backend private on the internal `ring-intercom` Docker
+network.
+
+Recommended flow:
+
+1. Create the external Docker networks if they do not already exist:
+   `ring-intercom` and `traefik_default`.
+2. Open Portainer and create a new stack.
+3. Paste or import `docker-compose/docker-compose.portainer.yml`.
+4. Add the environment variables in the Portainer stack UI.
+5. Deploy the stack.
+
+Notes:
+
+- In Portainer, bcrypt hashes for `ADMIN_PASSWORD_HASH` should also be escaped
+  as `$$` when they are consumed by the stack. This applies even when you enter
+  the value through Portainer's variables UI.
+- Set `TRUST_PROXY=1` when running behind Traefik or another single trusted
+  reverse proxy hop.
+- `frontend` is attached to both `traefik_default` and `ring-intercom`.
+- `backend` is attached only to `ring-intercom` and is not exposed publicly.
+- Keep `CLIENT_ORIGIN` set to the frontend URL seen by the browser.
+- Keep `BACKEND_URL` in the frontend container pointed at the internal Docker
+  service, usually `http://backend:3001`.
+
+Create the networks from the Docker host if needed:
+
+```bash
+docker network create ring-intercom
+docker network create traefik_default
 ```
 
 ## Required backend environment
@@ -57,6 +110,31 @@ docker compose up -d
   - Purpose: bcrypt hash used to verify admin password.
   - Generate hash (from backend directory):
     - `npm run hash-password -- yourStrongPassword`
+  - In Docker Compose and Portainer stack deployments, escape each `$` as `$$`
+    when the value is consumed by the stack configuration.
+
+## `NODE_ENV` guidance
+
+- `NODE_ENV=production`
+  - Use for real deployments.
+  - In current releases, this expects secure cookies, so pair it with HTTPS.
+
+- `NODE_ENV=development`
+  - Use for local development or plain HTTP testing on a trusted private LAN.
+  - If you must run the current release over plain `http://`, prefer
+    `NODE_ENV=development` so authentication cookies work without TLS.
+
+## `TRUST_PROXY` guidance
+
+- `TRUST_PROXY=0`
+  - Use when the backend receives requests directly.
+  - This is the safe default when no reverse proxy is in front of the app.
+
+- `TRUST_PROXY=1`
+  - Use when the backend is behind one trusted reverse proxy hop, such as
+    Traefik.
+  - This affects `req.ip`, login audit IP capture, rate limiting, and secure
+    cookie behavior when HTTPS is terminated at the proxy.
 
 ## Production checklist
 

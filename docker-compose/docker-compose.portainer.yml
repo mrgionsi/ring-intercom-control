@@ -1,0 +1,74 @@
+services:
+  backend:
+    image: ${BACKEND_IMAGE:-ghcr.io/mrgionsi/ring-intercom-control-backend:latest}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3001
+      DB_PATH: ${DB_PATH:-/data/data.db}
+      SESSION_DB_FILE: ${SESSION_DB_FILE:-session.db}
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in Portainer env or .env}
+      MASTER_KEY: ${MASTER_KEY:?set MASTER_KEY in Portainer env or .env}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:?set ADMIN_PASSWORD_HASH in Portainer env or .env}
+      CLIENT_ORIGIN: ${CLIENT_ORIGIN:-https://intercom.srv.home.gionsi.me}
+    networks:
+      - ring-intercom
+    volumes:
+      - ring-intercom-data:/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/nodejs/bin/node",
+          "-e",
+          "require('http').get('http://127.0.0.1:3001/api/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  frontend:
+    image: ${FRONTEND_IMAGE:-ghcr.io/mrgionsi/ring-intercom-control-frontend:latest}
+    restart: unless-stopped
+    environment:
+      PORT: 5173
+      BACKEND_URL: ${BACKEND_URL:-http://backend:3001}
+      PROXY_TIMEOUT_MS: ${PROXY_TIMEOUT_MS:-15000}
+      MAX_BODY_BYTES: ${MAX_BODY_BYTES:-1048576}
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/nodejs/bin/node",
+          "-e",
+          "require('http').get('http://127.0.0.1:5173/',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - traefik_default
+      - ring-intercom
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_default"
+      - "traefik.http.routers.intercom.rule=Host(`${TRAEFIK_HOST:-intercom.srv.home.gionsi.me}`)"
+      - "traefik.http.routers.intercom.entrypoints=websecure"
+      - "traefik.http.routers.intercom.tls=true"
+      - "traefik.http.routers.intercom.service=intercom"
+      - "traefik.http.services.intercom.loadbalancer.server.port=5173"
+
+volumes:
+  ring-intercom-data:
+
+networks:
+  traefik_default:
+    external: true
+  ring-intercom:
+    external: true

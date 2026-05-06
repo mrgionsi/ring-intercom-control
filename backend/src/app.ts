@@ -39,6 +39,7 @@ export async function createApp() {
   }
 
   const app = express();
+  app.set('trust proxy', config.trustProxy);
 
   app.use(
     morgan('combined', {

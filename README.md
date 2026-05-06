@@ -53,8 +53,8 @@ Published docs:
 
 ## Quick Start
 
-Prerequisite: Node.js `20.17.0` or newer. The repository includes `.nvmrc`
-with the CI/docs baseline (`20.19.0`).
+Prerequisite: Node.js `24.14.1` or newer. The repository includes `.nvmrc`
+with the CI/docs baseline (`24.14.1`).
 
 ```bash
 cd backend && npm install
@@ -64,6 +64,37 @@ cd ../frontend && npm install
 ```bash
 cd backend
 cp .env.example .env
+openssl rand -hex 32
+openssl rand -base64 32
+npm run hash-password -- yourAdminPassword
+```
+
+If you prefer not to use `npm run`, generate the same bcrypt hash directly with
+Node after `backend/npm install`:
+
+```bash
+node -e "const bcrypt=require('./backend/node_modules/bcryptjs'); console.log(bcrypt.hashSync('yourAdminPassword', 12));"
+```
+
+Set the generated values in `backend/.env`:
+
+```env
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD_HASH=<paste the hash from `npm run hash-password -- yourAdminPassword`>
+SESSION_SECRET=<paste the hex value from `openssl rand -hex 32`>
+MASTER_KEY=<paste the Base64 value from `openssl rand -base64 32`>
+```
+
+`MASTER_KEY` must be a Base64-encoded 32-byte key because the backend uses
+AES-256-GCM to encrypt Ring refresh tokens.
+
+If you place `ADMIN_PASSWORD_HASH` directly in Docker Compose YAML, escape each
+`$` as `$$`. Bcrypt hashes contain `$` separators and Docker Compose treats `$`
+as variable interpolation syntax. In Portainer stack deployments, keep the same
+rule and escape the bcrypt hash as `$$` there as well.
+
+```bash
+cd backend
 npm run dev
 ```
 
@@ -121,6 +152,7 @@ Files:
 
 - `docker-compose/docker-compose.yml`
 - `docker-compose/.env`
+- `docker-compose/docker-compose.portainer.yml`
 
 Run:
 
@@ -129,6 +161,22 @@ cd docker-compose
 cp .env.example .env
 docker compose up -d
 ```
+
+Environment notes:
+
+- `NODE_ENV=production`: use for real deployments. Cookies are treated as
+  secure in current releases, so pair this with HTTPS.
+- `NODE_ENV=development`: useful for local or private-LAN HTTP testing when you
+  are not terminating TLS yet.
+- `TRUST_PROXY=0`: use this when requests reach the backend directly, without a
+  reverse proxy in front of it.
+- `TRUST_PROXY=1`: use this when the backend sits behind one trusted proxy hop,
+  for example Traefik. This affects `req.ip`, login audit IPs, rate limiting,
+  and secure-cookie handling behind HTTPS termination.
+- `CLIENT_ORIGIN`: set this to the browser-facing frontend URL, for example
+  `http://192.168.1.50:5173`.
+- `BACKEND_URL` in the frontend container should usually point to the Docker
+  service name, for example `http://backend:3001`, not the host LAN IP.
 
 Stop:
 
@@ -143,6 +191,32 @@ Container logs are written to stdout/stderr, so they are visible with:
 docker logs ring-intercom-backend
 docker logs ring-intercom-frontend
 ```
+
+### Portainer + Traefik
+
+Use `docker-compose/docker-compose.portainer.yml` when exposing only the
+frontend through Traefik and keeping the backend private on the internal
+`ring-intercom` Docker network.
+
+Create the external Docker networks first if they do not already exist:
+
+```bash
+docker network create ring-intercom
+docker network create traefik_default
+```
+
+Portainer notes:
+
+- Import or paste `docker-compose/docker-compose.portainer.yml` into a stack.
+- Add the required environment variables in Portainer.
+- Set `TRUST_PROXY=1` when running behind Traefik.
+- `frontend` is attached to both `traefik_default` and `ring-intercom`.
+- `backend` is attached only to `ring-intercom` and is not exposed publicly.
+- `CLIENT_ORIGIN` should be the public browser URL, for example
+  `https://intercom.srv.home.gionsi.me`.
+- `BACKEND_URL` should stay internal as `http://backend:3001`.
+- In Portainer stack deployments, escape bcrypt `$` characters as `$$` for
+  `ADMIN_PASSWORD_HASH`.
 
 ## Validation and QA
 

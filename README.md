@@ -152,6 +152,7 @@ Files:
 
 - `docker-compose/docker-compose.yml`
 - `docker-compose/.env`
+- `docker-compose/docker-compose.portainer.yml`
 
 Run:
 
@@ -185,6 +186,31 @@ Container logs are written to stdout/stderr, so they are visible with:
 docker logs ring-intercom-backend
 docker logs ring-intercom-frontend
 ```
+
+### Portainer + Traefik
+
+Use `docker-compose/docker-compose.portainer.yml` when exposing only the
+frontend through Traefik and keeping the backend private on the internal
+`ring-intercom` Docker network.
+
+Create the external Docker networks first if they do not already exist:
+
+```bash
+docker network create ring-intercom
+docker network create traefik_default
+```
+
+Portainer notes:
+
+- Import or paste `docker-compose/docker-compose.portainer.yml` into a stack.
+- Add the required environment variables in Portainer.
+- `frontend` is attached to both `traefik_default` and `ring-intercom`.
+- `backend` is attached only to `ring-intercom` and is not exposed publicly.
+- `CLIENT_ORIGIN` should be the public browser URL, for example
+  `https://intercom.srv.home.gionsi.me`.
+- `BACKEND_URL` should stay internal as `http://backend:3001`.
+- In Portainer stack deployments, escape bcrypt `$` characters as `$$` for
+  `ADMIN_PASSWORD_HASH`.
 
 ## Validation and QA
 

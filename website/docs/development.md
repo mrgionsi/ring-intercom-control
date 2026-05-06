@@ -8,9 +8,9 @@ Live docs URL: `https://mrgionsi.github.io/ring-intercom-control/`
 
 ## Prerequisites
 
-- Node.js `20.17.0` or newer
-  - `.nvmrc` pins the local baseline to `20.19.0`
-  - CI currently runs the app test jobs on Node `24`
+- Node.js `24.14.1` or newer
+  - `.nvmrc` pins the local baseline to `24.14.1`
+  - CI currently runs the app test jobs on Node `24.14.1`
 - npm bundled with your selected Node runtime
 
 ## Local run

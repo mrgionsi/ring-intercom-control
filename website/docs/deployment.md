@@ -44,23 +44,36 @@ Notes:
 
 ## Deploy via Portainer
 
-Use the same Compose stack, but create it as a Portainer stack.
+Use `docker-compose/docker-compose.portainer.yml` when deploying behind Traefik
+and keeping the backend private on the internal `ring-intercom` Docker
+network.
 
 Recommended flow:
 
-1. Open Portainer and create a new stack.
-2. Paste the compose content.
-3. Add the environment variables in the Portainer stack UI.
-4. Deploy the stack.
+1. Create the external Docker networks if they do not already exist:
+   `ring-intercom` and `traefik_default`.
+2. Open Portainer and create a new stack.
+3. Paste or import `docker-compose/docker-compose.portainer.yml`.
+4. Add the environment variables in the Portainer stack UI.
+5. Deploy the stack.
 
 Notes:
 
 - In Portainer, bcrypt hashes for `ADMIN_PASSWORD_HASH` should also be escaped
   as `$$` when they are consumed by the stack. This applies even when you enter
   the value through Portainer's variables UI.
+- `frontend` is attached to both `traefik_default` and `ring-intercom`.
+- `backend` is attached only to `ring-intercom` and is not exposed publicly.
 - Keep `CLIENT_ORIGIN` set to the frontend URL seen by the browser.
 - Keep `BACKEND_URL` in the frontend container pointed at the internal Docker
   service, usually `http://backend:3001`.
+
+Create the networks from the Docker host if needed:
+
+```bash
+docker network create ring-intercom
+docker network create traefik_default
+```
 
 ## Required backend environment
 

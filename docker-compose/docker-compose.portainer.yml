@@ -11,9 +11,9 @@ services:
       MASTER_KEY: ${MASTER_KEY:?set MASTER_KEY in Portainer env or .env}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:?set ADMIN_PASSWORD_HASH in Portainer env or .env}
-      CLIENT_ORIGIN: ${CLIENT_ORIGIN:-http://localhost:5173}
-    ports:
-      - "${BACKEND_PORT:-3001}:3001"
+      CLIENT_ORIGIN: ${CLIENT_ORIGIN:-https://intercom.srv.home.gionsi.me}
+    networks:
+      - ring-intercom
     volumes:
       - ring-intercom-data:/data
     healthcheck:
@@ -37,8 +37,6 @@ services:
       BACKEND_URL: ${BACKEND_URL:-http://backend:3001}
       PROXY_TIMEOUT_MS: ${PROXY_TIMEOUT_MS:-15000}
       MAX_BODY_BYTES: ${MAX_BODY_BYTES:-1048576}
-    ports:
-      - "${FRONTEND_PORT:-5173}:5173"
     depends_on:
       backend:
         condition: service_healthy
@@ -54,6 +52,23 @@ services:
       timeout: 5s
       retries: 3
       start_period: 20s
+    networks:
+      - traefik_default
+      - ring-intercom
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_default"
+      - "traefik.http.routers.intercom.rule=Host(`${TRAEFIK_HOST:-intercom.srv.home.gionsi.me}`)"
+      - "traefik.http.routers.intercom.entrypoints=websecure"
+      - "traefik.http.routers.intercom.tls=true"
+      - "traefik.http.routers.intercom.service=intercom"
+      - "traefik.http.services.intercom.loadbalancer.server.port=5173"
 
 volumes:
   ring-intercom-data:
+
+networks:
+  traefik_default:
+    external: true
+  ring-intercom:
+    external: true

@@ -1,5 +1,5 @@
 # Stage: build
-FROM node:20.19.0-bookworm-slim@sha256:5cfa999422613d3b34f766cbb814d964cbfcb76aaf3607e805da21cccb352bac AS builder
+FROM node:24.14.1-bookworm-slim@sha256:b506e7321f176aae77317f99d67a24b272c1f09f1d10f1761f2773447d8da26c AS builder
 
 WORKDIR /app
 COPY package.json package-lock.json* ./
@@ -14,7 +14,7 @@ COPY . .
 RUN npm run build
 
 # Stage: prod
-FROM gcr.io/distroless/nodejs20-debian13
+FROM gcr.io/distroless/nodejs24-debian13@sha256:482fabdb0f0353417ab878532bb3bf45df925e3741c285a68038fb138b714cba
 
 LABEL org.opencontainers.image.description="Frontend web app for Ring Intercom Control."
 

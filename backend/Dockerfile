@@ -1,5 +1,5 @@
 # Stage: build
-FROM node:20.19-bookworm-slim AS builder
+FROM node:24.14.1-bookworm-slim@sha256:b506e7321f176aae77317f99d67a24b272c1f09f1d10f1761f2773447d8da26c AS builder
 
 WORKDIR /app
 COPY package.json package-lock.json* ./
@@ -16,14 +16,14 @@ RUN npm run build
 RUN mkdir -p /runtime-data && chown -R 65532:65532 /runtime-data
 
 # Stage: prod dependencies only
-FROM node:20.19-bookworm-slim AS prod-deps
+FROM node:24.14.1-bookworm-slim@sha256:b506e7321f176aae77317f99d67a24b272c1f09f1d10f1761f2773447d8da26c AS prod-deps
 
 WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev
 
 # Stage: prod
-FROM gcr.io/distroless/nodejs20-debian13
+FROM gcr.io/distroless/nodejs24-debian13@sha256:482fabdb0f0353417ab878532bb3bf45df925e3741c285a68038fb138b714cba
 
 LABEL org.opencontainers.image.description="Backend API for Ring Intercom Control, providing authentication, Ring integration, unlock auditing, and guest links."
 

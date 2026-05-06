@@ -53,8 +53,8 @@ Published docs:
 
 ## Quick Start
 
-Prerequisite: Node.js `20.17.0` or newer. The repository includes `.nvmrc`
-with the CI/docs baseline (`20.19.0`).
+Prerequisite: Node.js `24.14.1` or newer. The repository includes `.nvmrc`
+with the CI/docs baseline (`24.14.1`).
 
 ```bash
 cd backend && npm install

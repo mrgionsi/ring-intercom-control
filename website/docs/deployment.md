@@ -39,6 +39,8 @@ Notes:
   `http://192.168.1.50:5173`.
 - In the frontend container, `BACKEND_URL` should normally point to the Docker
   service name, for example `http://backend:3001`.
+- Set `TRUST_PROXY=0` when requests reach the backend directly, without a
+  reverse proxy in front of it.
 - If you paste `ADMIN_PASSWORD_HASH` directly into Compose YAML, escape each
   `$` as `$$`.
 
@@ -62,6 +64,8 @@ Notes:
 - In Portainer, bcrypt hashes for `ADMIN_PASSWORD_HASH` should also be escaped
   as `$$` when they are consumed by the stack. This applies even when you enter
   the value through Portainer's variables UI.
+- Set `TRUST_PROXY=1` when running behind Traefik or another single trusted
+  reverse proxy hop.
 - `frontend` is attached to both `traefik_default` and `ring-intercom`.
 - `backend` is attached only to `ring-intercom` and is not exposed publicly.
 - Keep `CLIENT_ORIGIN` set to the frontend URL seen by the browser.
@@ -119,6 +123,18 @@ docker network create traefik_default
   - Use for local development or plain HTTP testing on a trusted private LAN.
   - If you must run the current release over plain `http://`, prefer
     `NODE_ENV=development` so authentication cookies work without TLS.
+
+## `TRUST_PROXY` guidance
+
+- `TRUST_PROXY=0`
+  - Use when the backend receives requests directly.
+  - This is the safe default when no reverse proxy is in front of the app.
+
+- `TRUST_PROXY=1`
+  - Use when the backend is behind one trusted reverse proxy hop, such as
+    Traefik.
+  - This affects `req.ip`, login audit IP capture, rate limiting, and secure
+    cookie behavior when HTTPS is terminated at the proxy.
 
 ## Production checklist
 

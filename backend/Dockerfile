@@ -30,7 +30,6 @@ LABEL org.opencontainers.image.description="Backend API for Ring Intercom Contro
 WORKDIR /app
 
 COPY --from=builder --chown=65532:65532 /app/package.json ./
-COPY --from=builder --chown=65532:65532 /app/package-lock.json ./package-lock.json
 COPY --from=prod-deps --chown=65532:65532 /app/node_modules ./node_modules
 COPY --from=builder --chown=65532:65532 /app/dist ./dist
 # /data should be mounted as a persistent volume so DB_PATH data survives container recreation.
